@@ -232,3 +232,9 @@ body {
     animation: fall linear infinite;
 }
 @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
+
+/* Canvas centering */
+#hold1, #next1 {
+    display: block;
+    margin: 0 auto;
+}
