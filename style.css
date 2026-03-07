@@ -26,7 +26,7 @@ body {
 .menu-screen {
     position: fixed;
     inset: 0;
-    background: rgba(5, 10, 20, 0.95);
+    background: rgba(5, 10, 20, 0.98);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -36,7 +36,7 @@ body {
 .menu-screen.hidden { display: none; }
 
 .title {
-    font-size: 3.5rem;
+    font-size: 3rem;
     font-weight: 900;
     background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
     -webkit-background-clip: text;
@@ -44,25 +44,16 @@ body {
     margin-bottom: 2rem;
 }
 
-.big-btn {
-    padding: 1.2rem 4rem;
-    font-size: 1.4rem;
-}
-
-/* 霓虹按鈕 */
 .neon-btn {
     background: transparent;
     border: 2px solid var(--neon-blue);
     color: #fff;
-    padding: 0.8rem 2rem;
-    font-size: 1rem;
+    padding: 1rem 3rem;
+    font-size: 1.2rem;
     font-weight: bold;
     border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 .neon-btn:hover {
     background: var(--neon-blue);
@@ -70,31 +61,21 @@ body {
     box-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
 }
 
-/* 遊戲容器 - 三欄佈局 */
+/* 遊戲容器 */
 .game-container {
     display: flex;
-    gap: 25px;
+    gap: 20px;
     align-items: flex-start;
     padding: 20px;
 }
 
-/* 左側面板 */
-.left-panel {
+.left-panel, .right-panel {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    width: 150px;
+    width: 140px;
 }
 
-/* 右側面板 */
-.right-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 150px;
-}
-
-/* 中央面板 */
 .center-panel {
     display: flex;
     flex-direction: column;
@@ -103,55 +84,52 @@ body {
 }
 
 .game-title {
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     font-weight: 900;
     background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: 4px;
+    letter-spacing: 3px;
 }
 
-/* 麵板盒子 */
-.panel-box {
+/* 麵板 */
+.panel {
     background: var(--panel-bg);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 12px;
+    border-radius: 10px;
+    padding: 10px;
     width: 100%;
 }
 
 .panel-title {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--neon-blue);
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     text-align: center;
     margin-bottom: 8px;
-    padding-bottom: 6px;
+    padding-bottom: 5px;
     border-bottom: 1px solid var(--border-color);
 }
 
 /* 操作說明 */
 .controls {
-    flex: 1;
-}
-.control-list {
+    font-size: 0.65rem;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
-.control-item {
-    font-size: 0.7rem;
+.controls div {
     display: flex;
     justify-content: space-between;
     align-items: center;
- background: rgba(}
+}
 .key {
-   0, 243, 255, 0.15);
+    background: rgba(0, 243, 255, 0.15);
     border: 1px solid var(--neon-blue);
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-size: 0.65rem;
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: 0.6rem;
     color: var(--neon-blue);
 }
 
@@ -159,24 +137,20 @@ body {
 .stats {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 .stat-row {
     display: flex;
     justify-content: space-between;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #94a3b8;
 }
-.star-display {
-    color: var(--neon-yellow);
-    letter-spacing: -2px;
-}
-.val {
+.stat-row span:last-child {
     color: var(--neon-blue);
     font-weight: bold;
 }
 
-/* 遊戲畫布 */
+/* 畫布 */
 .canvas-wrap {
     position: relative;
     border: 2px solid var(--border-color);
@@ -192,23 +166,21 @@ body {
     pointer-events: none;
 }
 
-/* 暫停按鈕 */
+/* 暫停 */
 .pause-btn {
     background: transparent;
     border: 1px solid var(--neon-pink);
     color: var(--neon-pink);
-    padding: 6px 16px;
-    font-size: 0.75rem;
-    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.7rem;
+    border-radius: 15px;
     cursor: pointer;
-    transition: all 0.3s;
 }
 .pause-btn:hover {
     background: var(--neon-pink);
     color: #000;
 }
 
-/* 暫停遮罩 */
 .paused-overlay {
     position: absolute;
     inset: 0;
@@ -225,15 +197,11 @@ body {
     color: var(--neon-blue);
     text-shadow: 0 0 15px var(--neon-blue);
 }
-.paused-overlay p {
-    color: #64748b;
-    margin-top: 8px;
-    font-size: 0.85rem;
-}
+.paused-overlay p { color: #64748b; margin-top: 8px; font-size: 0.85rem; }
 
-/* COMBO 顯示 */
+/* COMBO */
 .combo-display {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -243,7 +211,7 @@ body {
     text-shadow: 0 0 20px var(--neon-yellow);
     opacity: 0;
     pointer-events: none;
-    z-index: 10;
+    z-index: 50;
 }
 .combo-display.show {
     opacity: 1;
@@ -255,7 +223,7 @@ body {
     100% { transform: translate(-50%, -50%) scale(1); }
 }
 
-/* 結束畫面 */
+/* 結束 */
 .gameover-screen {
     position: fixed;
     inset: 0;
@@ -264,7 +232,7 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 100;
+    z-index: 200;
 }
 .gameover-screen.show { display: flex; }
 .gameover-screen h1 {
@@ -277,17 +245,3 @@ body {
     color: var(--neon-blue);
     margin: 1rem 0 2rem;
 }
-
-/* 雪花 */
-.snow {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-}
-.snowflake {
-    position: absolute;
-    color: rgba(255, 255, 255, 0.25);
-    animation: fall linear infinite;
-}
-@keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
