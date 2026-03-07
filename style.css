@@ -1,9 +1,11 @@
 :root {
-    --bg-color: #0f172a;
-    --panel-bg: rgba(255, 255, 255, 0.05);
-    --border-color: rgba(255, 255, 255, 0.1);
+    --bg-color: #050a14;
+    --panel-bg: rgba(255, 255, 255, 0.03);
+    --border-color: rgba(255, 255, 255, 0.08);
     --neon-blue: #00f3ff;
     --neon-pink: #ff00ff;
+    --neon-purple: #9d4edd;
+    --text-color: #f8fafc;
 }
 
 * {
@@ -14,9 +16,9 @@
 
 body {
     background-color: var(--bg-color);
-    background-image: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-image: radial-gradient(circle at center, #101a30 0%, var(--bg-color) 100%);
+    color: var(--text-color);
+    font-family: 'Segoe UI', 'Roboto', helvetica, sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -24,11 +26,11 @@ body {
     overflow: hidden;
 }
 
-/* 選單 */
+/* 选单 */
 .menu-screen {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.98);
+    background: rgba(5, 10, 20, 0.98);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -40,15 +42,17 @@ body {
 .title {
     font-size: clamp(2rem, 8vw, 4rem);
     font-weight: 900;
-    background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 2rem;
+    text-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
 }
 
-.btn {
-    background: linear-gradient(145deg, #1e293b, #0f172a);
-    border: 3px solid var(--neon-blue);
+/* 霓虹按钮 */
+.neon-btn {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+    border: 2px solid var(--neon-blue);
     color: white;
     padding: 1rem 3rem;
     font-size: 1.2rem;
@@ -58,47 +62,79 @@ body {
     margin: 0.5rem;
     transition: all 0.3s;
     text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 0 20px rgba(0, 243, 255, 0.2), inset 0 0 20px rgba(0, 243, 255, 0.05);
 }
-.btn:hover {
+
+.neon-btn:hover {
     background: var(--neon-blue);
     color: #000;
     transform: scale(1.05);
-}
-.btn.secondary {
-    border-color: var(--neon-pink);
-}
-.btn.secondary:hover {
-    background: var(--neon-pink);
+    box-shadow: 0 0 40px rgba(0, 243, 255, 0.6);
 }
 
-.controls-info {
-    margin-top: 2rem;
-    background: var(--panel-bg);
-    padding: 1.5rem 2rem;
-    border-radius: 15px;
-    text-align: center;
+.neon-btn .icon {
+    font-size: 1.4rem;
+}
+
+/* 操作说明卡 */
+.controls-guidePanel {
+    width: 180px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.4);
     border: 1px solid var(--border-color);
-}
-.controls-info h3 {
-    color: var(--neon-blue);
-    margin-bottom: 0.5rem;
-}
-.controls-info p {
+    border-radius: 16px;
+    font-size: 0.85rem;
     color: #94a3b8;
-    line-height: 1.6;
+    backdrop-filter: blur(10px);
 }
 
-/* 遊戲區 */
-.game-container {
+.controls-guidePanel h3 {
+    color: var(--neon-blue);
+    margin-bottom: 15px;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.controls-guidePanel ul {
+    list-style: none;
+}
+
+.controls-guidePanel li {
+    margin-bottom: 8px;
     display: flex;
-    gap: 40px;
+    align-items: center;
+    gap: 8px;
+}
+
+.key {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    color: var(--neon-blue);
+}
+
+/* 游戏区 */
+.game-container {
+    display: none;
+    gap: 30px;
     padding: 30px;
     background: var(--panel-bg);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
     border: 1px solid var(--border-color);
-    border-radius: 20px;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    position: relative;
+    align-items: flex-start;
 }
+.game-container.active { display: flex; }
 
 .player-panel {
     display: flex;
@@ -127,9 +163,9 @@ body {
 .canvas-wrapper {
     position: relative;
     border: 2px solid var(--border-color);
-    border-radius: 5px;
+    border-radius: 8px;
     background-color: rgba(0, 0, 0, 0.8);
-    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+    box-shadow: 0 0 25px rgba(0, 243, 255, 0.15), inset 0 0 30px rgba(0, 0, 0, 0.5);
 }
 
 .fx-layer {
@@ -152,7 +188,7 @@ body {
     height: 100px;
     background: rgba(0, 0, 0, 0.5);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -163,6 +199,7 @@ body {
     font-size: 0.7rem;
     color: var(--neon-blue);
     margin-bottom: 5px;
+    text-transform: uppercase;
 }
 
 .score-panel {
@@ -173,11 +210,12 @@ body {
 .score-row {
     display: flex;
     justify-content: space-between;
-    padding: 5px 10px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 5px;
-    margin-bottom: 5px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    margin-bottom: 6px;
     font-size: 0.9rem;
+    border: 1px solid var(--border-color);
 }
 
 .score-row span:last-child {
@@ -185,45 +223,70 @@ body {
     font-weight: bold;
 }
 
-/* 中間區域 */
+/* 中间区域 */
 .center-arena {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     width: 150px;
+    position: relative;
 }
 
-.vs-text {
-    font-size: 3rem;
-    font-style: italic;
-    color: var(--neon-pink);
-    text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+.pause-btn {
+    font-size: 0.9rem;
+    padding: 0.8rem 1.5rem;
 }
 
 .combo-display {
     font-size: 2rem;
     font-weight: bold;
     color: #ffe66d;
-    text-shadow: 0 0 10px #ffe66d;
+    text-shadow: 0 0 20px #ffe66d;
     opacity: 0;
     transition: opacity 0.3s;
+    margin-top: 20px;
 }
 .combo-display.show {
     opacity: 1;
     animation: comboPulse 0.5s ease-out;
 }
+
 @keyframes comboPulse {
     0% { transform: scale(0.5); }
     50% { transform: scale(1.2); }
     100% { transform: scale(1); }
 }
 
-/* 結束畫面 */
+/* 暂停遮罩 */
+.paused-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    backdrop-filter: blur(5px);
+}
+.paused-overlay.show { display: flex; }
+.paused-overlay h2 {
+    font-size: 2rem;
+    color: var(--neon-blue);
+    text-shadow: 0 0 20px var(--neon-blue);
+    margin-bottom: 10px;
+}
+.paused-overlay p {
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+/* 结束画面 */
 .gameover-screen {
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.95);
+    background: rgba(5, 10, 20, 0.95);
     display: none;
     flex-direction: column;
     align-items: center;
@@ -235,6 +298,7 @@ body {
 .gameover-screen h1 {
     font-size: 4rem;
     color: var(--neon-pink);
+    text-shadow: 0 0 30px var(--neon-pink);
     margin-bottom: 1rem;
 }
 
@@ -244,7 +308,7 @@ body {
     margin-bottom: 2rem;
 }
 
-/* 雪花背景 */
+/* 雪花 */
 .snow {
     position: fixed;
     inset: 0;

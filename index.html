@@ -3,26 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris Battle</title>
+    <title>Tetris Battle - VFX Edition</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 選單 -->
+    <!-- 选单画面 -->
     <div class="menu-screen" id="menu">
         <h1 class="title">🧊 TETRIS BATTLE</h1>
-        <button class="btn" onclick="startGame()">開始遊戲</button>
-        <div class="controls-info">
-            <h3>操作說明</h3>
-            <p>移動 ← → | 旋轉 ↑ / Z | 軟降 ↓<br>硬降 空白 | Hold C</p>
+        <button class="neon-btn" onclick="startGame()">
+            <span class="icon">🎮</span> 开始游戏
+        </button>
+        
+        <div class="controls-guidePanel">
+            <h3>操作说明 (P1)</h3>
+            <ul>
+                <li><span class="key">←</span> <span class="key">→</span> : 移动</li>
+                <li><span class="key">↑</span> : 顺时针旋转</li>
+                <li><span class="key">Z</span> : 逆时针旋转</li>
+                <li><span class="key">↓</span> : 软降 (Soft)</li>
+                <li><span class="key">Space</span> : 硬降 (Hard)</li>
+                <li><span class="key">C</span> : 保留 (Hold)</li>
+            </ul>
         </div>
     </div>
 
-    <!-- 遊戲區 -->
+    <!-- 游戏区 -->
     <div class="game-container" id="game">
+        <!-- 操作说明卡 -->
+        <div class="controls-guidePanel">
+            <h3>操作说明 (P1)</h3>
+            <ul>
+                <li><span class="key">←</span> <span class="key">→</span> : 移动</li>
+                <li><span class="key">↑</span> : 顺时针旋转</li>
+                <li><span class="key">Z</span> : 逆时针旋转</li>
+                <li><span class="key">↓</span> : 软降</li>
+                <li><span class="key">Space</span> : 硬降</li>
+                <li><span class="key">C</span> : Hold</li>
+                <li><span class="key">P</span> : 暂停</li>
+            </ul>
+        </div>
+
         <!-- 玩家1 -->
-        <div class="player-panel" id="p1-panel">
+        <div class="player-panel" id="player1">
             <div class="stats-bar">
-                <span class="ko-stars" id="stars1">⭐️⭐️⭐️⭐️⭐️</span>
+                <span class="ko-stars" id="stars1">⭐⭐⭐⭐⭐</span>
                 <span class="lines-sent" id="sent1">Lines: 0</span>
             </div>
             <div class="canvas-wrapper">
@@ -45,44 +69,24 @@
             </div>
         </div>
 
-        <!-- 中間區域 -->
+        <!-- 中间区域 -->
         <div class="center-arena">
-            <h1 class="vs-text" id="vs-text" style="display:none">VS</h1>
+            <button id="pauseBtn" class="neon-btn pause-btn" onclick="togglePause()">
+                <span class="icon">⏸️</span> PAUSE
+            </button>
             <div class="combo-display" id="combo"></div>
-        </div>
-
-        <!-- 玩家2 -->
-        <div class="player-panel" id="p2-panel" style="display:none">
-            <div class="stats-bar">
-                <span class="ko-stars" id="stars2">⭐️⭐️⭐️⭐️⭐️</span>
-                <span class="lines-sent" id="sent2">Lines: 0</span>
-            </div>
-            <div class="canvas-wrapper">
-                <canvas id="board2" width="300" height="600"></canvas>
-                <canvas id="fx2" class="fx-layer" width="300" height="600"></canvas>
-            </div>
-            <div class="hold-next-panel">
-                <div class="hold-box">
-                    <span class="box-label">HOLD</span>
-                    <canvas id="hold2" width="80" height="80"></canvas>
-                </div>
-                <div class="next-box">
-                    <span class="box-label">NEXT</span>
-                    <canvas id="next2" width="80" height="80"></canvas>
-                </div>
-            </div>
-            <div class="score-panel">
-                <div class="score-row"><span>SCORE</span><span id="score2">0</span></div>
-                <div class="score-row"><span>LEVEL</span><span id="level2">1</span></div>
+            <div class="paused-overlay" id="pausedOverlay">
+                <h2>PAUSED</h2>
+                <p>按 P 继续</p>
             </div>
         </div>
     </div>
 
-    <!-- 結束畫面 -->
+    <!-- 结束画面 -->
     <div class="gameover-screen" id="gameover">
         <h1>GAME OVER</h1>
         <p id="winner-text"></p>
-        <button class="btn" onclick="backMenu()">返回選單</button>
+        <button class="neon-btn" onclick="backMenu()">返回选单</button>
     </div>
 
     <script src="game.js"></script>

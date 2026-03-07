@@ -10,7 +10,7 @@ class GameRenderer {
     }
     
     drawGrid() {
-        this.boardCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        this.boardCtx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
         this.boardCtx.lineWidth = 1;
         for (let x = 0; x <= this.boardCanvas.width; x += this.blockSize) {
             this.boardCtx.beginPath();
@@ -39,11 +39,13 @@ class GameRenderer {
         ctx.fillStyle = color;
         ctx.fillRect(px + 1, py + 1, this.blockSize - 2, this.blockSize - 2);
         
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        // 高光
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
         ctx.fillRect(px + 1, py + 1, this.blockSize - 2, 3);
         ctx.fillRect(px + 1, py + 1, 3, this.blockSize - 2);
         
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        // 阴影
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
         ctx.fillRect(px + this.blockSize - 4, py + 1, 3, this.blockSize - 2);
         ctx.fillRect(px + 1, py + this.blockSize - 4, this.blockSize - 2, 3);
     }
@@ -52,7 +54,6 @@ class GameRenderer {
         this.clear();
         this.drawGrid();
         
-        // 绘制已锁定方块
         for (let r = 0; r < 20; r++) {
             for (let c = 0; c < 10; c++) {
                 if (grid[r][c]) {
@@ -61,7 +62,6 @@ class GameRenderer {
             }
         }
         
-        // 绘制当前方块
         if (piece) {
             for (let r = 0; r < piece.shape.length; r++) {
                 for (let c = 0; c < piece.shape[r].length; c++) {
@@ -75,15 +75,14 @@ class GameRenderer {
         this.updateParticles();
     }
     
-    // 粒子特效
     spawnParticles(x, y, color) {
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 15; i++) {
             this.particles.push({
                 x: x * this.blockSize + this.blockSize / 2,
                 y: y * this.blockSize + this.blockSize / 2,
-                vx: (Math.random() - 0.5) * 8,
-                vy: (Math.random() - 0.5) * 8,
-                size: Math.random() * 6 + 2,
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.5) * 12,
+                size: Math.random() * 8 + 3,
                 life: 1,
                 color: color
             });
@@ -95,14 +94,16 @@ class GameRenderer {
             let p = this.particles[i];
             p.x += p.vx;
             p.y += p.vy;
-            p.vy += 0.2; // 重力
-            p.life -= 0.03;
+            p.vy += 0.3;
+            p.life -= 0.025;
             
             if (p.life <= 0) {
                 this.particles.splice(i, 1);
             } else {
-                this.fxCtx.fillStyle = p.color.replace(')', `, ${p.life})`).replace('rgb', 'rgba');
+                this.fxCtx.globalAlpha = p.life;
+                this.fxCtx.fillStyle = p.color;
                 this.fxCtx.fillRect(p.x, p.y, p.size, p.size);
+                this.fxCtx.globalAlpha = 1;
             }
         }
     }
@@ -167,13 +168,12 @@ function play(type) {
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         switch(type) {
-            case 'move': osc.frequency.value = 220; osc.type = 'sine'; gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05); osc.start(); osc.stop(audioCtx.currentTime + 0.05); break;
-            case 'rotate': osc.frequency.value = 330; osc.type = 'sine'; gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08); osc.start(); osc.stop(audioCtx.currentTime + 0.08); break;
-            case 'drop': osc.frequency.value = 150; osc.type = 'square'; gain.gain.setValueAtTime(0.03, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03); osc.start(); osc.stop(audioCtx.currentTime + 0.03); break;
-            case 'clear': for(let i=0;i<4;i++){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=440+i*110;o.type='sine';g.gain.setValueAtTime(0.08,audioCtx.currentTime+i*0.08);g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+i*0.08+0.15);o.start(audioCtx.currentTime+i*0.08);o.stop(audioCtx.currentTime+i*0.08+0.15);}break;
-            case 'hold': osc.frequency.value = 550; osc.type = 'sine'; gain.gain.setValueAtTime(0.06, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); break;
-            case 'attack': osc.frequency.value = 100; osc.type = 'square'; gain.gain.setValueAtTime(0.08, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.2); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2); osc.start(); osc.stop(audioCtx.currentTime + 0.2); break;
-            case 'over': osc.frequency.value = 200; osc.type = 'sawtooth'; gain.gain.setValueAtTime(0.1, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5); break;
+            case 'move': osc.frequency.value = 220; osc.type = 'sine'; gain.gain.setValueAtTime(0.04, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05); osc.start(); osc.stop(audioCtx.currentTime + 0.05); break;
+            case 'rotate': osc.frequency.value = 330; osc.type = 'sine'; gain.gain.setValueAtTime(0.04, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08); osc.start(); osc.stop(audioCtx.currentTime + 0.08); break;
+            case 'drop': osc.frequency.value = 150; osc.type = 'square'; gain.gain.setValueAtTime(0.02, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03); osc.start(); osc.stop(audioCtx.currentTime + 0.03); break;
+            case 'clear': for(let i=0;i<4;i++){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=440+i*110;o.type='sine';g.gain.setValueAtTime(0.06,audioCtx.currentTime+i*0.08);g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+i*0.08+0.15);o.start(audioCtx.currentTime+i*0.08);o.stop(audioCtx.currentTime+i*0.08+0.15);}break;
+            case 'hold': osc.frequency.value = 550; osc.type = 'sine'; gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); break;
+            case 'over': osc.frequency.value = 200; osc.type = 'sawtooth'; gain.gain.setValueAtTime(0.08, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5); break;
         }
     } catch(e) {}
 }
@@ -280,7 +280,6 @@ class Tetris {
         let lines = 0;
         for (let r = ROWS - 1; r >= 0; r--) {
             if (this.grid[r].every(c => c)) {
-                // 消除特效
                 for (let c = 0; c < COLS; c++) {
                     this.renderer.spawnParticles(c, r, COLORS[this.grid[r][c]]);
                 }
@@ -296,6 +295,14 @@ class Tetris {
             this.lines += lines;
             this.level = Math.floor(this.lines / 10) + 1;
             this.interval = Math.max(100, 1000 - (this.level - 1) * 100);
+            
+            // 显示 Combo
+            if (lines >= 2) {
+                const comboEl = document.getElementById('combo');
+                comboEl.textContent = lines === 4 ? 'TETRIS!' : `${lines} LINES!`;
+                comboEl.classList.add('show');
+                setTimeout(() => comboEl.classList.remove('show'), 1500);
+            }
         }
     }
     
@@ -322,7 +329,7 @@ class Tetris {
     }
     
     update(time) {
-        if (this.over) return;
+        if (this.over || isPaused) return;
         if (time - this.lastTime > this.interval) {
             if (!this.drop()) this.lock();
             this.lastTime = time;
@@ -342,62 +349,79 @@ class Tetris {
 }
 
 // ==================== 游戏控制 ====================
-let games = [], running = false;
+let game = null;
+let running = false;
+let isPaused = false;
 
 function startGame() {
     initAudio();
     
     document.getElementById('menu').classList.add('hidden');
     document.getElementById('gameover').classList.remove('show');
-    document.getElementById('game').style.display = 'flex';
-    document.getElementById('p2-panel').style.display = 'none';
-    document.getElementById('vs-text').style.display = 'none';
+    document.getElementById('game').classList.add('active');
+    document.getElementById('pausedOverlay').classList.remove('show');
     
-    games = [new Tetris(1)];
-    games[0].spawn();
+    game = new Tetris(1);
+    game.spawn();
     
     running = true;
+    isPaused = false;
     loop();
 }
 
 function backMenu() {
     document.getElementById('gameover').classList.remove('show');
-    document.getElementById('game').style.display = 'none';
+    document.getElementById('game').classList.remove('active');
     document.getElementById('menu').classList.remove('hidden');
     running = false;
 }
 
+function togglePause() {
+    if (!running) return;
+    isPaused = !isPaused;
+    document.getElementById('pausedOverlay').classList.toggle('show', isPaused);
+    if (!isPaused) {
+        game.lastTime = performance.now();
+        loop();
+    }
+}
 
 function loop(time = 0) {
-    if (!running) return;
-    games.forEach(g => {
-        g.update(time);
-        g.render();
-        if (g.over) end(g.id);
-    });
-    if (games.some(g => g.over)) return;
+    if (!running || isPaused) return;
+    game.update(time);
+    game.render();
+    if (game.over) {
+        end();
+        return;
+    }
     requestAnimationFrame(loop);
 }
 
-function end(loser) {
+function end() {
     running = false;
     play('over');
-    document.getElementById('winner-text').textContent = '遊戲結束！';
+    document.getElementById('winner-text').textContent = '游戏结束！';
     document.getElementById('gameover').classList.add('show');
 }
 
 // 键盘控制
 document.addEventListener('keydown', e => {
-    if (!running || games.length === 0) return;
+    if (!running || !game) return;
     
-    const p1 = games[0];
+    if (e.key === 'p' || e.key === 'P') {
+        togglePause();
+        return;
+    }
+    
+    if (isPaused) return;
+    
     switch(e.key) {
-        case 'ArrowLeft': p1.move(-1); break;
-        case 'ArrowRight': p1.move(1); break;
-        case 'ArrowDown': p1.drop(); break;
-        case 'ArrowUp': case 'z': case 'Z': p1.rotate(); break;
-        case 'c': case 'C': p1.holdPiece(); break;
-        case ' ': e.preventDefault(); p1.hardDrop(); break;
+        case 'ArrowLeft': game.move(-1); break;
+        case 'ArrowRight': game.move(1); break;
+        case 'ArrowDown': game.drop(); break;
+        case 'ArrowUp': case 'z': case 'Z': game.rotate(); break;
+        case 'c': case 'C': game.holdPiece(); break;
+        case ' ': e.preventDefault(); game.hardDrop(); break;
     }
 });
 
