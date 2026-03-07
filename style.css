@@ -64,7 +64,7 @@ body {
     box-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
 }
 
-/* 遊戲容器 - 強制水平置中 */
+/* 遊戲容器 */
 .game-container {
     display: flex;
     flex-direction: row;
@@ -83,16 +83,15 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
 }
 
 .vs-text {
+    color: var(--neon-pink);
+    text-shadow: 0 0 10px var(--neon-pink);
     font-size: 1.8rem;
     font-weight: 900;
-    background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     letter-spacing: 4px;
+    margin: 0 0 15px 0;
 }
 
 /* 霓虹視窗 */
@@ -117,34 +116,27 @@ body {
 }
 
 .panel-content {
-    padding: 12px;
-    text-align: center;
+    padding: 15px;
 }
 
-/* 操作說明 */
-.controls-text {
-    font-size: 0.7rem;
-    line-height: 1.6;
-    color: #94a3b8;
-}
-
-/* 統計 */
-.stats-text {
-    font-size: 0.75rem;
+.controls-text, .stats-text {
     line-height: 1.8;
+    font-size: 0.9rem;
     color: #94a3b8;
 }
-#stars1 {
-    color: var(--neon-yellow);
-    letter-spacing: -3px;
+
+.flex-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 /* 畫布 */
 .canvas-wrapper {
     position: relative;
-    border: 2px solid var(--border-color);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.8);
     border-radius: 4px;
-    background: #0a0a12;
     box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
 }
 
@@ -155,7 +147,23 @@ body {
     pointer-events: none;
 }
 
-/* 暫停 */
+/* 狀態遮罩 */
+#status-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--neon-blue);
+    text-shadow: 0 0 20px var(--neon-blue);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 暫停按鈕 */
 .pause-btn {
     background: transparent;
     border: 1px solid var(--neon-pink);
@@ -164,13 +172,12 @@ body {
     font-size: 0.75rem;
     border-radius: 20px;
     cursor: pointer;
+    margin-top: 10px;
 }
 .pause-btn:hover {
     background: var(--neon-pink);
     color: #000;
 }
-
-.hidden { display: none !important; }
 
 /* 結束 */
 .gameover-screen {
