@@ -3,128 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris Battle - Big Screen Edition</title>
+    <title>Tetris Battle</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- 選單畫面 -->
     <div class="menu-screen" id="menu">
         <h1 class="title">🧊 TETRIS BATTLE</h1>
-        <button class="neon-btn" onclick="startGame()">
+        <button class="neon-btn big-btn" onclick="startGame()">
             <span class="icon">🎮</span> 開始遊戲
         </button>
     </div>
 
     <!-- 遊戲區域 -->
-    <div class="game-container full-arena" id="game">
-        <!-- 左側面板 -->
-        <div class="side-panel left-side">
-            <!-- HOLD -->
-            <div class="neon-window hold-panel">
-                <div class="panel-header">HOLD</div>
-                <div class="panel-content">
-                    <canvas id="hold1" width="80" height="80"></canvas>
-                </div>
+    <div class="game-container" id="game">
+        <!-- 左上角：HOLD + 操作說明 -->
+        <div class="left-panel">
+            <div class="panel-box">
+                <div class="panel-title">HOLD</div>
+                <canvas id="hold1" width="100" height="80"></canvas>
             </div>
             
-            <!-- 操作說明 -->
-            <div class="neon-window controls-guidePanel">
-                <div class="panel-header">操作說明 (P1)</div>
-                <div class="panel-content">
-                    <ul>
-                        <li><span class="key">←</span> <span class="key">→</span> : 移動</li>
-                        <li><span class="key">↑</span> : 順時針旋轉</li>
-                        <li><span class="key">Z</span> : 逆時針旋轉</li>
-                        <li><span class="key">↓</span> : 軟降</li>
-                        <li><span class="key">Space</span> : 硬降</li>
-                        <li><span class="key">C</span> : 保留 (Hold)</li>
-                        <li><span class="key">P</span> : 暫停</li>
-                    </ul>
+            <div class="panel-box controls">
+                <div class="panel-title">操作說明</div>
+                <div class="control-list">
+                    <div class="control-item"><span class="key">← →</span> 移動</div>
+                    <div class="control-item"><span class="key">↑</span> 旋轉</div>
+                    <div class="control-item"><span class="key">Z</span> 逆旋</div>
+                    <div class="control-item"><span class="key">↓</span> 軟降</div>
+                    <div class="control-item"><span class="key">Space</span> 硬降</div>
+                    <div class="control-item"><span class="key">C</span> Hold</div>
                 </div>
             </div>
         </div>
 
-        <!-- 中央競技場 -->
-        <div class="center-arena">
-            <h1 class="vs-text">TETRIS</h1>
+        <!-- 中央：遊戲畫布 + 標題 -->
+        <div class="center-panel">
+            <div class="game-title">TETRIS</div>
+            <div class="canvas-wrap">
+                <canvas id="board1" width="300" height="600"></canvas>
+                <canvas id="fx1" class="fx-layer" width="300" height="600"></canvas>
+                <div class="paused-overlay" id="pausedOverlay">
+                    <h2>PAUSED</h2>
+                    <p>按 P 繼續</p>
+                </div>
+            </div>
+            <button class="pause-btn" onclick="togglePause()">⏸️ PAUSE</button>
+        </div>
+
+        <!-- 右側：NEXT + 統計 -->
+        <div class="right-panel">
+            <div class="panel-box">
+                <div class="panel-title">NEXT</div>
+                <canvas id="next1" width="100" height="160"></canvas>
+            </div>
             
-            <button id="pauseBtn" class="neon-btn pause-btn" onclick="togglePause()">
-                <span class="icon">⏸️</span> PAUSE
-            </button>
-            
-            <!-- 遊戲畫布 -->
-            <div class="player-panel">
-                <div class="canvas-wrapper enlarged">
-                    <canvas id="board1" width="300" height="600"></canvas>
-                    <canvas id="fx1" class="fx-layer" width="300" height="600"></canvas>
+            <div class="panel-box stats">
+                <div class="panel-title">ARENA STATS</div>
+                <div class="stat-row">
+                    <span>⭐ K.O.</span>
+                    <span class="star-display" id="stars1">★★★★★</span>
+                </div>
+                <div class="stat-row">
+                    <span>Lines</span>
+                    <span class="val" id="sent1">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Score</span>
+                    <span class="val" id="score1">0</span>
+                </div>
+                <div class="stat-row">
+                    <span>Level</span>
+                    <span class="val" id="level1">1</span>
                 </div>
             </div>
             
             <!-- COMBO 顯示 -->
             <div class="combo-display" id="combo"></div>
-            
-            <!-- 暫停遮罩 -->
-            <div class="paused-overlay" id="pausedOverlay">
-                <h2>PAUSED</h2>
-                <p>按 P 繼續</p>
-            </div>
         </div>
-
-        <!-- 右側面板 -->
-        <div class="side-panel right-side">
-            <!-- NEXT Queue -->
-            <div class="neon-window next-panel">
-                <div class="panel-header">NEXT</div>
-                <div class="panel-content flex-column">
-                    <svg viewBox="0 0 120 120" class="svg-tetromino small-queue">
-                        <rect x="0" y="0" width="30" height="30" class="classic-blue" />
-                        <rect x="0" y="30" width="30" height="30" class="classic-blue" />
-                        <rect x="30" y="30" width="30" height="30" class="classic-blue" />
-                        <rect x="60" y="30" width="30" height="30" class="classic-blue" />
-                    </svg>
-                    <svg viewBox="0 0 120 120" class="svg-tetromino small-queue">
-                        <rect x="0" y="30" width="30" height="30" class="classic-purple" />
-                        <rect x="30" y="30" width="30" height="30" class="classic-purple" />
-                        <rect x="60" y="30" width="30" height="30" class="classic-purple" />
-                        <rect x="30" y="0" width="30" height="30" class="classic-purple" />
-                    </svg>
-                    <svg viewBox="0 0 120 120" class="svg-tetromino small-queue">
-                        <rect x="30" y="0" width="30" height="30" class="classic-yellow"/>
-                        <rect x="60" y="0" width="30" height="30" class="classic-yellow"/>
-                        <rect x="30" y="30" width="30" height="30" class="classic-yellow"/>
-                        <rect x="60" y="30" width="30" height="30" class="classic-yellow"/>
-                    </svg>
-                    <svg viewBox="0 0 120 120" class="svg-tetromino small-queue">
-                        <rect x="0" y="0" width="30" height="30" class="classic-red"/>
-                        <rect x="30" y="0" width="30" height="30" class="classic-red"/>
-                        <rect x="30" y="30" width="30" height="30" class="classic-red"/>
-                        <rect x="60" y="30" width="30" height="30" class="classic-red"/>
-                    </svg>
-                    <svg viewBox="0 0 120 120" class="svg-tetromino small-queue">
-                        <rect x="0" y="0" width="30" height="30" class="classic-cyan"/>
-                        <rect x="30" y="0" width="30" height="30" class="classic-cyan"/>
-                        <rect x="60" y="0" width="30" height="30" class="classic-cyan"/>
-                        <rect x="90" y="0" width="30" height="30" class="classic-cyan"/>
-                    </svg>
-                </div>
-            </div>
-            
-            <!-- ARENA STATS -->
-            <div class="neon-window arena-statsPanel">
-                <div class="panel-header">ARENA STATS</div>
-                <div class="panel-content">
-                    <div class="ko-stars" id="stars1">⭐️⭐️⭐️⭐️⭐️</div>
-                    <div class="stat-item">LINE CLEARS: <span class="val-count" id="sent1">0</span></div>
-                    <div id="combo-display" class="combo-hidden huge-text neon-text"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 底部面板 -->
-    <div class="bottom-panel-row full-width">
-        <div class="stat-box score-box">SCORE: <span class="val-count" id="score1">0</span></div>
-        <div class="stat-box level-box">LEVEL: <span class="val-count" id="level1">1</span></div>
     </div>
 
     <!-- 結束畫面 -->
