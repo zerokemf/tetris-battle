@@ -220,12 +220,17 @@ class GameRenderer {
 
     renderPreview(canvas, type) {
         const ctx = canvas.getContext('2d');
-        const w = canvas.width, h = canvas.height;
+        const w = canvas.width || 100;
+        const h = canvas.height || 100;
         ctx.fillStyle = '#0a0a15';
         ctx.fillRect(0, 0, w, h);
         if (!type || !SHAPES[type]) return;
         const shape = SHAPES[type];
-        const size = Math.min(w, h) / 5;
+        // 根據形狀類型計算不同的大小
+        let size;
+        if (type === 'I') size = h * 0.5;
+        else if (type === 'O') size = Math.min(w, h) * 0.4;
+        else size = Math.min(w, h) * 0.45;
         const ox = (w - shape[0].length * size) / 2;
         const oy = (h - shape.length * size) / 2;
         for (let r = 0; r < shape.length; r++) {
