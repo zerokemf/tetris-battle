@@ -16,33 +16,97 @@
 
         body {
             font-family: 'Fredoka One', 'Orbitron', sans-serif;
-            background: linear-gradient(180deg, #87ceeb 0%, #e8f4f8 50%, #d4e8ed 100%);
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #1a1a24;
+            color: #fff;
             overflow: hidden;
         }
 
         .snowflakes { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-        .snowflake { position: absolute; color: rgba(255,255,255,0.8); font-size: 1rem; animation: fall linear infinite; }
+        .snowflake { position: absolute; color: rgba(255,255,255,0.6); font-size: 1.5rem; animation: fall linear infinite; }
         @keyframes fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0.3; } }
 
-        .game-container { display: flex; gap: 30px; align-items: flex-start; z-index: 1; padding: 30px; background: rgba(255,255,255,0.3); border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.2), inset 0 2px 10px rgba(255,255,255,0.5); }
+        /* 全螢幕遊戲容器 */
+        .game-container { 
+            display: flex; 
+            gap: 5vh; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 1; 
+            padding: 2vh;
+            width: 100vw;
+            height: 100vh;
+            max-width: 100%;
+            max-height: 100%;
+        }
 
-        .game-frame { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border-radius: 25px; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1); position: relative; }
+        .player-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 95vh;
+        }
 
-        .screen-area { background: #0a0a15; border-radius: 15px; padding: 15px; box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 0 10px rgba(78,205,196,0.3); position: relative; }
+        .game-frame { 
+            background: linear-gradient(145deg, #2a2a3a, #1a1a24); 
+            border-radius: 2vh; 
+            padding: 2vh; 
+            box-shadow: 0 1vh 4vh rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1); 
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
 
-        .game-title { text-align: center; font-size: 1.4rem; font-weight: 900; margin-bottom: 12px; color: #4ecdc4; text-shadow: 0 0 10px rgba(78,205,196,0.5); letter-spacing: 2px; }
+        .screen-area { 
+            background: #0a0a15; 
+            border-radius: 1vh; 
+            padding: 1vh; 
+            box-shadow: inset 0 0 3vh rgba(0,0,0,0.8), 0 0 2vh rgba(78,205,196,0.3); 
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
 
-        .game-area { display: flex; gap: 15px; }
+        .game-title { 
+            text-align: center; 
+            font-size: 3vh; 
+            font-weight: 900; 
+            margin-bottom: 1vh; 
+            color: #4ecdc4; 
+            text-shadow: 0 0 2vh rgba(78,205,196,0.5); 
+            letter-spacing: 0.5vh;
+        }
 
-        .board { display: grid; grid-template-columns: repeat(10, 25px); grid-template-rows: repeat(20, 25px); gap: 1px; background: #0a0a15; border-radius: 8px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+        .game-area { 
+            display: flex; 
+            gap: 2vh; 
+            flex: 1;
+            align-items: center;
+            justify-content: center;
+        }
 
-        .cell { width: 25px; height: 25px; background: #1e1e32; border-radius: 2px; }
+        /* 棋盤 - 自適應大小 */
+        .board { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            grid-template-rows: repeat(20, 1fr); 
+            gap: 1px; 
+            background: #0a0a15; 
+            border-radius: 0.5vh; 
+            box-shadow: inset 0 0 2vh rgba(0,0,0,0.8); 
+            aspect-ratio: 1/2;
+            height: 85vh;
+            width: auto;
+        }
+
+        .cell { 
+            background: #1e1e32; 
+            border-radius: 2px; 
+        }
         .cell.filled { box-shadow: inset 0 0 8px rgba(255,255,255,0.4); }
         .cell.i, .cell.i.filled { background: #00d4ff !important; border: 1px solid #00aadd; }
         .cell.o, .cell.o.filled { background: #ffdd00 !important; border: 1px solid #ddbb00; }
@@ -52,55 +116,154 @@
         .cell.j, .cell.j.filled { background: #4488ff !important; border: 1px solid #3366dd; }
         .cell.l, .cell.l.filled { background: #ff9933 !important; border: 1px solid #dd7722; }
         .cell.garbage, .cell.garbage.filled { background: #555566 !important; border: 1px solid #666677; }
-        .cell.bomb { background: radial-gradient(circle, #ff4444 30%, #aa0000 70%); position: relative; }
-        .cell.bomb::after { content: '☢'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 14px; color: #ffff00; }
 
-        .side-panel { display: flex; flex-direction: column; gap: 12px; min-width: 90px; }
+        .side-panel { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 1.5vh; 
+            min-width: 12vh;
+        }
 
-        .panel-box { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border-radius: 12px; padding: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative; }
-        .panel-box::before { content: ''; position: absolute; top: -5px; left: 10%; right: 10%; height: 15px; background: linear-gradient(180deg, #fff 0%, #e8e8e8 100%); border-radius: 10px 10px 50% 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10; }
-        .panel-label { font-size: 0.65rem; color: #4ecdc4; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
-        .panel-value { font-size: 1rem; font-weight: 700; color: #f0f8ff; }
+        .panel-box { 
+            background: linear-gradient(145deg, #2a2a3a, #1a1a24); 
+            border-radius: 1vh; 
+            padding: 1vh; 
+            text-align: center; 
+            box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.3); 
+            position: relative;
+        }
+        .panel-box::before { 
+            content: ''; 
+            position: absolute; 
+            top: -0.5vh; 
+            left: 10%; 
+            right: 10%; 
+            height: 1.5vh; 
+            background: linear-gradient(180deg, #fff 0%, #e8e8e8 100%); 
+            border-radius: 1vh 1vh 50% 50%; 
+            box-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.2); 
+            z-index: 10; 
+        }
+        .panel-label { 
+            font-size: 1vh; 
+            color: #4ecdc4; 
+            margin-bottom: 0.5vh; 
+            text-transform: uppercase; 
+            letter-spacing: 0.1vh; 
+            margin-top: 1vh;
+        }
+        .panel-value { 
+            font-size: 2vh; 
+            font-weight: 700; 
+            color: #f0f8ff; 
+        }
 
-        .next-preview, .hold-preview { display: grid; grid-template-columns: repeat(4, 18px); grid-template-rows: repeat(4, 18px); gap: 1px; justify-content: center; background: #0a0a15; border-radius: 5px; padding: 4px; margin: 0 auto; }
-        .next-preview .cell, .hold-preview .cell { width: 18px; height: 18px; }
+        .next-preview, .hold-preview { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            grid-template-rows: repeat(4, 1fr); 
+            gap: 1px; 
+            background: #0a0a15; 
+            border-radius: 0.5vh; 
+            padding: 0.5vh; 
+            margin: 0 auto; 
+            aspect-ratio: 1;
+            width: 8vh;
+            height: 8vh;
+        }
+        .next-preview .cell, .hold-preview .cell { }
 
-        .menu-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, #87ceeb 0%, #e8f4f8 50%, #d4e8ed 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .menu-title { font-size: 2.5rem; font-weight: 900; margin-bottom: 40px; background: linear-gradient(90deg, #4ecdc4, #45b7aa, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .menu-btn { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border: 3px solid #4ecdc4; color: #f0f8ff; padding: 15px 50px; font-size: 1rem; font-family: 'Fredoka One', sans-serif; border-radius: 30px; cursor: pointer; margin: 10px; transition: all 0.3s; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
-        .menu-btn:hover { background: #4ecdc4; color: #1a1a24; transform: scale(1.05); box-shadow: 0 0 30px rgba(78,205,196,0.5); }
-        .menu-btn.secondary { border-color: #ff6b6b; }
-        .menu-btn.secondary:hover { background: #ff6b6b; box-shadow: 0 0 30px rgba(255,107,107,0.5); }
-        
-        .menu-controls { display: flex; gap: 30px; margin-top: 30px; }
-        .control-group { background: rgba(255,255,255,0.9); border-radius: 15px; padding: 15px 25px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        .control-title { font-size: 0.9rem; color: #1a1a24; margin-bottom: 8px; font-weight: bold; }
-        .control-row { font-size: 0.75rem; color: #555; margin: 4px 0; }
-
-        .game-over-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,10,30,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .game-over-title { font-size: 2rem; font-weight: 900; color: #ff6b6b; margin-bottom: 20px; }
-        .winner-text { font-size: 1.2rem; color: #4ecdc4; margin-bottom: 30px; }
-
-        .vs-indicator { display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: #ff6b6b; }
+        .vs-indicator { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 5vh; 
+            font-weight: 900; 
+            color: #ff6b6b; 
+            text-shadow: 0 0 3vh rgba(255,107,107,0.5);
+        }
         .hidden { display: none !important; }
-        
-        @media (max-width: 600px) {
-            .board { grid-template-columns: repeat(10, 9mm); grid-template-rows: repeat(20, 9mm); gap: 0; }
-            .cell { width: 9mm; height: 9mm; }
-            .game-container { padding: 5px; gap: 5px; }
-            .game-frame { padding: 6px; border-radius: 12px; }
-            .screen-area { padding: 6px; border-radius: 8px; }
-            .game-area { gap: 5px; }
-            .side-panel { min-width: 28mm; gap: 4mm; }
-            .panel-box { padding: 4px; border-radius: 6px; }
-            .panel-label { font-size: 0.45rem; }
-            .panel-value { font-size: 0.65rem; }
-            .next-preview, .hold-preview { grid-template-columns: repeat(4, 6mm); grid-template-rows: repeat(4, 6mm); gap: 0; }
-            .next-preview .cell, .hold-preview .cell { width: 6mm; height: 6mm; }
-            .game-title { font-size: 0.7rem; margin-bottom: 6px; }
-            .panel-box::before { height: 8px; }
-            .menu-controls { flex-direction: column; gap: 10px; }
-            .control-group { padding: 10px 15px; }
+
+        /* 選單 */
+        .menu-screen { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 100; 
+        }
+        .menu-title { 
+            font-size: 8vh; 
+            font-weight: 900; 
+            margin-bottom: 5vh; 
+            background: linear-gradient(90deg, #4ecdc4, #45b7aa, #ff6b6b); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+        }
+        .menu-btn { 
+            background: linear-gradient(145deg, #2a2a3a, #1a1a24); 
+            border: 0.5vh solid #4ecdc4; 
+            color: #f0f8ff; 
+            padding: 2vh 6vw; 
+            font-size: 2.5vh; 
+            font-family: 'Fredoka One', sans-serif; 
+            border-radius: 3vh; 
+            cursor: pointer; 
+            margin: 1.5vh; 
+            transition: all 0.3s; 
+            text-transform: uppercase; 
+            letter-spacing: 0.3vh; 
+            box-shadow: 0 1vh 3vh rgba(0,0,0,0.3); 
+        }
+        .menu-btn:hover { 
+            background: #4ecdc4; 
+            color: #1a1a24; 
+            transform: scale(1.05); 
+            box-shadow: 0 0 5vh rgba(78,205,196,0.5); 
+        }
+        .menu-btn.secondary { border-color: #ff6b6b; }
+        .menu-btn.secondary:hover { background: #ff6b6b; box-shadow: 0 0 5vh rgba(255,107,107,0.5); }
+
+        .menu-controls { display: flex; gap: 5vw; margin-top: 5vh; }
+        .control-group { background: rgba(255,255,255,0.9); border-radius: 2vh; padding: 2vh 3vw; text-align: center; box-shadow: 0 1vh 3vh rgba(0,0,0,0.1); }
+        .control-title { font-size: 1.5vh; color: #1a1a24; margin-bottom: 1vh; font-weight: bold; }
+        .control-row { font-size: 1.2vh; color: #555; margin: 0.5vh 0; }
+
+        .game-over-screen { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background: rgba(10,10,30,0.95); 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 100; 
+        }
+        .game-over-title { font-size: 8vh; font-weight: 900; color: #ff6b6b; margin-bottom: 3vh; }
+        .winner-text { font-size: 3vh; color: #4ecdc4; margin-bottom: 5vh; }
+
+        /* 手機 */
+        @media (max-width: 800px) {
+            .board { height: 60vh; }
+            .side-panel { min-width: 8vh; }
+            .next-preview, .hold-preview { width: 6vh; height: 6vh; }
+            .menu-title { font-size: 5vh; }
+            .menu-btn { font-size: 1.8vh; padding: 1.5vh 4vw; }
+            .menu-controls { flex-direction: column; gap: 1.5vh; }
+            .control-group { padding: 1.5vh 4vw; }
+            .game-title { font-size: 2vh; }
+            .panel-label { font-size: 0.8vh; }
+            .panel-value { font-size: 1.5vh; }
+            .vs-indicator { font-size: 3vh; }
         }
     </style>
 </head>
@@ -110,7 +273,6 @@
         <div class="menu-title">🧊 TETRIS BATTLE</div>
         <button class="menu-btn" onclick="startGame(1)">🎮 單人模式</button>
         <button class="menu-btn secondary" onclick="startGame(2)">⚔️ 雙人對戰</button>
-        
         <div class="menu-controls">
             <div class="control-group">
                 <div class="control-title">🎮 P1 操作</div>
