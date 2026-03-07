@@ -9,24 +9,15 @@ const SHAPES = {
     J: [[1,0,0],[1,1,1],[0,0,0]],
     L: [[0,0,1],[1,1,1],[0,0,0]]
 };
-// 经典霓虹色彩
 const COLORS = {
     I: '#00f3ff', O: '#ffee00', T: '#9d4edd',
     S: '#33ff00', Z: '#ff0055', J: '#0066ff', L: '#ff9900'
 };
 
 class Bag7 {
-    constructor() {
-        this.bag = [];
-        this.refill();
-    }
-    refill() {
-        this.bag = [...PIECES].sort(() => Math.random() - 0.5);
-    }
-    next() {
-        if (this.bag.length === 0) this.refill();
-        return this.bag.pop();
-    }
+    constructor() { this.bag = []; this.refill(); }
+    refill() { this.bag = [...PIECES].sort(() => Math.random() - 0.5); }
+    next() { if (this.bag.length === 0) this.refill(); return this.bag.pop(); }
 }
 
 // ==================== 方块类 ====================
@@ -40,12 +31,9 @@ class Piece {
         this.y = 0;
     }
 
-    // Ghost Piece 落点计算
     getGhostY() {
         let ghostY = this.y;
-        while (this.board.valid(this, this.x, ghostY + 1)) {
-            ghostY++;
-        }
+        while (this.board.valid(this, this.x, ghostY + 1)) ghostY++;
         return ghostY;
     }
 
@@ -71,15 +59,12 @@ class Particle {
         this.vx = (Math.random() - 0.5) * 10;
         this.vy = (Math.random() - 0.5) * 10 - 2;
         this.gravity = 0.15;
-        this.friction = 0.96;
         this.color = color;
         this.size = Math.random() * 4 + 2;
         this.life = 1;
     }
     update() {
         this.vy += this.gravity;
-        this.vx *= this.friction;
-        this.vy *= this.friction;
         this.x += this.vx;
         this.y += this.vy;
         this.life -= 0.02;
@@ -105,32 +90,42 @@ class GameRenderer {
         this.fxCtx = this.fxCanvas.getContext('2d');
         this.blockSize = 36;
         this.particles = [];
+        this.resize();
+    }
+
+    resize() {
+        const rect = this.boardCanvas.getBoundingClientRect();
+        this.boardCanvas.width = rect.width;
+        this.boardCanvas.height = rect.height;
+        this.fxCanvas.width = rect.width;
+        this.fxCanvas.height = rect.height;
+        this.blockSize = rect.width / 10;
     }
 
     clear() {
         this.boardCtx.fillStyle = '#0a0a15';
-        this.boardCtx.fillRect(0, 0, 360, 720);
-        this.fxCtx.clearRect(0, 0, 360, 720);
+        this.boardCtx.fillRect(0, 0, this.boardCanvas.width, this.boardCanvas.height);
+        this.fxCtx.clearRect(0, 0, this.fxCanvas.width, this.fxCanvas.height);
     }
 
     drawGrid() {
         this.boardCtx.strokeStyle = 'rgba(255,255,255,0.03)';
         this.boardCtx.lineWidth = 1;
-        for (let x = 0; x <= 360; x += this.blockSize) {
+        const cols = 10, rows = 20;
+        for (let x = 0; x <= cols; x++) {
             this.boardCtx.beginPath();
-            this.boardCtx.moveTo(x, 0);
-            this.boardCtx.lineTo(x, 600);
+            this.boardCtx.moveTo(x * this.blockSize, 0);
+            this.boardCtx.lineTo(x * this.blockSize, this.boardCanvas.height);
             this.boardCtx.stroke();
         }
-        for (let y = 0; y <= 720; y += this.blockSize) {
+        for (let y = 0; y <= rows; y++) {
             this.boardCtx.beginPath();
-            this.boardCtx.moveTo(0, y);
-            this.boardCtx.lineTo(300, y);
+            this.boardCtx.moveTo(0, y * this.blockSize);
+            this.boardCtx.lineTo(this.boardCanvas.width, y * this.blockSize);
             this.boardCtx.stroke();
         }
     }
 
-    // 画方块矩阵
     drawMatrix(matrix, offsetX, offsetY, color, isGhost = false) {
         matrix.forEach((row, y) => {
             row.forEach((val, x) => {
@@ -159,10 +154,10 @@ class GameRenderer {
     }
 
     render(grid, piece) {
+        this.resize();
         this.clear();
         this.drawGrid();
         
-        // 画已固定的方块
         for (let r = 0; r < 20; r++) {
             for (let c = 0; c < 10; c++) {
                 if (grid[r][c]) {
@@ -172,15 +167,12 @@ class GameRenderer {
             }
         }
 
-        // 画 Ghost Piece
         if (piece) {
             const ghostY = piece.getGhostY();
             this.drawMatrix(piece.shape, piece.x, ghostY, piece.color, true);
-            // 画真实方块
             this.drawMatrix(piece.shape, piece.x, piece.y, piece.color, false);
         }
 
-        // 更新粒子
         this.fxCtx.save();
         this.fxCtx.globalCompositeOperation = 'lighter';
         for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -194,8 +186,8 @@ class GameRenderer {
     spawnParticles(x, y, color) {
         for (let i = 0; i < 12; i++) {
             this.particles.push(new Particle(
-                x * this.blockSize + 15,
-                y * this.blockSize + 15,
+                x * this.blockSize + this.blockSize/2,
+                y * this.blockSize + this.blockSize/2,
                 color
             ));
         }
@@ -203,13 +195,14 @@ class GameRenderer {
 
     renderPreview(canvas, type) {
         const ctx = canvas.getContext('2d');
+        const w = canvas.width, h = canvas.height;
         ctx.fillStyle = '#0a0a15';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, w, h);
         if (!type || !SHAPES[type]) return;
         const shape = SHAPES[type];
-        const size = canvas.width / 5;
-        const ox = (canvas.width - shape[0].length * size) / 2;
-        const oy = (canvas.height - shape.length * size) / 2;
+        const size = Math.min(w, h) / 5;
+        const ox = (w - shape[0].length * size) / 2;
+        const oy = (h - shape.length * size) / 2;
         for (let r = 0; r < shape.length; r++) {
             for (let c = 0; c < shape[r].length; c++) {
                 if (shape[r][c]) {
@@ -252,9 +245,7 @@ class Tetris {
         this.piece = new Piece(nextType, this);
         this.next = bag.next();
         this.canHold = true;
-        if (!this.valid(this.piece, this.piece.x, this.piece.y)) {
-            this.over = true;
-        }
+        if (!this.valid(this.piece, this.piece.x, this.piece.y)) this.over = true;
     }
 
     valid(p, x, y) {
@@ -284,22 +275,14 @@ class Tetris {
         this.piece.shape = old;
     }
 
-    move(dir) {
-        if (this.piece.move(dir, 0)) play('move');
-    }
+    move(dir) { if (this.piece.move(dir, 0)) play('move'); }
 
     drop() {
-        if (this.piece.move(0, 1)) {
-            play('drop');
-            return true;
-        }
+        if (this.piece.move(0, 1)) { play('drop'); return true; }
         return false;
     }
 
-    hardDrop() {
-        this.piece.hardDrop();
-        play('drop');
-    }
+    hardDrop() { this.piece.hardDrop(); play('drop'); }
 
     lockPiece() {
         for (let r = 0; r < this.piece.shape.length; r++) {
@@ -340,11 +323,8 @@ class Tetris {
         if (!this.canHold) return;
         play('hold');
         const t = this.piece.type;
-        if (this.hold) {
-            this.piece = new Piece(this.hold, this);
-        } else {
-            this.spawn();
-        }
+        if (this.hold) { this.piece = new Piece(this.hold, this); }
+        else { this.spawn(); }
         this.hold = t;
         this.canHold = false;
     }
@@ -504,7 +484,6 @@ function loop(time = 0) {
     requestAnimationFrame(loop);
 }
 
-// 键盘监听
 document.addEventListener('keydown', e => {
     if (!running) return;
     if (e.key === 'p' || e.key === 'P') togglePause();
@@ -524,3 +503,11 @@ for (let i = 0; i < 25; i++) {
     s.style.fontSize = Math.random() * 10 + 10 + 'px';
     snow.appendChild(s);
 }
+
+// 窗口大小改变时调整
+window.addEventListener('resize', () => {
+    if (game && game.renderer) {
+        game.renderer.resize();
+        game.render();
+    }
+});

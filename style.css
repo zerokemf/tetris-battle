@@ -6,6 +6,7 @@
     --neon-purple: #9d4edd;
     --border-color: rgba(255, 255, 255, 0.1);
     --panel-bg: rgba(255, 255, 255, 0.05);
+    --scale: 1;
 }
 
 * {
@@ -21,8 +22,9 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     overflow: hidden;
+    padding: 1vh 1vw;
 }
 
 /* ========== 選單 ========== */
@@ -39,20 +41,21 @@ body {
 .menu-screen.hidden { display: none; }
 
 .title {
-    font-size: 5rem;
+    font-size: clamp(2rem, 8vw, 5rem);
     font-weight: 900;
     background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 3rem;
+    text-align: center;
 }
 
 .neon-btn {
     background: transparent;
-    border: 3px solid var(--neon-blue);
+    border: clamp(2px, 0.4vw, 4px) solid var(--neon-blue);
     color: white;
-    padding: 1.5rem 4rem;
-    font-size: 1.8rem;
+    padding: clamp(0.8rem, 2vw, 1.5rem) clamp(2rem, 5vw, 4rem);
+    font-size: clamp(1rem, 2.5vw, 1.8rem);
     font-weight: bold;
     border-radius: 60px;
     cursor: pointer;
@@ -61,23 +64,25 @@ body {
 .neon-btn:hover {
     background: var(--neon-blue);
     color: #000;
-    box-shadow: 0 0 50px rgba(0, 243, 255, 0.6);
+    box-shadow: 0 0 40px rgba(0, 243, 255, 0.6);
     transform: scale(1.05);
 }
 
-/* ========== 遊戲容器 - 加大 ========== */
+/* ========== 遊戲容器 - 自適應 ========== */
 .game-container {
     display: flex;
     flex-direction: row;
-    gap: 50px;
+    gap: clamp(15px, 4vw, 50px);
     align-items: flex-start;
+    max-width: 95vw;
+    max-height: 95vh;
 }
 
 .side-panel {
     display: flex;
     flex-direction: column;
-    gap: 25px;
-    width: 220px;
+    gap: clamp(10px, 2vw, 25px);
+    width: clamp(120px, 15vw, 220px);
 }
 
 .center-arena {
@@ -89,17 +94,17 @@ body {
 .vs-text {
     color: var(--neon-pink);
     text-shadow: 0 0 15px var(--neon-pink);
-    font-size: 2.5rem;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
     font-weight: 900;
-    letter-spacing: 6px;
-    margin: 0 0 20px 0;
+    letter-spacing: clamp(3px, 1vw, 6px);
+    margin-bottom: clamp(8px, 2vw, 20px);
 }
 
-/* ========== 霓虹視窗 - 加大 ========== */
+/* ========== 霓虹視窗 ========== */
 .neon-window {
     background: var(--panel-bg);
     border: 2px solid var(--border-color);
-    border-radius: 16px;
+    border-radius: clamp(10px, 2vw, 16px);
     box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
     width: 100%;
 }
@@ -107,50 +112,55 @@ body {
 .panel-header {
     background: rgba(0, 243, 255, 0.2);
     text-align: center;
-    padding: 12px;
+    padding: clamp(6px, 1.5vw, 12px);
     color: var(--neon-blue);
     font-weight: bold;
-    font-size: 1rem;
-    letter-spacing: 2px;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
+    font-size: clamp(0.6rem, 1.2vw, 1rem);
+    letter-spacing: 1px;
+    border-top-left-radius: clamp(10px, 2vw, 16px);
+    border-top-right-radius: clamp(10px, 2vw, 16px);
 }
 
 .panel-content {
-    padding: 20px;
+    padding: clamp(10px, 2vw, 20px);
 }
 
-/* 操作說明 - 加大 */
 .controls-text, .stats-text {
-    line-height: 2;
-    font-size: 1.1rem;
+    line-height: clamp(1.6, 3vw, 2);
+    font-size: clamp(0.7rem, 1.3vw, 1.1rem);
     color: #94a3b8;
 }
 
 .flex-column {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: clamp(8px, 1.5vw, 15px);
 }
 
-/* ========== 畫布 - 加大 ========== */
+/* ========== 畫布 - 自適應大小 ========== */
 .canvas-wrapper {
     position: relative;
-    border: 3px solid rgba(255, 255, 255, 0.25);
+    border: clamp(2px, 0.4vw, 3px) solid rgba(255, 255, 255, 0.25);
     background: rgba(0, 0, 0, 0.85);
-    border-radius: 6px;
+    border-radius: clamp(4px, 1vw, 6px);
     box-shadow: 0 0 30px rgba(0, 243, 255, 0.25);
+    /* 自適應寬高 */
+    width: clamp(250px, 35vw, 360px);
+    height: clamp(500px, 70vw, 720px);
 }
 
 #board1, #fx1 {
-    width: 360px;
-    height: 720px;
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .fx-layer {
     position: absolute;
     top: 0;
     left: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
 }
 
@@ -160,26 +170,25 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 3rem;
+    font-size: clamp(1.5rem, 4vw, 3rem);
     font-weight: bold;
     color: var(--neon-blue);
-    text-shadow: 0 0 30px var(--neon-blue);
+    text-shadow: 0 0 25px var(--neon-blue);
+    white-space: nowrap;
 }
 
-.hidden {
-    display: none !important;
-}
+.hidden { display: none !important; }
 
-/* 暫停按鈕 - 加大 */
+/* 暫停按鈕 */
 .pause-btn {
     background: transparent;
-    border: 2px solid var(--neon-pink);
+    border: clamp(1px, 0.3vw, 2px) solid var(--neon-pink);
     color: var(--neon-pink);
-    padding: 10px 25px;
-    font-size: 1rem;
+    padding: clamp(5px, 1vw, 10px) clamp(12px, 2.5vw, 25px);
+    font-size: clamp(0.6rem, 1.2vw, 1rem);
     border-radius: 25px;
     cursor: pointer;
-    margin-top: 15px;
+    margin-top: clamp(8px, 2vw, 15px);
     transition: all 0.3s;
 }
 .pause-btn:hover {
@@ -201,12 +210,12 @@ body {
 }
 .gameover-screen.show { display: flex; }
 .gameover-screen h1 {
-    font-size: 5rem;
+    font-size: clamp(2rem, 8vw, 5rem);
     color: var(--neon-pink);
     text-shadow: 0 0 40px var(--neon-pink);
 }
 .gameover-screen p {
-    font-size: 2rem;
+    font-size: clamp(1.2rem, 3vw, 2rem);
     color: var(--neon-blue);
     margin: 1.5rem 0 3rem;
 }
