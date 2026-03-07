@@ -11,8 +11,8 @@
         <div class="side-panel">
             <div class="neon-window">
                 <div class="panel-header">HOLD</div>
-                <div class="panel-content" id="hold-box">
-                    <canvas id="hold1" ></canvas>
+                <div class="panel-content">
+                    <canvas id="hold1" width="80" height="80"></canvas>
                 </div>
             </div>
             <div class="neon-window">
@@ -32,8 +32,8 @@
         <div class="center-arena">
             <h1 class="vs-text">TETRIS</h1>
             <div class="canvas-wrapper">
-                <canvas id="board1" ></canvas>
-                <canvas id="fx1" class="fx-layer" ></canvas>
+                <canvas id="board1" width="300" height="600"></canvas>
+                <canvas id="fx1" class="fx-layer" width="300" height="600"></canvas>
                 <div id="status-overlay" class="hidden"></div>
             </div>
             <button class="pause-btn" onclick="togglePause()">⏸️ PAUSE</button>
@@ -42,8 +42,8 @@
         <div class="side-panel">
             <div class="neon-window">
                 <div class="panel-header">NEXT</div>
-                <div class="panel-content flex-column" id="next-queue">
-                    <canvas id="next1" ></canvas>
+                <div class="panel-content">
+                    <canvas id="next1" width="80" height="120"></canvas>
                 </div>
             </div>
             <div class="neon-window">
@@ -61,7 +61,7 @@
     </div>
 
     <div class="menu-screen" id="menu">
-        <h1 class="title">🧊 TETRIS BATTLE</h1>
+        <h1 class="title">🧊 TETRIS</h1>
         <button class="neon-btn" onclick="startGame()">
             <span class="icon">🎮</span> 開始遊戲
         </button>

@@ -220,19 +220,22 @@ class GameRenderer {
 
     renderPreview(canvas, type) {
         const ctx = canvas.getContext('2d');
-        const w = canvas.width || 100;
-        const h = canvas.height || 100;
+        const w = canvas.width || 80;
+        const h = canvas.height || 80;
         ctx.fillStyle = '#0a0a15';
         ctx.fillRect(0, 0, w, h);
         if (!type || !SHAPES[type]) return;
         const shape = SHAPES[type];
-        // 根據形狀計算大小，確保不超過畫布
-        const maxSize = Math.min(w / shape[0].length, h / shape.length) * 0.8;
-        const size = Math.min(maxSize, 25); // 最大 25px
-        const ox = (w - shape[0].length * size) / 2;
-        const oy = (h - shape.length * size) / 2;
-        for (let r = 0; r < shape.length; r++) {
-            for (let c = 0; c < shape[r].length; c++) {
+        // 根據形狀寬高計算大小，確保置中且不超過畫布
+        const shapeW = shape[0].length;
+        const shapeH = shape.length;
+        const sizeX = (w - 4) / shapeW;
+        const sizeY = (h - 4) / shapeH;
+        const size = Math.min(sizeX, sizeY);
+        const ox = (w - shapeW * size) / 2;
+        const oy = (h - shapeH * size) / 2;
+        for (let r = 0; r < shapeH; r++) {
+            for (let c = 0; c < shapeW; c++) {
                 if (shape[r][c]) {
                     ctx.fillStyle = COLORS[type];
                     ctx.shadowBlur = 3;
