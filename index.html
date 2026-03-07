@@ -583,6 +583,96 @@
         const ROWS = 20;
         const EMPTY = 'empty';
 
+        // 音效系統 (Web Audio API)
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+        
+        function playSound(type) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                switch(type) {
+                    case 'move':
+                        osc.frequency.value = 220;
+                        osc.type = 'sine';
+                        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.05);
+                        break;
+                    case 'rotate':
+                        osc.frequency.value = 330;
+                        osc.type = 'sine';
+                        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.08);
+                        break;
+                    case 'drop':
+                        osc.frequency.value = 150;
+                        osc.type = 'square';
+                        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.03);
+                        break;
+                    case 'clear':
+                        // 清除行音效 - 上升的音階
+                        for (let i = 0; i < 4; i++) {
+                            const o = audioCtx.createOscillator();
+                            const g = audioCtx.createGain();
+                            o.connect(g);
+                            g.connect(audioCtx.destination);
+                            o.frequency.value = 440 + i * 110;
+                            o.type = 'sine';
+                            g.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.08);
+                            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.08 + 0.15);
+                            o.start(audioCtx.currentTime + i * 0.08);
+                            o.stop(audioCtx.currentTime + i * 0.08 + 0.15);
+                        }
+                        break;
+                    case 'hold':
+                        osc.frequency.value = 550;
+                        osc.type = 'sine';
+                        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.1);
+                        break;
+                    case 'gameover':
+                        osc.frequency.value = 200;
+                        osc.type = 'sawtooth';
+                        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.5);
+                        break;
+                    case 'attack':
+                        osc.frequency.value = 120;
+                        osc.type = 'square';
+                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                        osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.15);
+                        break;
+                }
+            } catch(e) {}
+        }
+
         // 方塊形狀定義
         const SHAPES = {
             I: [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
@@ -679,22 +769,27 @@
                     for (let offset of [-1, 1, -2, 2]) {
                         if (this.isValidPosition(this.currentPiece, this.currentPiece.x + offset, this.currentPiece.y)) {
                             this.currentPiece.x += offset;
+                            playSound('rotate');
                             return;
                         }
                     }
                     this.currentPiece.shape = original;
+                } else {
+                    playSound('rotate');
                 }
             }
 
             move(dir) {
                 if (this.isValidPosition(this.currentPiece, this.currentPiece.x + dir, this.currentPiece.y)) {
                     this.currentPiece.x += dir;
+                    playSound('move');
                 }
             }
 
             drop() {
                 if (this.isValidPosition(this.currentPiece, this.currentPiece.x, this.currentPiece.y + 1)) {
                     this.currentPiece.y++;
+                    playSound('drop');
                     return true;
                 }
                 return false;
@@ -740,6 +835,7 @@
 
             updateScore(linesCleared) {
                 if (linesCleared > 0) {
+                    playSound('clear');
                     const points = [0, 100, 300, 500, 800];
                     this.score += points[linesCleared] * this.level;
                     this.lines += linesCleared;
@@ -750,12 +846,14 @@
                     if (gameMode === 2 && linesCleared >= 2) {
                         const garbageLines = linesCleared - 1; // 2行送1行, 3行送2行, 4行送3行
                         sendGarbage(this.playerId === 1 ? 2 : 1, garbageLines);
+                        playSound('attack');
                     }
                 }
             }
 
             hold() {
                 if (!this.canHold) return;
+                playSound('hold');
                 
                 const currentType = this.currentPiece.type;
                 if (this.holdPiece) {
@@ -879,6 +977,7 @@
 
         // 遊戲控制
         function startGame(mode) {
+            initAudio(); // 初始化音效
             gameMode = mode;
             document.getElementById('menuScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').style.display = 'none';
@@ -936,6 +1035,7 @@
 
         function endGame(loser) {
             isGameOver = true;
+            playSound('gameover');
             const winner = loser === 1 ? 'PLAYER 2' : 'PLAYER 1';
             document.getElementById('winnerText').textContent = 
                 gameMode === 1 ? '遊戲結束!' : `${winner} Wins!`;
