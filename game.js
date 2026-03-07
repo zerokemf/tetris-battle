@@ -53,7 +53,7 @@ class GameRenderer {
     }
     
     drawGrid() {
-        this.boardCtx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+        this.boardCtx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
         this.boardCtx.lineWidth = 1;
         for (let x = 0; x <= this.boardCanvas.width; x += this.blockSize) {
             this.boardCtx.beginPath();
@@ -113,7 +113,22 @@ class GameRenderer {
             }
         }
         
-        this.updateParticles();
+        this.updateAndDrawParticles();
+    }
+    
+    // 触发霓虹炸裂特效
+    triggerLineClearEffect(rowIndices, blockColors) {
+        rowIndices.forEach(row => {
+            for (let col = 0; col < 10; col++) {
+                const centerX = col * this.blockSize + this.blockSize / 2;
+                const centerY = row * this.blockSize + this.blockSize / 2;
+                const color = blockColors[col] || '#00f3ff';
+                
+                for (let i = 0; i < 12; i++) {
+                    this.particles.push(new Particle(centerX, centerY, color));
+                }
+            }
+        });
     }
     
     spawnParticles(x, y, color) {
@@ -126,7 +141,11 @@ class GameRenderer {
         }
     }
     
-    updateParticles() {
+    // 粒子特效渲染系统
+    updateAndDrawParticles() {
+        this.fxCtx.save();
+        this.fxCtx.globalCompositeOperation = 'lighter'; // 制造加色发光效果
+        
         for (let i = this.particles.length - 1; i >= 0; i--) {
             this.particles[i].update();
             this.particles[i].draw(this.fxCtx);
@@ -134,6 +153,8 @@ class GameRenderer {
                 this.particles.splice(i, 1);
             }
         }
+        
+        this.fxCtx.restore();
     }
     
     renderPreview(canvas, type) {
@@ -306,8 +327,13 @@ class Tetris {
     
     clearLines() {
         let lines = 0;
+        let clearedRows = [];
+        let clearedColors = [];
+        
         for (let r = ROWS - 1; r >= 0; r--) {
             if (this.grid[r].every(c => c)) {
+                clearedRows.push(r);
+                clearedColors.push([...this.grid[r]]);
                 for (let c = 0; c < COLS; c++) {
                     this.renderer.spawnParticles(c, r, COLORS[this.grid[r][c]]);
                 }
@@ -317,7 +343,11 @@ class Tetris {
                 r++;
             }
         }
+        
         if (lines > 0) {
+            // 触发额外特效
+            this.renderer.triggerLineClearEffect(clearedRows, clearedColors.flat());
+            
             play('clear');
             this.score += [0, 100, 300, 500, 800][lines] * this.level;
             this.lines += lines;
@@ -397,7 +427,14 @@ function togglePause() {
     if (!running) return;
     isPaused = !isPaused;
     document.getElementById('pausedOverlay').classList.toggle('show', isPaused);
-    document.getElementById('pauseBtn').classList.toggle('paused-true', isPaused);
+    
+    const pauseBtn = document.getElementById('pauseBtn');
+    pauseBtn.classList.remove('paused-true', 'paused-false');
+    pauseBtn.classList.add(`paused-${isPaused}`);
+    pauseBtn.innerHTML = isPaused 
+        ? '<span class="icon">▶️</span> RESUME' 
+        : '<span class="icon">⏸️</span> PAUSE';
+    
     if (!isPaused) {
         game.lastTime = performance.now();
         loop();
