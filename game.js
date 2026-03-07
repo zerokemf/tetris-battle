@@ -226,18 +226,16 @@ class GameRenderer {
         ctx.fillRect(0, 0, w, h);
         if (!type || !SHAPES[type]) return;
         const shape = SHAPES[type];
-        // 根據形狀類型計算不同的大小
-        let size;
-        if (type === 'I') size = h * 0.5;
-        else if (type === 'O') size = Math.min(w, h) * 0.4;
-        else size = Math.min(w, h) * 0.45;
+        // 根據形狀計算大小，確保不超過畫布
+        const maxSize = Math.min(w / shape[0].length, h / shape.length) * 0.8;
+        const size = Math.min(maxSize, 25); // 最大 25px
         const ox = (w - shape[0].length * size) / 2;
         const oy = (h - shape.length * size) / 2;
         for (let r = 0; r < shape.length; r++) {
             for (let c = 0; c < shape[r].length; c++) {
                 if (shape[r][c]) {
                     ctx.fillStyle = COLORS[type];
-                    ctx.shadowBlur = 5;
+                    ctx.shadowBlur = 3;
                     ctx.shadowColor = COLORS[type];
                     ctx.fillRect(ox + c * size, oy + r * size, size - 1, size - 1);
                 }
