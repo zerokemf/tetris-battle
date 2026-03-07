@@ -150,6 +150,73 @@ class GameRenderer {
     }
 }
 
+// ==================== 输入管理器 ====================
+class InputManager {
+    constructor(game) {
+        this.game = game;
+        this.keys = {};
+        this.keyTimers = {};
+        this.DAS = 130;
+        this.ARR = 30;
+        this.lastTime = performance.now();
+        this.initListeners();
+    }
+
+    initListeners() {
+        window.addEventListener('keydown', (e) => {
+            if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.code)) {
+                e.preventDefault();
+            }
+            if (!this.keys[e.code]) {
+                this.keys[e.code] = true;
+                this.keyTimers[e.code] = 0;
+                this.triggerAction(e.code);
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            this.keys[e.code] = false;
+            this.keyTimers[e.code] = 0;
+        });
+    }
+
+    update() {
+        const currentTime = performance.now();
+        const deltaTime = currentTime - this.lastTime;
+        this.lastTime = currentTime;
+
+        for (const [key, isPressed] of Object.entries(this.keys)) {
+            if (isPressed) {
+                this.keyTimers[key] += deltaTime;
+                if (this.keyTimers[key] >= this.DAS) {
+                    while (this.keyTimers[key] >= this.DAS + this.ARR) {
+                        this.triggerAction(key);
+                        if (this.ARR === 0) {
+                            this.keyTimers[key] = this.DAS;
+                            break;
+                        }
+                        this.keyTimers[key] -= this.ARR;
+                    }
+                }
+            }
+        }
+    }
+
+    triggerAction(keyCode) {
+        if (!this.game) return;
+        switch(keyCode) {
+            case 'ArrowLeft': this.game.move(-1); break;
+            case 'ArrowRight': this.game.move(1); break;
+            case 'ArrowDown': this.game.drop(); break;
+            case 'ArrowUp': case 'KeyZ': this.game.rotate(); break;
+            case 'KeyC': this.game.holdPiece(); break;
+            case 'Space': 
+                this.game.hardDrop(); 
+                this.keys['Space'] = false; 
+                break;
+        }
+    }
+}
+
 // ==================== 游戏常数 ====================
 const COLS = 10, ROWS = 20, EMPTY = 0;
 const SHAPES = {
@@ -354,6 +421,7 @@ class Tetris {
 
 // ==================== 游戏控制 ====================
 let game = null;
+let inputManager = null;
 let running = false;
 let isPaused = false;
 
@@ -366,6 +434,7 @@ function startGame() {
     
     game = new Tetris(1);
     game.spawn();
+    inputManager = new InputManager(game);
     
     running = true;
     isPaused = false;
@@ -391,12 +460,16 @@ function togglePause() {
     
     if (!isPaused) {
         game.lastTime = performance.now();
+        inputManager.lastTime = performance.now();
         loop();
     }
 }
 
 function loop(time = 0) {
     if (!running || isPaused) return;
+    
+    if (inputManager) inputManager.update();
+    
     game.update(time);
     game.render();
     if (game.over) {
@@ -413,24 +486,13 @@ function end() {
     document.getElementById('gameover').classList.add('show');
 }
 
-// 键盘控制
+// 键盘控制（保留给暂停等特殊键）
 document.addEventListener('keydown', e => {
     if (!running || !game) return;
     
     if (e.key === 'p' || e.key === 'P') {
         togglePause();
         return;
-    }
-    
-    if (isPaused) return;
-    
-    switch(e.key) {
-        case 'ArrowLeft': game.move(-1); break;
-        case 'ArrowRight': game.move(1); break;
-        case 'ArrowDown': game.drop(); break;
-        case 'ArrowUp': case 'z': case 'Z': game.rotate(); break;
-        case 'c': case 'C': game.holdPiece(); break;
-        case ' ': e.preventDefault(); game.hardDrop(); break;
     }
 });
 
