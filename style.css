@@ -6,7 +6,6 @@
     --neon-purple: #9d4edd;
     --border-color: rgba(255, 255, 255, 0.1);
     --panel-bg: rgba(255, 255, 255, 0.05);
-    --scale: 1;
 }
 
 * {
@@ -27,7 +26,7 @@ body {
     padding: 1vh 1vw;
 }
 
-/* ========== 選單 ========== */
+/* 選單 */
 .menu-screen {
     position: fixed;
     inset: 0;
@@ -68,7 +67,7 @@ body {
     transform: scale(1.05);
 }
 
-/* ========== 遊戲容器 - 自適應 ========== */
+/* 遊戲容器 */
 .game-container {
     display: flex;
     flex-direction: row;
@@ -100,7 +99,7 @@ body {
     margin-bottom: clamp(8px, 2vw, 20px);
 }
 
-/* ========== 霓虹視窗 ========== */
+/* 霓虹視窗 */
 .neon-window {
     background: var(--panel-bg);
     border: 2px solid var(--border-color);
@@ -123,6 +122,10 @@ body {
 
 .panel-content {
     padding: clamp(10px, 2vw, 20px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .controls-text, .stats-text {
@@ -137,15 +140,15 @@ body {
     gap: clamp(8px, 1.5vw, 15px);
 }
 
-/* ========== 畫布 - 自適應大小 ========== */
+/* 畫布 */
 .canvas-wrapper {
     position: relative;
     border: clamp(2px, 0.4vw, 3px) solid rgba(255, 255, 255, 0.25);
     background: rgba(0, 0, 0, 0.85);
     border-radius: clamp(4px, 1vw, 6px);
     box-shadow: 0 0 30px rgba(0, 243, 255, 0.25);
-    width: clamp(250px, 35vw, 360px);
-    height: clamp(500px, 70vw, 720px);
+    width: clamp(250px, 35vw, 300px);
+    height: clamp(500px, 70vw, 600px);
 }
 
 #board1, #fx1 {
@@ -163,7 +166,13 @@ body {
     pointer-events: none;
 }
 
-/* ========== 狀態遮罩 ========== */
+/* HOLD 和 NEXT canvas */
+#hold1, #next1 {
+    display: block;
+    background: transparent !important;
+}
+
+/* 狀態遮罩 */
 #status-overlay {
     position: absolute;
     top: 50%;
@@ -196,7 +205,7 @@ body {
     box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
 }
 
-/* ========== 結束畫面 ========== */
+/* 結束畫面 */
 .gameover-screen {
     position: fixed;
     inset: 0;
@@ -232,9 +241,3 @@ body {
     animation: fall linear infinite;
 }
 @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
-
-/* Canvas centering */
-#hold1, #next1 {
-    display: block;
-    margin: 0 auto;
-}

@@ -222,8 +222,7 @@ class GameRenderer {
         const ctx = canvas.getContext('2d');
         const w = canvas.width || 80;
         const h = canvas.height || 80;
-        ctx.fillStyle = '#0a0a15';
-        ctx.fillRect(0, 0, w, h);
+        ctx.clearRect(0, 0, w, h);
         if (!type || !SHAPES[type]) return;
         const shape = SHAPES[type];
         // 根據形狀寬高計算大小，確保置中且不超過畫布
