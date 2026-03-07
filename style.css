@@ -144,7 +144,6 @@ body {
     background: rgba(0, 0, 0, 0.85);
     border-radius: clamp(4px, 1vw, 6px);
     box-shadow: 0 0 30px rgba(0, 243, 255, 0.25);
-    /* 自適應寬高 */
     width: clamp(250px, 35vw, 360px);
     height: clamp(500px, 70vw, 720px);
 }
