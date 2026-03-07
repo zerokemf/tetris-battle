@@ -46,12 +46,11 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 2rem;
-    text-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
 }
 
 /* 霓虹按钮 */
 .neon-btn {
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+    background: transparent;
     border: 2px solid var(--neon-blue);
     color: white;
     padding: 1rem 3rem;
@@ -65,7 +64,6 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: 0 0 20px rgba(0, 243, 255, 0.2), inset 0 0 20px rgba(0, 243, 255, 0.05);
 }
 
 .neon-btn:hover {
@@ -73,10 +71,6 @@ body {
     color: #000;
     transform: scale(1.05);
     box-shadow: 0 0 40px rgba(0, 243, 255, 0.6);
-}
-
-.neon-btn .icon {
-    font-size: 1.4rem;
 }
 
 /* 操作说明卡 */
@@ -92,33 +86,68 @@ body {
 }
 
 .controls-guidePanel h3 {
-    color: var(--neon-blue);
+    margin-top: 0;
+    color: var(--text-color);
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
     margin-bottom: 15px;
-    font-size: 1rem;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 .controls-guidePanel ul {
     list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .controls-guidePanel li {
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.key {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: monospace;
+    font-weight: bold;
+    color: var(--neon-blue);
+    box-shadow: 0 0 5px rgba(0, 243, 255, 0.3);
+}
+
+/* 霓虹暂停钮 */
+.pause-btn {
+    background: transparent;
+    border: 2px solid var(--neon-pink);
+    color: var(--neon-pink);
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-shadow: 0 0 10px var(--neon-pink);
+    box-shadow: 0 0 15px rgba(255, 0, 255, 0.2), inset 0 0 10px rgba(255, 0, 255, 0.2);
+    margin-top: 20px;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.key {
-    display: inline-block;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    padding: 2px 6px;
-    font-size: 0.75rem;
-    font-family: monospace;
-    color: var(--neon-blue);
+.pause-btn:hover {
+    box-shadow: 0 0 30px rgba(255, 0, 255, 0.5), inset 0 0 15px rgba(255, 0, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.pause-btn.paused-true {
+    background-color: var(--neon-pink);
+    color: var(--bg-color);
+    text-shadow: none;
 }
 
 /* 游戏区 */
@@ -231,11 +260,6 @@ body {
     align-items: center;
     width: 150px;
     position: relative;
-}
-
-.pause-btn {
-    font-size: 0.9rem;
-    padding: 0.8rem 1.5rem;
 }
 
 .combo-display {

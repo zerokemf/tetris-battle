@@ -1,3 +1,46 @@
+// ==================== 粒子类 (处理炸裂特效) ====================
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 10;
+        this.vy = (Math.random() - 0.5) * 10 - 2;
+        this.gravity = 0.15;
+        this.friction = 0.96;
+        this.color = color;
+        this.size = Math.random() * 4 + 2;
+        this.baseLife = Math.random() * 0.5 + 0.5;
+        this.life = this.baseLife;
+    }
+
+    update() {
+        this.vy += this.gravity;
+        this.vx *= this.friction;
+        this.vy *= this.friction;
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= 0.02;
+    }
+
+    draw(ctx) {
+        if (this.life <= 0) return;
+        const alpha = this.life / this.baseLife;
+        
+        ctx.save();
+        // 核心亮点 (白色)
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+        
+        // 外部光晕 (粒子颜色)
+        ctx.shadowBlur = 10 * alpha;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = alpha;
+        ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
+        ctx.restore();
+    }
+}
+
 // ==================== 渲染器类 ====================
 class GameRenderer {
     constructor(boardId, fxId) {
@@ -39,12 +82,10 @@ class GameRenderer {
         ctx.fillStyle = color;
         ctx.fillRect(px + 1, py + 1, this.blockSize - 2, this.blockSize - 2);
         
-        // 高光
         ctx.fillStyle = 'rgba(255,255,255,0.4)';
         ctx.fillRect(px + 1, py + 1, this.blockSize - 2, 3);
         ctx.fillRect(px + 1, py + 1, 3, this.blockSize - 2);
         
-        // 阴影
         ctx.fillStyle = 'rgba(0,0,0,0.4)';
         ctx.fillRect(px + this.blockSize - 4, py + 1, 3, this.blockSize - 2);
         ctx.fillRect(px + 1, py + this.blockSize - 4, this.blockSize - 2, 3);
@@ -76,34 +117,21 @@ class GameRenderer {
     }
     
     spawnParticles(x, y, color) {
-        for (let i = 0; i < 15; i++) {
-            this.particles.push({
-                x: x * this.blockSize + this.blockSize / 2,
-                y: y * this.blockSize + this.blockSize / 2,
-                vx: (Math.random() - 0.5) * 12,
-                vy: (Math.random() - 0.5) * 12,
-                size: Math.random() * 8 + 3,
-                life: 1,
-                color: color
-            });
+        for (let i = 0; i < 20; i++) {
+            this.particles.push(new Particle(
+                x * this.blockSize + this.blockSize / 2,
+                y * this.blockSize + this.blockSize / 2,
+                color
+            ));
         }
     }
     
     updateParticles() {
         for (let i = this.particles.length - 1; i >= 0; i--) {
-            let p = this.particles[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.3;
-            p.life -= 0.025;
-            
-            if (p.life <= 0) {
+            this.particles[i].update();
+            this.particles[i].draw(this.fxCtx);
+            if (this.particles[i].life <= 0) {
                 this.particles.splice(i, 1);
-            } else {
-                this.fxCtx.globalAlpha = p.life;
-                this.fxCtx.fillStyle = p.color;
-                this.fxCtx.fillRect(p.x, p.y, p.size, p.size);
-                this.fxCtx.globalAlpha = 1;
             }
         }
     }
@@ -296,7 +324,6 @@ class Tetris {
             this.level = Math.floor(this.lines / 10) + 1;
             this.interval = Math.max(100, 1000 - (this.level - 1) * 100);
             
-            // 显示 Combo
             if (lines >= 2) {
                 const comboEl = document.getElementById('combo');
                 comboEl.textContent = lines === 4 ? 'TETRIS!' : `${lines} LINES!`;
@@ -317,15 +344,6 @@ class Tetris {
         }
         this.hold = t;
         this.canHold = false;
-    }
-    
-    addGarbage(n) {
-        for (let i = 0; i < n; i++) {
-            this.grid.pop();
-            const row = Array(COLS).fill('garbage');
-            row[Math.floor(Math.random() * COLS)] = EMPTY;
-            this.grid.unshift(row);
-        }
     }
     
     update(time) {
@@ -355,7 +373,6 @@ let isPaused = false;
 
 function startGame() {
     initAudio();
-    
     document.getElementById('menu').classList.add('hidden');
     document.getElementById('gameover').classList.remove('show');
     document.getElementById('game').classList.add('active');
@@ -380,6 +397,7 @@ function togglePause() {
     if (!running) return;
     isPaused = !isPaused;
     document.getElementById('pausedOverlay').classList.toggle('show', isPaused);
+    document.getElementById('pauseBtn').classList.toggle('paused-true', isPaused);
     if (!isPaused) {
         game.lastTime = performance.now();
         loop();
