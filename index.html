@@ -85,17 +85,22 @@
         .hidden { display: none !important; }
         
         @media (max-width: 600px) {
-            .board { grid-template-columns: repeat(10, 18px); grid-template-rows: repeat(20, 18px); }
-            .cell { width: 18px; height: 18px; }
-            .game-container { padding: 15px; gap: 15px; }
-            .game-frame { padding: 12px; }
-            .side-panel { min-width: 70px; gap: 8px; }
-            .panel-box { padding: 8px; }
-            .panel-label { font-size: 0.55rem; }
-            .panel-value { font-size: 0.8rem; }
-            .next-preview, .hold-preview { grid-template-columns: repeat(4, 14px); grid-template-rows: repeat(4, 14px); }
-            .next-preview .cell, .hold-preview .cell { width: 14px; height: 14px; }
-            .game-title { font-size: 1rem; }
+            .board { grid-template-columns: repeat(10, 9mm); grid-template-rows: repeat(20, 9mm); gap: 0; }
+            .cell { width: 9mm; height: 9mm; }
+            .game-container { padding: 5px; gap: 5px; }
+            .game-frame { padding: 6px; border-radius: 12px; }
+            .screen-area { padding: 6px; border-radius: 8px; }
+            .game-area { gap: 5px; }
+            .side-panel { min-width: 28mm; gap: 4mm; }
+            .panel-box { padding: 4px; border-radius: 6px; }
+            .panel-label { font-size: 0.45rem; }
+            .panel-value { font-size: 0.65rem; }
+            .next-preview, .hold-preview { grid-template-columns: repeat(4, 6mm); grid-template-rows: repeat(4, 6mm); gap: 0; }
+            .next-preview .cell, .hold-preview .cell { width: 6mm; height: 6mm; }
+            .game-title { font-size: 0.7rem; margin-bottom: 6px; }
+            .panel-box::before { height: 8px; }
+            .menu-controls { flex-direction: column; gap: 10px; }
+            .control-group { padding: 10px 15px; }
         }
     </style>
 </head>
