@@ -1,4 +1,4 @@
-// ==================== 粒子类 (处理炸裂特效) ====================
+// ==================== 粒子类 ====================
 class Particle {
     constructor(x, y, color) {
         this.x = x;
@@ -25,13 +25,9 @@ class Particle {
     draw(ctx) {
         if (this.life <= 0) return;
         const alpha = this.life / this.baseLife;
-        
         ctx.save();
-        // 核心亮点 (白色)
         ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
         ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
-        
-        // 外部光晕 (粒子颜色)
         ctx.shadowBlur = 10 * alpha;
         ctx.shadowColor = this.color;
         ctx.fillStyle = this.color;
@@ -55,16 +51,16 @@ class GameRenderer {
     drawGrid() {
         this.boardCtx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
         this.boardCtx.lineWidth = 1;
-        for (let x = 0; x <= this.boardCanvas.width; x += this.blockSize) {
+        for (let x = 0; x <= 300; x += this.blockSize) {
             this.boardCtx.beginPath();
             this.boardCtx.moveTo(x, 0);
-            this.boardCtx.lineTo(x, this.boardCanvas.height);
+            this.boardCtx.lineTo(x, 600);
             this.boardCtx.stroke();
         }
-        for (let y = 0; y <= this.boardCanvas.height; y += this.blockSize) {
+        for (let y = 0; y <= 600; y += this.blockSize) {
             this.boardCtx.beginPath();
             this.boardCtx.moveTo(0, y);
-            this.boardCtx.lineTo(this.boardCanvas.width, y);
+            this.boardCtx.lineTo(300, y);
             this.boardCtx.stroke();
         }
     }
@@ -78,14 +74,11 @@ class GameRenderer {
     drawBlock(x, y, color) {
         const ctx = this.boardCtx;
         const px = x * this.blockSize, py = y * this.blockSize;
-        
         ctx.fillStyle = color;
         ctx.fillRect(px + 1, py + 1, this.blockSize - 2, this.blockSize - 2);
-        
         ctx.fillStyle = 'rgba(255,255,255,0.4)';
         ctx.fillRect(px + 1, py + 1, this.blockSize - 2, 3);
         ctx.fillRect(px + 1, py + 1, 3, this.blockSize - 2);
-        
         ctx.fillStyle = 'rgba(0,0,0,0.4)';
         ctx.fillRect(px + this.blockSize - 4, py + 1, 3, this.blockSize - 2);
         ctx.fillRect(px + 1, py + this.blockSize - 4, this.blockSize - 2, 3);
@@ -113,26 +106,11 @@ class GameRenderer {
             }
         }
         
-        this.updateAndDrawParticles();
-    }
-    
-    // 触发霓虹炸裂特效
-    triggerLineClearEffect(rowIndices, blockColors) {
-        rowIndices.forEach(row => {
-            for (let col = 0; col < 10; col++) {
-                const centerX = col * this.blockSize + this.blockSize / 2;
-                const centerY = row * this.blockSize + this.blockSize / 2;
-                const color = blockColors[col] || '#00f3ff';
-                
-                for (let i = 0; i < 12; i++) {
-                    this.particles.push(new Particle(centerX, centerY, color));
-                }
-            }
-        });
+        this.updateParticles();
     }
     
     spawnParticles(x, y, color) {
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 15; i++) {
             this.particles.push(new Particle(
                 x * this.blockSize + this.blockSize / 2,
                 y * this.blockSize + this.blockSize / 2,
@@ -141,19 +119,14 @@ class GameRenderer {
         }
     }
     
-    // 粒子特效渲染系统
-    updateAndDrawParticles() {
+    updateParticles() {
         this.fxCtx.save();
-        this.fxCtx.globalCompositeOperation = 'lighter'; // 制造加色发光效果
-        
+        this.fxCtx.globalCompositeOperation = 'lighter';
         for (let i = this.particles.length - 1; i >= 0; i--) {
             this.particles[i].update();
             this.particles[i].draw(this.fxCtx);
-            if (this.particles[i].life <= 0) {
-                this.particles.splice(i, 1);
-            }
+            if (this.particles[i].life <= 0) this.particles.splice(i, 1);
         }
-        
         this.fxCtx.restore();
     }
     
@@ -161,14 +134,11 @@ class GameRenderer {
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#0a0a15';
         ctx.fillRect(0, 0, 80, 80);
-        
         if (!type || !SHAPES[type]) return;
-        
         const shape = SHAPES[type];
         const size = 15;
         const ox = type === 'O' ? 20 : type === 'I' ? 10 : 25;
         const oy = type === 'I' ? 15 : type === 'O' ? 25 : 20;
-        
         for (let r = 0; r < shape.length; r++) {
             for (let c = 0; c < shape[r].length; c++) {
                 if (shape[r][c]) {
@@ -181,9 +151,7 @@ class GameRenderer {
 }
 
 // ==================== 游戏常数 ====================
-const COLS = 10, ROWS = 20;
-const EMPTY = 0;
-
+const COLS = 10, ROWS = 20, EMPTY = 0;
 const SHAPES = {
     I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
     O: [[1,1],[1,1]],
@@ -193,13 +161,11 @@ const SHAPES = {
     J: [[1,0,0],[1,1,1],[0,0,0]],
     L: [[0,0,1],[1,1,1],[0,0,0]]
 };
-
 const COLORS = {
     I: 'rgb(0, 243, 255)', O: 'rgb(255, 221, 0)', T: 'rgb(204, 102, 255)',
     S: 'rgb(102, 255, 102)', Z: 'rgb(255, 68, 102)', J: 'rgb(68, 136, 255)', L: 'rgb(255, 153, 51)',
     garbage: 'rgb(85, 85, 102)'
 };
-
 const PIECES = 'IJLOSTZ';
 
 // ==================== 音效 ====================
@@ -236,7 +202,6 @@ class Tetris {
         this.level = 1;
         this.lines = 0;
         this.sent = 0;
-        this.ko = 0;
         this.stars = 5;
         this.piece = null;
         this.next = null;
@@ -327,13 +292,8 @@ class Tetris {
     
     clearLines() {
         let lines = 0;
-        let clearedRows = [];
-        let clearedColors = [];
-        
         for (let r = ROWS - 1; r >= 0; r--) {
             if (this.grid[r].every(c => c)) {
-                clearedRows.push(r);
-                clearedColors.push([...this.grid[r]]);
                 for (let c = 0; c < COLS; c++) {
                     this.renderer.spawnParticles(c, r, COLORS[this.grid[r][c]]);
                 }
@@ -343,11 +303,7 @@ class Tetris {
                 r++;
             }
         }
-        
         if (lines > 0) {
-            // 触发额外特效
-            this.renderer.triggerLineClearEffect(clearedRows, clearedColors.flat());
-            
             play('clear');
             this.score += [0, 100, 300, 500, 800][lines] * this.level;
             this.lines += lines;
@@ -356,7 +312,7 @@ class Tetris {
             
             if (lines >= 2) {
                 const comboEl = document.getElementById('combo');
-                comboEl.textContent = lines === 4 ? 'TETRIS!' : `${lines} LINES!`;
+                comboEl.textContent = lines === 4 ? 'TETRIS!' : lines + ' LINES!';
                 comboEl.classList.add('show');
                 setTimeout(() => comboEl.classList.remove('show'), 1500);
             }
@@ -430,10 +386,8 @@ function togglePause() {
     
     const pauseBtn = document.getElementById('pauseBtn');
     pauseBtn.classList.remove('paused-true', 'paused-false');
-    pauseBtn.classList.add(`paused-${isPaused}`);
-    pauseBtn.innerHTML = isPaused 
-        ? '<span class="icon">▶️</span> RESUME' 
-        : '<span class="icon">⏸️</span> PAUSE';
+    pauseBtn.classList.add('paused-' + isPaused);
+    pauseBtn.innerHTML = isPaused ? '<span class="icon">▶️</span> RESUME' : '<span class="icon">⏸️</span> PAUSE';
     
     if (!isPaused) {
         game.lastTime = performance.now();
