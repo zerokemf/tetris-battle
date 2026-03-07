@@ -2,628 +2,90 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tetris Battle</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --cell-size: 28px;
-            --board-width: calc(var(--cell-size) * 10);
-            --board-height: calc(var(--cell-size) * 20);
-            --cyan: #00d4ff;
-            --pink: #ff6b6b;
-            --bg-dark: #0d0d1a;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden;
-            font-family: 'Orbitron', sans-serif;
-        }
-        body {
-            background: linear-gradient(135deg, var(--bg-dark), #1a1a2e, #0d0d1a);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-        }
-
-        /* 選單 */
-        #menu {
-            position: fixed;
-            inset: 0;
-            background: rgba(13,13,26,0.98);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-        #menu.hidden { display: none; }
-        
-        .title {
-            font-size: clamp(2rem, 8vw, 4rem);
-            font-weight: 900;
-            margin-bottom: 2rem;
-            background: linear-gradient(90deg, var(--cyan), var(--pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .btn {
-            background: linear-gradient(145deg, #2a2a3a, #1a1a24);
-            border: 3px solid var(--cyan);
-            color: #fff;
-            padding: 1rem 3rem;
-            font-size: 1.2rem;
-            font-family: 'Fredoka One', sans-serif;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 0.5rem;
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
-        .btn:hover {
-            background: var(--cyan);
-            color: #000;
-            transform: scale(1.05);
-        }
-        .btn.secondary { border-color: var(--pink); }
-        .btn.secondary:hover { background: var(--pink); }
-        
-        .controls-box {
-            margin-top: 2rem;
-            background: rgba(255,255,255,0.1);
-            padding: 1.5rem 2rem;
-            border-radius: 15px;
-            text-align: center;
-        }
-        .controls-box h3 { color: var(--cyan); margin-bottom: 0.5rem; }
-        .controls-box p { font-size: 0.9rem; color: #aaa; line-height: 1.6; }
-
-        /* 遊戲區 */
-        #game {
-            display: none;
-            gap: 20px;
-            align-items: flex-start;
-        }
-        #game.active { display: flex; }
-        
-        .player {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .frame {
-            background: linear-gradient(145deg, #2a2a3a, #1a1a24);
-            border-radius: 20px;
-            padding: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-        
-        .screen {
-            background: #0a0a15;
-            border-radius: 12px;
-            padding: 10px;
-            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
-        }
-        
-        .player-name {
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: var(--cyan);
-            margin-bottom: 10px;
-        }
-        
-        .game-area {
-            display: flex;
-            gap: 15px;
-        }
-        
-        .board {
-            display: grid;
-            grid-template-columns: repeat(10, var(--cell-size));
-            grid-template-rows: repeat(20, var(--cell-size));
-            gap: 1px;
-            background: #0a0a15;
-            border-radius: 5px;
-        }
-        
-        .cell {
-            width: var(--cell-size);
-            height: var(--cell-size);
-            background: #151525;
-            border-radius: 2px;
-        }
-        .cell.filled { box-shadow: inset 0 0 8px rgba(255,255,255,0.3); }
-        .cell.i { background: var(--cyan); }
-        .cell.o { background: #ffdd00; }
-        .cell.t { background: #cc66ff; }
-        .cell.s { background: #66ff66; }
-        .cell.z { background: #ff4466; }
-        .cell.j { background: #4488ff; }
-        .cell.l { background: #ff9933; }
-        .cell.garbage { background: #555566; }
-        
-        .side {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            min-width: 100px;
-        }
-        
-        .panel {
-            background: linear-gradient(145deg, #2a2a3a, #1a1a24);
-            border-radius: 10px;
-            padding: 10px;
-            text-align: center;
-        }
-        
-        .panel-label {
-            font-size: 0.7rem;
-            color: var(--cyan);
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-        
-        .panel-value {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-        
-        .preview {
-            display: grid;
-            grid-template-columns: repeat(4, 20px);
-            grid-template-rows: repeat(4, 20px);
-            gap: 1px;
-            background: #0a0a15;
-            border-radius: 5px;
-            padding: 3px;
-            margin: 0 auto;
-        }
-        
-        .preview .cell {
-            width: 20px;
-            height: 20px;
-        }
-        
-        .vs {
-            font-size: 3rem;
-            font-weight: 900;
-            color: var(--pink);
-            display: none;
-            align-items: center;
-        }
-        .vs.show { display: flex; }
-        
-        /* 結束 */
-        #gameover {
-            position: fixed;
-            inset: 0;
-            background: rgba(10,10,30,0.95);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-        #gameover.show { display: flex; }
-        #gameover h1 { font-size: 3rem; color: var(--pink); margin-bottom: 1rem; }
-        #gameover p { font-size: 1.5rem; color: var(--cyan); margin-bottom: 2rem; }
-
-        /* 雪花 */
-        .snow {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-        }
-        .snowflake {
-            position: absolute;
-            color: rgba(255,255,255,0.5);
-            animation: fall linear infinite;
-        }
-        @keyframes fall {
-            to { transform: translateY(100vh) rotate(360deg); }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="snow" id="snow"></div>
-    
     <!-- 選單 -->
-    <div id="menu">
-        <div class="title">🧊 TETRIS BATTLE</div>
-        <button class="btn" onclick="startGame(1)">單人模式</button>
-        <button class="btn secondary" onclick="startGame(2)">雙人對戰</button>
-        
-        <div class="controls-box">
+    <div class="menu-screen" id="menu">
+        <h1 class="title">🧊 TETRIS BATTLE</h1>
+        <button class="btn" onclick="startGame(1)"></button>
+        <button class="btn secondary" onclick="單人模式startGame(2)">雙人對戰</button>
+        <div class="controls-info">
             <h3>操作說明</h3>
-            <p>移動 ← → | 旋轉 ↑ / Z<br>軟降 ↓ | 硬降 空白 | Hold C</p>
+            <p>移動 ← → | 旋轉 ↑ / Z | 軟降 ↓<br>硬降 空白 | Hold C</p>
         </div>
     </div>
-    
+
     <!-- 遊戲區 -->
-    <div id="game">
-        <div class="player" id="p1">
-            <div class="frame">
-                <div class="player-name">P1</div>
-                <div class="screen">
-                    <div class="game-area">
-                        <div class="side">
-                            <div class="panel"><div class="panel-label">HOLD</div><div class="preview" id="hold1"></div></div>
-                            <div class="panel"><div class="panel-label">SENT</div><div class="panel-value" id="sent1">0</div></div>
-                            <div class="panel"><div class="panel-label">KO</div><div class="panel-value" id="ko1">0</div></div>
-                        </div>
-                        <div class="board" id="board1"></div>
-                        <div class="side">
-                            <div class="panel"><div class="panel-label">NEXT</div><div class="preview" id="next1"></div></div>
-                            <div class="panel"><div class="panel-label">SCORE</div><div class="panel-value" id="score1">0</div></div>
-                            <div class="panel"><div class="panel-label">LEVEL</div><div class="panel-value" id="level1">1</div></div>
-                        </div>
-                    </div>
+    <div class="game-container" id="game">
+        <!-- 玩家1 -->
+        <div class="player-panel" id="p1-panel">
+            <div class="stats-bar">
+                <span class="ko-stars" id="stars1">⭐️⭐️⭐️⭐️⭐️</span>
+                <span class="lines-sent" id="sent1">Lines: 0</span>
+            </div>
+            <div class="canvas-wrapper">
+                <canvas id="board1" width="300" height="600"></canvas>
+                <canvas id="fx1" class="fx-layer" width="300" height="600"></canvas>
+            </div>
+            <div class="hold-next-panel">
+                <div class="hold-box">
+                    <span class="box-label">HOLD</span>
+                    <canvas id="hold1" width="80" height="80"></canvas>
+                </div>
+                <div class="next-box">
+                    <span class="box-label">NEXT</span>
+                    <canvas id="next1" width="80" height="80"></canvas>
                 </div>
             </div>
+            <div class="score-panel">
+                <div class="score-row"><span>SCORE</span><span id="score1">0</span></div>
+                <div class="score-row"><span>LEVEL</span><span id="level1">1</span></div>
+            </div>
         </div>
-        
-        <div class="vs" id="vs">VS</div>
-        
-        <div class="player" id="p2">
-            <div class="frame">
-                <div class="player-name">P2</div>
-                <div class="screen">
-                    <div class="game-area">
-                        <div class="side">
-                            <div class="panel"><div class="panel-label">HOLD</div><div class="preview" id="hold2"></div></div>
-                            <div class="panel"><div class="panel-label">SENT</div><div class="panel-value" id="sent2">0</div></div>
-                            <div class="panel"><div class="panel-label">KO</div><div class="panel-value" id="ko2">0</div></div>
-                        </div>
-                        <div class="board" id="board2"></div>
-                        <div class="side">
-                            <div class="panel"><div class="panel-label">NEXT</div><div class="preview" id="next2"></div></div>
-                            <div class="panel"><div class="panel-label">SCORE</div><div class="panel-value" id="score2">0</div></div>
-                            <div class="panel"><div class="panel-label">LEVEL</div><div class="panel-value" id="level2">1</div></div>
-                        </div>
-                    </div>
+
+        <!-- 中間區域 -->
+        <div class="center-arena">
+            <h1 class="vs-text" id="vs-text" style="display:none">VS</h1>
+            <div class="combo-display" id="combo"></div>
+        </div>
+
+        <!-- 玩家2 -->
+        <div class="player-panel" id="p2-panel" style="display:none">
+            <div class="stats-bar">
+                <span class="ko-stars" id="stars2">⭐️⭐️⭐️⭐️⭐️</span>
+                <span class="lines-sent" id="sent2">Lines: 0</span>
+            </div>
+            <div class="canvas-wrapper">
+                <canvas id="board2" width="300" height="600"></canvas>
+                <canvas id="fx2" class="fx-layer" width="300" height="600"></canvas>
+            </div>
+            <div class="hold-next-panel">
+                <div class="hold-box">
+                    <span class="box-label">HOLD</span>
+                    <canvas id="hold2" width="80" height="80"></canvas>
                 </div>
+                <div class="next-box">
+                    <span class="box-label">NEXT</span>
+                    <canvas id="next2" width="80" height="80"></canvas>
+                </div>
+            </div>
+            <div class="score-panel">
+                <div class="score-row"><span>SCORE</span><span id="score2">0</span></div>
+                <div class="score-row"><span>LEVEL</span><span id="level2">1</span></div>
             </div>
         </div>
     </div>
-    
-    <!-- 結束 -->
-    <div id="gameover">
+
+    <!-- 結束畫面 -->
+    <div class="gameover-screen" id="gameover">
         <h1>GAME OVER</h1>
-        <p id="winner"></p>
+        <p id="winner-text"></p>
         <button class="btn" onclick="backMenu()">返回選單</button>
     </div>
 
-    <script>
-    // ==================== 遊戲核心 ====================
-    const COLS = 10, ROWS = 20, EMPTY = 0;
-    const SHAPES = {
-        I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
-        O: [[1,1],[1,1]],
-        T: [[0,1,0],[1,1,1],[0,0,0]],
-        S: [[0,1,1],[1,1,0],[0,0,0]],
-        Z: [[1,1,0],[0,1,1],[0,0,0]],
-        J: [[1,0,0],[1,1,1],[0,0,0]],
-        L: [[0,0,1],[1,1,1],[0,0,0]]
-    };
-    const PIECES = 'IJLOSTZ';
-
-    // 音效
-    let audioCtx = null;
-    function initAudio() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-    }
-    function play(type) {
-        if (!audioCtx) return;
-        try {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            switch(type) {
-                case 'move': osc.frequency.value = 220; osc.type = 'sine'; gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05); osc.start(); osc.stop(audioCtx.currentTime + 0.05); break;
-                case 'rotate': osc.frequency.value = 330; osc.type = 'sine'; gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08); osc.start(); osc.stop(audioCtx.currentTime + 0.08); break;
-                case 'drop': osc.frequency.value = 150; osc.type = 'square'; gain.gain.setValueAtTime(0.03, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03); osc.start(); osc.stop(audioCtx.currentTime + 0.03); break;
-                case 'clear': for(let i=0;i<4;i++){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=440+i*110;o.type='sine';g.gain.setValueAtTime(0.08,audioCtx.currentTime+i*0.08);g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+i*0.08+0.15);o.start(audioCtx.currentTime+i*0.08);o.stop(audioCtx.currentTime+i*0.08+0.15);}break;
-                case 'hold': osc.frequency.value = 550; osc.type = 'sine'; gain.gain.setValueAtTime(0.06, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); break;
-                case 'attack': osc.frequency.value = 100; osc.type = 'square'; gain.gain.setValueAtTime(0.08, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.2); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2); osc.start(); osc.stop(audioCtx.currentTime + 0.2); break;
-                case 'over': osc.frequency.value = 200; osc.type = 'sawtooth'; gain.gain.setValueAtTime(0.1, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5); break;
-            }
-        } catch(e) {}
-    }
-
-    // 遊戲類
-    class Tetris {
-        constructor(id) {
-            this.id = id;
-            this.grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(EMPTY));
-            this.score = 0;
-            this.level = 1;
-            this.lines = 0;
-            this.sent = 0;
-            this.ko = 0;
-            this.piece = null;
-            this.next = null;
-            this.hold = null;
-            this.canHold = true;
-            this.over = false;
-            this.interval = 1000;
-            this.lastTime = 0;
-        }
-        
-        spawn() {
-            this.piece = this.next || { type: PIECES[Math.floor(Math.random() * 7)], shape: null, x: 3, y: 0 };
-            this.piece.shape = SHAPES[this.piece.type].map(r => [...r]);
-            this.next = { type: PIECES[Math.floor(Math.random() * 7)], shape: null, x: 3, y: 0 };
-            this.next.shape = SHAPES[this.next.type].map(r => [...r]);
-            this.canHold = true;
-            if (!this.valid(this.piece, this.piece.x, this.piece.y)) this.over = true;
-        }
-        
-        valid(p, x, y) {
-            for (let r = 0; r < p.shape.length; r++) {
-                for (let c = 0; c < p.shape[r].length; c++) {
-                    if (p.shape[r][c]) {
-                        let nx = x + c, ny = y + r;
-                        if (nx < 0 || nx >= COLS || ny >= ROWS) return false;
-                        if (ny >= 0 && this.grid[ny][nx]) return false;
-                    }
-                }
-            }
-            return true;
-        }
-        
-        rotate() {
-            const old = this.piece.shape;
-            const rot = old[0].map((_, i) => old.map(r => r[i]).reverse());
-            this.piece.shape = rot;
-            for (let o of [0, -1, 1, -2, 2]) {
-                if (this.valid(this.piece, this.piece.x + o, this.piece.y)) {
-                    this.piece.x += o;
-                    play('rotate');
-                    return;
-                }
-            }
-            this.piece.shape = old;
-        }
-        
-        move(dir) {
-            if (this.valid(this.piece, this.piece.x + dir, this.piece.y)) {
-                this.piece.x += dir;
-                play('move');
-            }
-        }
-        
-        drop() {
-            if (this.valid(this.piece, this.piece.x, this.piece.y + 1)) {
-                this.piece.y++;
-                play('drop');
-                return true;
-            }
-            return false;
-        }
-        
-        hardDrop() {
-            while (this.valid(this.piece, this.piece.x, this.piece.y + 1)) this.piece.y++;
-            play('drop');
-            this.lock();
-        }
-        
-        lock() {
-            for (let r = 0; r < this.piece.shape.length; r++) {
-                for (let c = 0; c < this.piece.shape[r].length; c++) {
-                    if (this.piece.shape[r][c]) {
-                        let y = this.piece.y + r, x = this.piece.x + c;
-                        if (y >= 0) this.grid[y][x] = this.piece.type.toLowerCase();
-                    }
-                }
-            }
-            this.clear();
-            this.spawn();
-        }
-        
-        clear() {
-            let lines = 0;
-            for (let r = ROWS - 1; r >= 0; r--) {
-                if (this.grid[r].every(c => c)) {
-                    this.grid.splice(r, 1);
-                    this.grid.unshift(Array(COLS).fill(EMPTY));
-                    lines++;
-                    r++;
-                }
-            }
-            if (lines > 0) {
-                play('clear');
-                this.score += [0, 100, 300, 500, 800][lines] * this.level;
-                this.lines += lines;
-                this.level = Math.floor(this.lines / 10) + 1;
-                this.interval = Math.max(100, 1000 - (this.level - 1) * 100);
-                if (gameMode === 2 && lines >= 2) {
-                    sendGarbage(this.id === 1 ? 2 : 1, lines - 1);
-                    play('attack');
-                }
-            }
-        }
-        
-        holdPiece() {
-            if (!this.canHold) return;
-            play('hold');
-            const t = this.piece.type;
-            if (this.hold) {
-                this.piece = { type: this.hold, shape: SHAPES[this.hold].map(r => [...r]), x: 3, y: 0 };
-            } else {
-                this.spawn();
-            }
-            this.hold = t;
-            this.canHold = false;
-        }
-        
-        addGarbage(n) {
-            for (let i = 0; i < n; i++) {
-                this.grid.pop();
-                const row = Array(COLS).fill('garbage');
-                row[Math.floor(Math.random() * COLS)] = EMPTY;
-                this.grid.unshift(row);
-            }
-        }
-        
-        update(time) {
-            if (this.over) return;
-            if (time - this.lastTime > this.interval) {
-                if (!this.drop()) this.lock();
-                this.lastTime = time;
-            }
-        }
-        
-        render() {
-            const board = document.getElementById('board' + this.id);
-            board.innerHTML = '';
-            const temp = this.grid.map(r => [...r]);
-            if (this.piece) {
-                for (let r = 0; r < this.piece.shape.length; r++) {
-                    for (let c = 0; c < this.piece.shape[r].length; c++) {
-                        if (this.piece.shape[r][c]) {
-                            let y = this.piece.y + r, x = this.piece.x + c;
-                            if (y >= 0 && y < ROWS && x >= 0 && x < COLS) temp[y][x] = this.piece.type.toLowerCase();
-                        }
-                    }
-                }
-            }
-            for (let r = 0; r < ROWS; r++) {
-                for (let c = 0; c < COLS; c++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell' + (temp[r][c] ? ' filled ' + temp[r][c] : '');
-                    board.appendChild(cell);
-                }
-            }
-            renderPreview('next' + this.id, this.next ? this.next.type : null);
-            renderPreview('hold' + this.id, this.hold);
-            document.getElementById('score' + this.id).textContent = this.score;
-            document.getElementById('level' + this.id).textContent = this.level;
-            document.getElementById('sent' + this.id).textContent = this.sent;
-            document.getElementById('ko' + this.id).textContent = this.ko;
-        }
-    }
-
-    function renderPreview(id, type) {
-        const el = document.getElementById(id);
-        el.innerHTML = '';
-        for (let i = 0; i < 16; i++) el.appendChild(document.createElement('div'));
-        if (!type || !SHAPES[type]) return;
-        const shape = SHAPES[type];
-        const ox = type === 'O' ? 0 : type === 'I' ? 0 : 1;
-        const oy = type === 'I' ? 1 : type === 'O' ? 0 : 1;
-        for (let r = 0; r < 4; r++) {
-            for (let c = 0; c < 4; c++) {
-                const cell = el.children[r * 4 + c];
-                const sr = r - oy, sc = c - ox;
-                if (sr >= 0 && sr < shape.length && sc >= 0 && sc < shape[0].length && shape[sr][sc]) {
-                    cell.className = 'cell filled ' + type.toLowerCase();
-                }
-            }
-        }
-    }
-
-    // ==================== 遊戲控制 ====================
-    let gameMode = 1, games = [], running = false;
-    
-    function startGame(mode) {
-        initAudio();
-        gameMode = mode;
-        document.getElementById('menu').classList.add('hidden');
-        document.getElementById('gameover').classList.remove('show');
-        document.getElementById('game').classList.add('active');
-        document.getElementById('vs').classList.toggle('show', mode === 2);
-        document.getElementById('p2').style.display = mode === 2 ? 'flex' : 'none';
-        
-        games = [new Tetris(1)];
-        if (mode === 2) games.push(new Tetris(2));
-        
-        games[0].spawn();
-        if (mode === 2) games[1].spawn();
-        
-        running = true;
-        loop();
-    }
-    
-    function backMenu() {
-        document.getElementById('gameover').classList.remove('show');
-        document.getElementById('game').classList.remove('active');
-        document.getElementById('menu').classList.remove('hidden');
-        running = false;
-    }
-    
-    function sendGarbage(to, lines) {
-        games[to - 1].addGarbage(lines);
-        games[to === 1 ? 0 : 1].sent += lines;
-    }
-    
-    function loop(time = 0) {
-        if (!running) return;
-        games.forEach(g => {
-            g.update(time);
-            g.render();
-            if (g.over) end(g.id);
-        });
-        if (games.some(g => g.over)) return;
-        requestAnimationFrame(loop);
-    }
-    
-    function end(loser) {
-        running = false;
-        play('over');
-        const winner = loser === 1 ? 'P2' : 'P1';
-        document.getElementById('winner').textContent = gameMode === 1 ? '遊戲結束！' : winner + ' 獲勝！';
-        document.getElementById('gameover').classList.add('show');
-    }
-
-    // 鍵盤
-    document.addEventListener('keydown', e => {
-        if (!running || games.length === 0) return;
-        
-        const p1 = games[0];
-        switch(e.key) {
-            case 'ArrowLeft': p1.move(-1); break;
-            case 'ArrowRight': p1.move(1); break;
-            case 'ArrowDown': p1.drop(); break;
-            case 'ArrowUp': case 'z': case 'Z': p1.rotate(); break;
-            case 'c': case 'C': p1.holdPiece(); break;
-            case ' ': e.preventDefault(); p1.hardDrop(); break;
-        }
-        
-        if (gameMode === 2 && games[1]) {
-            const p2 = games[1];
-            switch(e.key) {
-                case 'ArrowLeft': case 'ArrowRight': case 'ArrowDown': case 'ArrowUp': case 'z': case 'Z': case 'c': case 'C': case ' ': break;
-                case 'a': p2.move(-1); break;
-                case 'd': p2.move(1); break;
-                case 's': p2.drop(); break;
-                case 'w': p2.rotate(); break;
-                case 'x': p2.holdPiece(); break;
-                case 'Enter': e.preventDefault(); p2.hardDrop(); break;
-            }
-        }
-    });
-
-    // 雪花
-    const snow = document.getElementById('snow');
-    for (let i = 0; i < 30; i++) {
-        const s = document.createElement('div');
-        s.className = 'snowflake';
-        s.textContent = '❄';
-        s.style.left = Math.random() * 100 + '%';
-        s.style.animationDuration = Math.random() * 5 + 5 + 's';
-        s.style.animationDelay = Math.random() * 10 + 's';
-        s.style.fontSize = Math.random() * 10 + 10 + 'px';
-        snow.appendChild(s);
-    }
-    </script>
+    <script src="game.js"></script>
 </body>
 </html>

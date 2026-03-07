@@ -1,0 +1,261 @@
+:root {
+    --bg-color: #0f172a;
+    --panel-bg: rgba(255, 255, 255, 0.05);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --neon-blue: #00f3ff;
+    --neon-pink: #ff00ff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-color);
+    background-image: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* 選單 */
+.menu-screen {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.98);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+.menu-screen.hidden { display: none; }
+
+.title {
+    font-size: clamp(2rem, 8vw, 4rem);
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 2rem;
+}
+
+.btn {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    border: 3px solid var(--neon-blue);
+    color: white;
+    padding: 1rem 3rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 50px;
+    cursor: pointer;
+    margin: 0.5rem;
+    transition: all 0.3s;
+    text-transform: uppercase;
+}
+.btn:hover {
+    background: var(--neon-blue);
+    color: #000;
+    transform: scale(1.05);
+}
+.btn.secondary {
+    border-color: var(--neon-pink);
+}
+.btn.secondary:hover {
+    background: var(--neon-pink);
+}
+
+.controls-info {
+    margin-top: 2rem;
+    background: var(--panel-bg);
+    padding: 1.5rem 2rem;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+.controls-info h3 {
+    color: var(--neon-blue);
+    margin-bottom: 0.5rem;
+}
+.controls-info p {
+    color: #94a3b8;
+    line-height: 1.6;
+}
+
+/* 遊戲區 */
+.game-container {
+    display: flex;
+    gap: 40px;
+    padding: 30px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+.player-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stats-bar {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 0 5px;
+}
+
+.ko-stars {
+    font-size: 0.8rem;
+    letter-spacing: -2px;
+}
+
+.lines-sent {
+    color: var(--neon-pink);
+    font-size: 0.9rem;
+}
+
+.canvas-wrapper {
+    position: relative;
+    border: 2px solid var(--border-color);
+    border-radius: 5px;
+    background-color: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+}
+
+.fx-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.hold-next-panel {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 15px;
+    gap: 10px;
+}
+
+.hold-box, .next-box {
+    width: 80px;
+    height: 100px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px;
+}
+
+.box-label {
+    font-size: 0.7rem;
+    color: var(--neon-blue);
+    margin-bottom: 5px;
+}
+
+.score-panel {
+    margin-top: 15px;
+    width: 100%;
+}
+
+.score-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.score-row span:last-child {
+    color: var(--neon-blue);
+    font-weight: bold;
+}
+
+/* 中間區域 */
+.center-arena {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 150px;
+}
+
+.vs-text {
+    font-size: 3rem;
+    font-style: italic;
+    color: var(--neon-pink);
+    text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+}
+
+.combo-display {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ffe66d;
+    text-shadow: 0 0 10px #ffe66d;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.combo-display.show {
+    opacity: 1;
+    animation: comboPulse 0.5s ease-out;
+}
+@keyframes comboPulse {
+    0% { transform: scale(0.5); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+/* 結束畫面 */
+.gameover-screen {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.95);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+.gameover-screen.show { display: flex; }
+
+.gameover-screen h1 {
+    font-size: 4rem;
+    color: var(--neon-pink);
+    margin-bottom: 1rem;
+}
+
+.gameover-screen p {
+    font-size: 2rem;
+    color: var(--neon-blue);
+    margin-bottom: 2rem;
+}
+
+/* 雪花背景 */
+.snow {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+.snowflake {
+    position: absolute;
+    color: rgba(255, 255, 255, 0.3);
+    animation: fall linear infinite;
+}
+@keyframes fall {
+    to { transform: translateY(100vh) rotate(360deg); }
+}
