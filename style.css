@@ -78,49 +78,57 @@ body {
     box-shadow: 0 0 40px rgba(0, 243, 255, 0.6);
 }
 
-/* 全螢幕佈局 */
-.full-arena {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    padding: 0;
-    gap: 0;
-}
-
+/* 🌟 大螢幕佈局：側邊面板容器 */
 .side-panel {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    width: 180px;
-    padding: 20px;
+    gap: 20px;
+    height: 90vh;
+    width: 200px;
 }
 
-/* 霓虹視窗 */
+.left-side {
+    align-items: flex-end;
+    margin-right: 30px;
+}
+
+.right-side {
+    align-items: flex-start;
+    margin-left: 30px;
+}
+
+/* 🌟 加大的霓虹視窗樣式 */
 .neon-window {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 10px;
+    border-radius: 16px;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.2), inset 0 0 10px rgba(0, 243, 255, 0.1);
     backdrop-filter: blur(10px);
+    width: 100%;
 }
 
 .panel-header {
+    background: rgba(0, 243, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 16px;
     font-size: 0.8rem;
     color: var(--neon-blue);
-    text-transform: uppercase;
     text-align: center;
-    margin-bottom: 8px;
-    letter-spacing: 2px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+}
+
+.panel-content {
+    padding: 20px;
 }
 
 .panel-content ul {
     list-style: none;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
 }
 
 .panel-content li {
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -130,10 +138,20 @@ body {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    padding: 2px 6px;
+    padding: 2px 8px;
     font-family: monospace;
     color: var(--neon-blue);
-    font-size: 0.7rem;
+    font-size: 0.75rem;
+}
+
+/* 全螢幕佈局 */
+.full-arena {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 0;
+    gap: 0;
 }
 
 /* 中央競技場 */
@@ -153,8 +171,10 @@ body {
     margin-bottom: 10px;
 }
 
-/* 加大畫布 */
+/* 加大的 Canvas wrappers */
 .canvas-wrapper.enlarged {
+    width: 300px;
+    height: 600px;
     border: 2px solid var(--border-color);
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.8);
@@ -225,23 +245,34 @@ body {
 .paused-overlay p { color: #94a3b8; margin-top: 10px; }
 
 /* NEXT Queue SVG */
-.small-queue {
-    width: 100px;
-    height: 80px;
-    margin: 2px 0;
+.svg-tetromino {
+    width: 100%;
 }
+.svg-tetromino.small-queue {
+    max-height: 40px;
+    margin-bottom: 10px;
+}
+
+/* 🌟 經典方塊色彩 + 霓虹發光 */
+.classic-orange { fill: var(--classic-orange); filter: drop-shadow(0 0 5px var(--classic-orange)); }
+.classic-blue { fill: var(--classic-blue); filter: drop-shadow(0 0 5px var(--classic-blue)); }
+.classic-yellow { fill: var(--classic-yellow); filter: drop-shadow(0 0 5px var(--classic-yellow)); }
+.classic-purple { fill: var(--classic-purple); filter: drop-shadow(0 0 5px var(--classic-purple)); }
+.classic-red { fill: var(--classic-red); filter: drop-shadow(0 0 5px var(--classic-red)); }
+.classic-green { fill: var(--classic-green); filter: drop-shadow(0 0 5px var(--classic-green)); }
+.classic-cyan { fill: var(--classic-cyan); filter: drop-shadow(0 0 5px var(--classic-cyan)); }
 
 /* ARENA STATS */
 .ko-stars {
-    font-size: 1rem;
+    font-size: 1.2rem;
     letter-spacing: -3px;
     text-align: center;
     margin-bottom: 10px;
 }
 .stat-item {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--neon-pink);
-    margin: 5px 0;
+    margin: 8px 0;
 }
 .val-count {
     color: var(--neon-blue);
@@ -256,27 +287,25 @@ body {
     text-shadow: 0 0 10px var(--neon-yellow);
 }
 
-/* 底部面板 */
+/* 底部 PANEL-ROW */
 .bottom-panel-row {
     position: fixed;
     bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
     display: flex;
+    justify-content: center;
     gap: 30px;
+    padding: 0;
 }
-.full-width { width: auto; }
 
 .stat-box {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    padding: 10px 25px;
+    padding: 10px 20px;
+    color: #94a3b8;
     font-size: 1rem;
     font-weight: bold;
 }
-.score-box { border-color: var(--neon-blue); }
-.level-box { border-color: var(--neon-pink); }
 
 /* 結束畫面 */
 .gameover-screen {
@@ -297,14 +326,11 @@ body {
 }
 .gameover-screen p { font-size: 2rem; color: var(--neon-blue); margin: 1rem 0; }
 
-/* 🌟 經典方塊色彩 */
-.classic-cyan { fill: var(--classic-cyan); }
-.classic-blue { fill: var(--classic-blue); }
-.classic-orange { fill: var(--classic-orange); }
-.classic-yellow { fill: var(--classic-yellow); }
-.classic-green { fill: var(--classic-green); }
-.classic-purple { fill: var(--classic-purple); }
-.classic-red { fill: var(--classic-red); }
+/* Flex column */
+.flex-column {
+    display: flex;
+    flex-direction: column;
+}
 
 /* 雪花 */
 .snow {
@@ -319,9 +345,3 @@ body {
     animation: fall linear infinite;
 }
 @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
-
-/* Flex column */
-.flex-column {
-    display: flex;
-    flex-direction: column;
-}
