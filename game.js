@@ -1,5 +1,137 @@
-// ==================== 遊戲常數 ====================
-const COLS = 10, ROWS = 20, BLOCK = 30; // 每格 30px
+// ==================== 渲染器类 ====================
+class GameRenderer {
+    constructor(boardId, fxId) {
+        this.boardCanvas = document.getElementById(boardId);
+        this.boardCtx = this.boardCanvas.getContext('2d');
+        this.fxCanvas = document.getElementById(fxId);
+        this.fxCtx = this.fxCanvas.getContext('2d');
+        this.blockSize = 30;
+        this.particles = [];
+    }
+    
+    drawGrid() {
+        this.boardCtx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        this.boardCtx.lineWidth = 1;
+        for (let x = 0; x <= this.boardCanvas.width; x += this.blockSize) {
+            this.boardCtx.beginPath();
+            this.boardCtx.moveTo(x, 0);
+            this.boardCtx.lineTo(x, this.boardCanvas.height);
+            this.boardCtx.stroke();
+        }
+        for (let y = 0; y <= this.boardCanvas.height; y += this.blockSize) {
+            this.boardCtx.beginPath();
+            this.boardCtx.moveTo(0, y);
+            this.boardCtx.lineTo(this.boardCanvas.width, y);
+            this.boardCtx.stroke();
+        }
+    }
+    
+    clear() {
+        this.boardCtx.fillStyle = '#0a0a15';
+        this.boardCtx.fillRect(0, 0, 300, 600);
+        this.fxCtx.clearRect(0, 0, 300, 600);
+    }
+    
+    drawBlock(x, y, color) {
+        const ctx = this.boardCtx;
+        const px = x * this.blockSize, py = y * this.blockSize;
+        
+        ctx.fillStyle = color;
+        ctx.fillRect(px + 1, py + 1, this.blockSize - 2, this.blockSize - 2);
+        
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillRect(px + 1, py + 1, this.blockSize - 2, 3);
+        ctx.fillRect(px + 1, py + 1, 3, this.blockSize - 2);
+        
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillRect(px + this.blockSize - 4, py + 1, 3, this.blockSize - 2);
+        ctx.fillRect(px + 1, py + this.blockSize - 4, this.blockSize - 2, 3);
+    }
+    
+    render(grid, piece) {
+        this.clear();
+        this.drawGrid();
+        
+        // 绘制已锁定方块
+        for (let r = 0; r < 20; r++) {
+            for (let c = 0; c < 10; c++) {
+                if (grid[r][c]) {
+                    this.drawBlock(c, r, COLORS[grid[r][c]] || COLORS[grid[r][c][0]]);
+                }
+            }
+        }
+        
+        // 绘制当前方块
+        if (piece) {
+            for (let r = 0; r < piece.shape.length; r++) {
+                for (let c = 0; c < piece.shape[r].length; c++) {
+                    if (piece.shape[r][c]) {
+                        this.drawBlock(piece.x + c, piece.y + r, COLORS[piece.type]);
+                    }
+                }
+            }
+        }
+        
+        this.updateParticles();
+    }
+    
+    // 粒子特效
+    spawnParticles(x, y, color) {
+        for (let i = 0; i < 10; i++) {
+            this.particles.push({
+                x: x * this.blockSize + this.blockSize / 2,
+                y: y * this.blockSize + this.blockSize / 2,
+                vx: (Math.random() - 0.5) * 8,
+                vy: (Math.random() - 0.5) * 8,
+                size: Math.random() * 6 + 2,
+                life: 1,
+                color: color
+            });
+        }
+    }
+    
+    updateParticles() {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            let p = this.particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.2; // 重力
+            p.life -= 0.03;
+            
+            if (p.life <= 0) {
+                this.particles.splice(i, 1);
+            } else {
+                this.fxCtx.fillStyle = p.color.replace(')', `, ${p.life})`).replace('rgb', 'rgba');
+                this.fxCtx.fillRect(p.x, p.y, p.size, p.size);
+            }
+        }
+    }
+    
+    renderPreview(canvas, type) {
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#0a0a15';
+        ctx.fillRect(0, 0, 80, 80);
+        
+        if (!type || !SHAPES[type]) return;
+        
+        const shape = SHAPES[type];
+        const size = 15;
+        const ox = type === 'O' ? 20 : type === 'I' ? 10 : 25;
+        const oy = type === 'I' ? 15 : type === 'O' ? 25 : 20;
+        
+        for (let r = 0; r < shape.length; r++) {
+            for (let c = 0; c < shape[r].length; c++) {
+                if (shape[r][c]) {
+                    ctx.fillStyle = COLORS[type];
+                    ctx.fillRect(ox + c * size, oy + r * size, size - 1, size - 1);
+                }
+            }
+        }
+    }
+}
+
+// ==================== 游戏常数 ====================
+const COLS = 10, ROWS = 20;
 const EMPTY = 0;
 
 const SHAPES = {
@@ -13,9 +145,9 @@ const SHAPES = {
 };
 
 const COLORS = {
-    I: '#00f3ff', O: '#ffdd00', T: '#cc66ff',
-    S: '#66ff66', Z: '#ff4466', J: '#4488ff', L: '#ff9933',
-    garbage: '#555566'
+    I: 'rgb(0, 243, 255)', O: 'rgb(255, 221, 0)', T: 'rgb(204, 102, 255)',
+    S: 'rgb(102, 255, 102)', Z: 'rgb(255, 68, 102)', J: 'rgb(68, 136, 255)', L: 'rgb(255, 153, 51)',
+    garbage: 'rgb(85, 85, 102)'
 };
 
 const PIECES = 'IJLOSTZ';
@@ -46,7 +178,7 @@ function play(type) {
     } catch(e) {}
 }
 
-// ==================== 遊戲類 ====================
+// ==================== 游戏类 ====================
 class Tetris {
     constructor(id) {
         this.id = id;
@@ -65,11 +197,7 @@ class Tetris {
         this.interval = 1000;
         this.lastTime = 0;
         
-        // Canvas
-        this.canvas = document.getElementById('board' + id);
-        this.ctx = this.canvas.getContext('2d');
-        this.fxCanvas = document.getElementById('fx' + id);
-        this.fxCtx = this.fxCanvas.getContext('2d');
+        this.renderer = new GameRenderer('board' + id, 'fx' + id);
         this.holdCanvas = document.getElementById('hold' + id);
         this.nextCanvas = document.getElementById('next' + id);
     }
@@ -152,6 +280,10 @@ class Tetris {
         let lines = 0;
         for (let r = ROWS - 1; r >= 0; r--) {
             if (this.grid[r].every(c => c)) {
+                // 消除特效
+                for (let c = 0; c < COLS; c++) {
+                    this.renderer.spawnParticles(c, r, COLORS[this.grid[r][c]]);
+                }
                 this.grid.splice(r, 1);
                 this.grid.unshift(Array(COLS).fill(EMPTY));
                 lines++;
@@ -202,90 +334,19 @@ class Tetris {
         }
     }
     
-    // ==================== 渲染 ====================
     render() {
-        // 清空
-        this.ctx.fillStyle = '#0a0a15';
-        this.ctx.fillRect(0, 0, 300, 600);
-        this.fxCtx.clearRect(0, 0, 300, 600);
+        this.renderer.render(this.grid, this.piece);
+        this.renderer.renderPreview(this.holdCanvas, this.hold);
+        this.renderer.renderPreview(this.nextCanvas, this.next ? this.next.type : null);
         
-        // 網格線
-        this.ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-        for (let i = 1; i < COLS; i++) this.ctx.beginPath(), this.ctx.moveTo(i*BLOCK, 0), this.ctx.lineTo(i*BLOCK, 600), this.ctx.stroke();
-        for (let i = 1; i < ROWS; i++) this.ctx.beginPath(), this.ctx.moveTo(0, i*BLOCK), this.ctx.lineTo(300, i*BLOCK), this.ctx.stroke();
-        
-        // 已經鎖定的方塊
-        for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS; c++) {
-                if (this.grid[r][c]) this.drawBlock(c, r, COLORS[this.grid[r][c]] || COLORS[this.grid[r][c][0]]);
-            }
-        }
-        
-        // 當前方塊
-        if (this.piece) {
-            for (let r = 0; r < this.piece.shape.length; r++) {
-                for (let c = 0; c < this.piece.shape[r].length; c++) {
-                    if (this.piece.shape[r][c]) {
-                        this.drawBlock(this.piece.x + c, this.piece.y + r, COLORS[this.piece.type]);
-                    }
-                }
-            }
-        }
-        
-        // 渲染 Hold / Next
-        this.renderPreview(this.holdCanvas, this.hold);
-        this.renderPreview(this.nextCanvas, this.next ? this.next.type : null);
-        
-        // 更新 UI
         document.getElementById('score' + this.id).textContent = this.score;
         document.getElementById('level' + this.id).textContent = this.level;
         document.getElementById('sent' + this.id).textContent = 'Lines: ' + this.sent;
         document.getElementById('stars' + this.id).textContent = '⭐'.repeat(this.stars) + '☆'.repeat(5 - this.stars);
     }
-    
-    drawBlock(x, y, color) {
-        const ctx = this.ctx;
-        const px = x * BLOCK, py = y * BLOCK;
-        
-        // 主色
-        ctx.fillStyle = color;
-        ctx.fillRect(px + 1, py + 1, BLOCK - 2, BLOCK - 2);
-        
-        // 高光
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.fillRect(px + 1, py + 1, BLOCK - 2, 4);
-        ctx.fillRect(px + 1, py + 1, 4, BLOCK - 2);
-        
-        // 陰影
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.fillRect(px + BLOCK - 5, py + 1, 4, BLOCK - 2);
-        ctx.fillRect(px + 1, py + BLOCK - 5, BLOCK - 2, 4);
-    }
-    
-    renderPreview(canvas, type) {
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#0a0a15';
-        ctx.fillRect(0, 0, 80, 80);
-        
-        if (!type || !SHAPES[type]) return;
-        
-        const shape = SHAPES[type];
-        const size = 15;
-        const ox = type === 'O' ? 20 : type === 'I' ? 10 : 25;
-        const oy = type === 'I' ? 15 : type === 'O' ? 25 : 20;
-        
-        for (let r = 0; r < shape.length; r++) {
-            for (let c = 0; c < shape[r].length; c++) {
-                if (shape[r][c]) {
-                    ctx.fillStyle = COLORS[type];
-                    ctx.fillRect(ox + c * size, oy + r * size, size - 1, size - 1);
-                }
-            }
-        }
-    }
 }
 
-// ==================== 遊戲控制 ====================
+// ==================== 游戏控制 ====================
 let gameMode = 1, games = [], running = false;
 
 function startGame(mode) {
@@ -339,7 +400,7 @@ function end(loser) {
     document.getElementById('gameover').classList.add('show');
 }
 
-// 鍵盤控制
+// 键盘控制
 document.addEventListener('keydown', e => {
     if (!running || games.length === 0) return;
     
