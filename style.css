@@ -4,21 +4,24 @@
     --neon-pink: #ff00ff;
     --neon-yellow: #ffee00;
     --neon-purple: #9d4edd;
-    --border-color: rgba(255, 255, 255, 0.12);
-    --panel-bg: rgba(0, 0, 0, 0.5);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --panel-bg: rgba(255, 255, 255, 0.05);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
 body {
-    background: var(--bg-color);
-    background-image: radial-gradient(circle at 50% 30%, #0f1a2e 0%, var(--bg-color) 70%);
-    color: #fff;
+    background-color: var(--bg-color);
+    color: white;
     font-family: 'Segoe UI', sans-serif;
-    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
+    height: 100vh;
     overflow: hidden;
 }
 
@@ -47,7 +50,7 @@ body {
 .neon-btn {
     background: transparent;
     border: 2px solid var(--neon-blue);
-    color: #fff;
+    color: white;
     padding: 1rem 3rem;
     font-size: 1.2rem;
     font-weight: bold;
@@ -61,97 +64,83 @@ body {
     box-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
 }
 
-/* 遊戲容器 */
+/* 遊戲容器 - 強制水平置中 */
 .game-container {
     display: flex;
-    gap: 20px;
+    flex-direction: row;
+    gap: 30px;
     align-items: flex-start;
-    padding: 20px;
 }
 
-.left-panel, .right-panel {
+.side-panel {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    width: 140px;
+    gap: 20px;
+    width: 160px;
 }
 
-.center-panel {
+.center-arena {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
 }
 
-.game-title {
-    font-size: 1.5rem;
+.vs-text {
+    font-size: 1.8rem;
     font-weight: 900;
     background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    letter-spacing: 3px;
+    letter-spacing: 4px;
 }
 
-/* 麵板 */
-.panel {
+/* 霓虹視窗 */
+.neon-window {
     background: var(--panel-bg);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
-    padding: 10px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
     width: 100%;
 }
 
-.panel-title {
-    font-size: 0.7rem;
-    color: var(--neon-blue);
-    text-transform: uppercase;
-    letter-spacing: 1px;
+.panel-header {
+    background: rgba(0, 243, 255, 0.15);
     text-align: center;
-    margin-bottom: 8px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid var(--border-color);
+    padding: 8px;
+    color: var(--neon-blue);
+    font-weight: bold;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.panel-content {
+    padding: 12px;
+    text-align: center;
 }
 
 /* 操作說明 */
-.controls {
-    font-size: 0.65rem;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-.controls div {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.key {
-    background: rgba(0, 243, 255, 0.15);
-    border: 1px solid var(--neon-blue);
-    border-radius: 3px;
-    padding: 1px 4px;
-    font-size: 0.6rem;
-    color: var(--neon-blue);
+.controls-text {
+    font-size: 0.7rem;
+    line-height: 1.6;
+    color: #94a3b8;
 }
 
 /* 統計 */
-.stats {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-.stat-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.7rem;
+.stats-text {
+    font-size: 0.75rem;
+    line-height: 1.8;
     color: #94a3b8;
 }
-.stat-row span:last-child {
-    color: var(--neon-blue);
-    font-weight: bold;
+#stars1 {
+    color: var(--neon-yellow);
+    letter-spacing: -3px;
 }
 
 /* 畫布 */
-.canvas-wrap {
+.canvas-wrapper {
     position: relative;
     border: 2px solid var(--border-color);
     border-radius: 4px;
@@ -171,9 +160,9 @@ body {
     background: transparent;
     border: 1px solid var(--neon-pink);
     color: var(--neon-pink);
-    padding: 5px 14px;
-    font-size: 0.7rem;
-    border-radius: 15px;
+    padding: 6px 16px;
+    font-size: 0.75rem;
+    border-radius: 20px;
     cursor: pointer;
 }
 .pause-btn:hover {
@@ -181,47 +170,7 @@ body {
     color: #000;
 }
 
-.paused-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.85);
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-}
-.paused-overlay.show { display: flex; }
-.paused-overlay h2 {
-    font-size: 1.5rem;
-    color: var(--neon-blue);
-    text-shadow: 0 0 15px var(--neon-blue);
-}
-.paused-overlay p { color: #64748b; margin-top: 8px; font-size: 0.85rem; }
-
-/* COMBO */
-.combo-display {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: var(--neon-yellow);
-    text-shadow: 0 0 20px var(--neon-yellow);
-    opacity: 0;
-    pointer-events: none;
-    z-index: 50;
-}
-.combo-display.show {
-    opacity: 1;
-    animation: comboPop 0.4s ease-out;
-}
-@keyframes comboPop {
-    0% { transform: translate(-50%, -50%) scale(0.5); }
-    50% { transform: translate(-50%, -50%) scale(1.2); }
-    100% { transform: translate(-50%, -50%) scale(1); }
-}
+.hidden { display: none !important; }
 
 /* 結束 */
 .gameover-screen {
@@ -245,3 +194,17 @@ body {
     color: var(--neon-blue);
     margin: 1rem 0 2rem;
 }
+
+/* 雪花 */
+.snow {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+.snowflake {
+    position: absolute;
+    color: rgba(255, 255, 255, 0.2);
+    animation: fall linear infinite;
+}
+@keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
