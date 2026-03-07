@@ -15,24 +15,24 @@
 
         /* 選單 - 全螢幕 */
         .menu-screen { position: fixed; inset: 0; background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .menu-title { font-size: 15vw; font-weight: 900; margin-bottom: 8vh; background: linear-gradient(90deg, #4ecdc4, #45b7aa, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 3vw rgba(78,205,196,0.8)); }
-        .menu-btn { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border: 0.6vh solid #4ecdc4; color: #f0f8ff; padding: 3vh 12vw; font-size: 4vw; font-family: 'Fredoka One', sans-serif; border-radius: 4vh; cursor: pointer; margin: 2vh; transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5vh; box-shadow: 0 2vh 5vh rgba(0,0,0,0.5); width: 55vw; }
+        .menu-title { font-size: 10vw; font-weight: 900; margin-bottom: 8vh; background: linear-gradient(90deg, #4ecdc4, #45b7aa, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 3vw rgba(78,205,196,0.8)); }
+        .menu-btn { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border: 0.6vh solid #4ecdc4; color: #f0f8ff; padding: 2vh 6vw; font-size: 2vw; font-family: 'Fredoka One', sans-serif; border-radius: 4vh; cursor: pointer; margin: 2vh; transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5vh; box-shadow: 0 2vh 5vh rgba(0,0,0,0.5); width: 35vw; }
         .menu-btn:hover { background: #4ecdc4; color: #1a1a24; transform: scale(1.08); box-shadow: 0 0 8vw rgba(78,205,196,0.6); }
         .menu-btn.secondary { border-color: #ff6b6b; }
         .menu-btn.secondary:hover { background: #ff6b6b; box-shadow: 0 0 8vw rgba(255,107,107,0.6); }
-        .menu-controls { display: flex; gap: 8vw; margin-top: 8vh; }
+        .menu-controls { display: flex; gap: 4vw; margin-top: 8vh; }
         .control-group { background: rgba(255,255,255,0.95); border-radius: 3vh; padding: 3vh 5vw; text-align: center; box-shadow: 0 3vh 8vh rgba(0,0,0,0.3); }
         .control-title { font-size: 2.5vw; color: #1a1a24; margin-bottom: 1vh; font-weight: bold; }
         .control-row { font-size: 1.8vw; color: #555; margin: 0.8vh 0; }
 
         /* 遊戲區 */
-        .game-container { display: flex; gap: 8vw; align-items: center; justify-content: center; z-index: 1; width: 100vw; height: 100vh; }
+        .game-container { display: flex; gap: 4vw; align-items: center; justify-content: center; z-index: 1; width: 100vw; height: 100vh; }
         .player-section { display: flex; flex-direction: column; align-items: center; height: 95vh; }
-        .game-frame { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border-radius: 2vh; padding: 3vh; box-shadow: 0 2vh 6vh rgba(0,0,0,0.6); height: 92vh; display: flex; flex-direction: column; }
+        .game-frame { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border-radius: 2vh; padding: 3vh; box-shadow: 0 2vh 6vh rgba(0,0,0,0.6); height: 75vh; display: flex; flex-direction: column; }
         .screen-area { background: #0a0a15; border-radius: 1.5vh; padding: 2vh; box-shadow: inset 0 0 4vh rgba(0,0,0,0.8), 0 0 3vh rgba(78,205,196,0.4); flex: 1; display: flex; flex-direction: column; }
         .game-title { text-align: center; font-size: 5vh; font-weight: 900; margin-bottom: 2vh; color: #4ecdc4; text-shadow: 0 0 3vh rgba(78,205,196,0.8); }
         .game-area { display: flex; gap: 3vh; flex: 1; align-items: center; justify-content: center; }
-        .board { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); gap: 1px; background: #0a0a15; border-radius: 0.8vh; box-shadow: inset 0 0 3vh rgba(0,0,0,0.8); aspect-ratio: 1/2; height: 75vh; width: auto; }
+        .board { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); gap: 1px; background: #0a0a15; border-radius: 0.8vh; box-shadow: inset 0 0 3vh rgba(0,0,0,0.8); aspect-ratio: 1/2; height: 60vh; width: auto; }
         .cell { background: #1e1e32; border-radius: 2px; }
         .cell.filled { box-shadow: inset 0 0 8px rgba(255,255,255,0.4); }
         .cell.i, .cell.i.filled { background: #00d4ff !important; border: 1px solid #00aadd; }
