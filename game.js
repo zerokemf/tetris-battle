@@ -296,11 +296,6 @@ class Tetris {
             this.lines += lines;
             this.level = Math.floor(this.lines / 10) + 1;
             this.interval = Math.max(100, 1000 - (this.level - 1) * 100);
-            
-            if (gameMode === 2 && lines >= 2) {
-                sendGarbage(this.id === 1 ? 2 : 1, lines - 1);
-                play('attack');
-            }
         }
     }
     
@@ -347,23 +342,19 @@ class Tetris {
 }
 
 // ==================== 游戏控制 ====================
-let gameMode = 1, games = [], running = false;
+let games = [], running = false;
 
-function startGame(mode) {
+function startGame() {
     initAudio();
-    gameMode = mode;
     
     document.getElementById('menu').classList.add('hidden');
     document.getElementById('gameover').classList.remove('show');
     document.getElementById('game').style.display = 'flex';
-    document.getElementById('p2-panel').style.display = mode === 2 ? 'flex' : 'none';
-    document.getElementById('vs-text').style.display = mode === 2 ? 'block' : 'none';
+    document.getElementById('p2-panel').style.display = 'none';
+    document.getElementById('vs-text').style.display = 'none';
     
     games = [new Tetris(1)];
-    if (mode === 2) games.push(new Tetris(2));
-    
     games[0].spawn();
-    if (mode === 2) games[1].spawn();
     
     running = true;
     loop();
@@ -376,10 +367,6 @@ function backMenu() {
     running = false;
 }
 
-function sendGarbage(to, lines) {
-    games[to - 1].addGarbage(lines);
-    games[to === 1 ? 0 : 1].sent += lines;
-}
 
 function loop(time = 0) {
     if (!running) return;
@@ -395,8 +382,7 @@ function loop(time = 0) {
 function end(loser) {
     running = false;
     play('over');
-    const winner = loser === 1 ? 'P2' : 'P1';
-    document.getElementById('winner-text').textContent = gameMode === 1 ? '遊戲結束！' : winner + ' 獲勝！';
+    document.getElementById('winner-text').textContent = '遊戲結束！';
     document.getElementById('gameover').classList.add('show');
 }
 
@@ -412,18 +398,6 @@ document.addEventListener('keydown', e => {
         case 'ArrowUp': case 'z': case 'Z': p1.rotate(); break;
         case 'c': case 'C': p1.holdPiece(); break;
         case ' ': e.preventDefault(); p1.hardDrop(); break;
-    }
-    
-    if (gameMode === 2 && games[1]) {
-        const p2 = games[1];
-        switch(e.key) {
-            case 'a': p2.move(-1); break;
-            case 'd': p2.move(1); break;
-            case 's': p2.drop(); break;
-            case 'w': p2.rotate(); break;
-            case 'x': p2.holdPiece(); break;
-            case 'Enter': e.preventDefault(); p2.hardDrop(); break;
-        }
     }
 });
 
