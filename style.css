@@ -25,7 +25,7 @@ body {
     overflow: hidden;
 }
 
-/* 選單 */
+/* ========== 選單 ========== */
 .menu-screen {
     position: fixed;
     inset: 0;
@@ -39,44 +39,45 @@ body {
 .menu-screen.hidden { display: none; }
 
 .title {
-    font-size: 3rem;
+    font-size: 5rem;
     font-weight: 900;
     background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
 }
 
 .neon-btn {
     background: transparent;
-    border: 2px solid var(--neon-blue);
+    border: 3px solid var(--neon-blue);
     color: white;
-    padding: 1rem 3rem;
-    font-size: 1.2rem;
+    padding: 1.5rem 4rem;
+    font-size: 1.8rem;
     font-weight: bold;
-    border-radius: 50px;
+    border-radius: 60px;
     cursor: pointer;
     transition: all 0.3s;
 }
 .neon-btn:hover {
     background: var(--neon-blue);
     color: #000;
-    box-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
+    box-shadow: 0 0 50px rgba(0, 243, 255, 0.6);
+    transform: scale(1.05);
 }
 
-/* 遊戲容器 */
+/* ========== 遊戲容器 - 加大 ========== */
 .game-container {
     display: flex;
     flex-direction: row;
-    gap: 30px;
+    gap: 50px;
     align-items: flex-start;
 }
 
 .side-panel {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    width: 160px;
+    gap: 25px;
+    width: 220px;
 }
 
 .center-arena {
@@ -87,57 +88,63 @@ body {
 
 .vs-text {
     color: var(--neon-pink);
-    text-shadow: 0 0 10px var(--neon-pink);
-    font-size: 1.8rem;
+    text-shadow: 0 0 15px var(--neon-pink);
+    font-size: 2.5rem;
     font-weight: 900;
-    letter-spacing: 4px;
-    margin: 0 0 15px 0;
+    letter-spacing: 6px;
+    margin: 0 0 20px 0;
 }
 
-/* 霓虹視窗 */
+/* ========== 霓虹視窗 - 加大 ========== */
 .neon-window {
     background: var(--panel-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
     width: 100%;
 }
 
 .panel-header {
-    background: rgba(0, 243, 255, 0.15);
+    background: rgba(0, 243, 255, 0.2);
     text-align: center;
-    padding: 8px;
+    padding: 12px;
     color: var(--neon-blue);
     font-weight: bold;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-    border-top-left-radius: 12px;
-    border-top-right-radius: 12px;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
 }
 
 .panel-content {
-    padding: 15px;
+    padding: 20px;
 }
 
+/* 操作說明 - 加大 */
 .controls-text, .stats-text {
-    line-height: 1.8;
-    font-size: 0.9rem;
+    line-height: 2;
+    font-size: 1.1rem;
     color: #94a3b8;
 }
 
 .flex-column {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
 }
 
-/* 畫布 */
+/* ========== 畫布 - 加大 ========== */
 .canvas-wrapper {
     position: relative;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    background: rgba(0, 0, 0, 0.8);
-    border-radius: 4px;
-    box-shadow: 0 0 20px rgba(0, 243, 255, 0.15);
+    border: 3px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.85);
+    border-radius: 6px;
+    box-shadow: 0 0 30px rgba(0, 243, 255, 0.25);
+}
+
+#board1, #fx1 {
+    width: 360px;
+    height: 720px;
 }
 
 .fx-layer {
@@ -147,39 +154,41 @@ body {
     pointer-events: none;
 }
 
-/* 狀態遮罩 */
+/* ========== 狀態遮罩 ========== */
 #status-overlay {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 2rem;
+    font-size: 3rem;
     font-weight: bold;
     color: var(--neon-blue);
-    text-shadow: 0 0 20px var(--neon-blue);
+    text-shadow: 0 0 30px var(--neon-blue);
 }
 
 .hidden {
     display: none !important;
 }
 
-/* 暫停按鈕 */
+/* 暫停按鈕 - 加大 */
 .pause-btn {
     background: transparent;
-    border: 1px solid var(--neon-pink);
+    border: 2px solid var(--neon-pink);
     color: var(--neon-pink);
-    padding: 6px 16px;
-    font-size: 0.75rem;
-    border-radius: 20px;
+    padding: 10px 25px;
+    font-size: 1rem;
+    border-radius: 25px;
     cursor: pointer;
-    margin-top: 10px;
+    margin-top: 15px;
+    transition: all 0.3s;
 }
 .pause-btn:hover {
     background: var(--neon-pink);
     color: #000;
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
 }
 
-/* 結束 */
+/* ========== 結束畫面 ========== */
 .gameover-screen {
     position: fixed;
     inset: 0;
@@ -192,14 +201,14 @@ body {
 }
 .gameover-screen.show { display: flex; }
 .gameover-screen h1 {
-    font-size: 3rem;
+    font-size: 5rem;
     color: var(--neon-pink);
-    text-shadow: 0 0 25px var(--neon-pink);
+    text-shadow: 0 0 40px var(--neon-pink);
 }
 .gameover-screen p {
-    font-size: 1.5rem;
+    font-size: 2rem;
     color: var(--neon-blue);
-    margin: 1rem 0 2rem;
+    margin: 1.5rem 0 3rem;
 }
 
 /* 雪花 */

@@ -103,26 +103,26 @@ class GameRenderer {
         this.boardCtx = this.boardCanvas.getContext('2d');
         this.fxCanvas = document.getElementById(fxId);
         this.fxCtx = this.fxCanvas.getContext('2d');
-        this.blockSize = 30;
+        this.blockSize = 36;
         this.particles = [];
     }
 
     clear() {
         this.boardCtx.fillStyle = '#0a0a15';
-        this.boardCtx.fillRect(0, 0, 300, 600);
-        this.fxCtx.clearRect(0, 0, 300, 600);
+        this.boardCtx.fillRect(0, 0, 360, 720);
+        this.fxCtx.clearRect(0, 0, 360, 720);
     }
 
     drawGrid() {
         this.boardCtx.strokeStyle = 'rgba(255,255,255,0.03)';
         this.boardCtx.lineWidth = 1;
-        for (let x = 0; x <= 300; x += this.blockSize) {
+        for (let x = 0; x <= 360; x += this.blockSize) {
             this.boardCtx.beginPath();
             this.boardCtx.moveTo(x, 0);
             this.boardCtx.lineTo(x, 600);
             this.boardCtx.stroke();
         }
-        for (let y = 0; y <= 600; y += this.blockSize) {
+        for (let y = 0; y <= 720; y += this.blockSize) {
             this.boardCtx.beginPath();
             this.boardCtx.moveTo(0, y);
             this.boardCtx.lineTo(300, y);
