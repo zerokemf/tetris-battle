@@ -77,7 +77,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 25px;
-    width: 220px;
+    width: 250px;
 }
 
 .center-arena {
@@ -89,9 +89,9 @@ body {
 .vs-text {
     color: var(--neon-pink);
     text-shadow: 0 0 15px var(--neon-pink);
-    font-size: 2.5rem;
+    font-size: 3rem;
     font-weight: 900;
-    letter-spacing: 6px;
+    letter-spacing: 8px;
     margin: 0 0 20px 0;
 }
 
@@ -143,8 +143,8 @@ body {
 }
 
 #board1, #fx1 {
-    width: 360px;
-    height: 720px;
+    width: 420px;
+    height: 840px;
 }
 
 .fx-layer {
