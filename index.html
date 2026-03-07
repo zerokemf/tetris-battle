@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tetris Battle - Rescue Edition</title>
+    <title>Tetris Battle - SRS Edition</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="game-container">
-        <!-- 左側面板 -->
         <div class="side-panel">
             <div class="neon-window">
                 <div class="panel-header">HOLD</div>
@@ -20,16 +19,16 @@
                 <div class="panel-header">操作說明</div>
                 <div class="panel-content controls-text">
                     ← → : 移動<br>
-                    ↑ : 旋轉<br>
-                    Z : 逆旋<br>
+                    ↑ : 順轉 (SRS)<br>
+                    Z : 逆轉 (SRS)<br>
                     ↓ : 軟降<br>
                     Space : 硬降<br>
-                    C : 保留
+                    C : 保留<br>
+                    P : 暫停
                 </div>
             </div>
         </div>
 
-        <!-- 中央競技場 -->
         <div class="center-arena">
             <h1 class="vs-text">TETRIS</h1>
             <div class="canvas-wrapper">
@@ -40,7 +39,6 @@
             <button class="pause-btn" onclick="togglePause()">⏸️ PAUSE</button>
         </div>
 
-        <!-- 右側面板 -->
         <div class="side-panel">
             <div class="neon-window">
                 <div class="panel-header">NEXT</div>
@@ -62,7 +60,6 @@
         </div>
     </div>
 
-    <!-- 選單 -->
     <div class="menu-screen" id="menu">
         <h1 class="title">🧊 TETRIS BATTLE</h1>
         <button class="neon-btn" onclick="startGame()">
@@ -70,7 +67,6 @@
         </button>
     </div>
 
-    <!-- 結束畫面 -->
     <div class="gameover-screen" id="gameover">
         <h1>GAME OVER</h1>
         <p id="winner-text"></p>
