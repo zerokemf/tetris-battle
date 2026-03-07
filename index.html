@@ -4,1124 +4,186 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tetris Battle</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #1a1a2e;
-            --bg-light: #16213e;
-            --accent-blue: #0f3460;
-            --accent-cyan: #00fff5;
-            --accent-pink: #e94560;
-            --snow-white: #e8e8e8;
-            --frame-dark: #2d2d44;
-            --frame-light: #3d3d5c;
+            --frame-dark: #1a1a24;
+            --accent-cyan: #4ecdc4;
+            --accent-pink: #ff6b6b;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Orbitron', sans-serif;
-            background: linear-gradient(135deg, #0c0c1e 0%, #1a1a3e 50%, #0d1b2a 100%);
+            font-family: 'Fredoka One', 'Orbitron', sans-serif;
+            background: linear-gradient(180deg, #87ceeb 0%, #e8f4f8 50%, #d4e8ed 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: var(--snow-white);
+            color: #1a1a24;
             overflow: hidden;
         }
 
-        /* 冬日雪花背景 */
-        .snowflakes {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-        }
+        .snowflakes { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .snowflake { position: absolute; color: rgba(255,255,255,0.8); font-size: 1rem; animation: fall linear infinite; }
+        @keyframes fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0.3; } }
 
-        .snowflake {
-            position: absolute;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 1rem;
-            animation: fall linear infinite;
-        }
+        .game-container { display: flex; gap: 30px; align-items: flex-start; z-index: 1; padding: 30px; background: rgba(255,255,255,0.3); border-radius: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.2), inset 0 2px 10px rgba(255,255,255,0.5); }
 
-        @keyframes fall {
-            0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(110vh) rotate(360deg); opacity: 0.3; }
-        }
+        .game-frame { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border-radius: 25px; padding: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1); position: relative; }
 
-        /* 遊戲容器 */
-        .game-container {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-            z-index: 1;
-            padding: 20px;
-        }
+        .screen-area { background: #0a0a15; border-radius: 15px; padding: 15px; box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 0 10px rgba(78,205,196,0.3); position: relative; }
 
-        .game-frame {
-            background: var(--frame-dark);
-            border-radius: 20px;
-            padding: 15px;
-            box-shadow: 
-                0 0 30px rgba(0, 255, 245, 0.2),
-                inset 0 2px 10px rgba(255, 255, 255, 0.1);
-            position: relative;
-        }
+        .game-title { text-align: center; font-size: 1.4rem; font-weight: 900; margin-bottom: 12px; color: #4ecdc4; text-shadow: 0 0 10px rgba(78,205,196,0.5); letter-spacing: 2px; }
 
-        .game-frame::before {
-            content: '';
-            position: absolute;
-            top: -5px;
-            left: -5px;
-            right: -5px;
-            bottom: -5px;
-            border-radius: 25px;
-            background: linear-gradient(45deg, var(--accent-cyan), transparent, var(--accent-pink));
-            z-index: -1;
-            opacity: 0.5;
-        }
+        .game-area { display: flex; gap: 15px; }
 
-        /* 遊戲標題 */
-        .game-title {
-            text-align: center;
-            font-size: 2rem;
-            font-weight: 900;
-            margin-bottom: 15px;
-            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-shadow: 0 0 20px rgba(0, 255, 245, 0.5);
-        }
+        .board { display: grid; grid-template-columns: repeat(10, 25px); grid-template-rows: repeat(20, 25px); gap: 1px; background: #0a0a15; border-radius: 8px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
 
-        /* 遊戲區域 */
-        .game-area {
-            display: flex;
-            gap: 15px;
-        }
+        .cell { width: 25px; height: 25px; background: rgba(30,30,50,0.6); border-radius: 2px; }
+        .cell.filled { box-shadow: inset 0 0 8px rgba(255,255,255,0.4); }
+        .cell.i { background: linear-gradient(135deg, #00d4ff, #0099cc); border: 1px solid #00aadd; }
+        .cell.o { background: linear-gradient(135deg, #ffdd00, #ffaa00); border: 1px solid #ddbb00; }
+        .cell.t { background: linear-gradient(135deg, #cc66ff, #9933cc); border: 1px solid #aa44dd; }
+        .cell.s { background: linear-gradient(135deg, #66ff66, #33cc33); border: 1px solid #44dd44; }
+        .cell.z { background: linear-gradient(135deg, #ff4466, #cc2244); border: 1px solid #dd3355; }
+ { background: linear        .cell.j-gradient(135deg, #4488ff, #2266cc); border: 1px solid #3366dd; }
+        .cell.l { background: linear-gradient(135deg, #ff9933, #cc6600); border: 1px solid #dd7722; }
+        .cell.garbage { background: linear-gradient(135deg, #555566, #333344); border: 1px solid #666677; }
+        .cell.bomb { background: radial-gradient(circle, #ff4444 30%, #aa0000 70%); position: relative; }
+        .cell.bomb::after { content: '☢'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 14px; color: #ffff00; }
 
-        /* 方塊網格 */
-        .board-container {
-            position: relative;
-        }
+        .side-panel { display: flex; flex-direction: column; gap: 12px; min-width: 90px; }
 
-        .board {
-            display: grid;
-            grid-template-columns: repeat(10, 28px);
-            grid-template-rows: repeat(20, 28px);
-            gap: 1px;
-            background: #0a0a15;
-            border: 3px solid var(--frame-light);
-            border-radius: 8px;
-            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
-        }
+        .panel-box { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border-radius: 12px; padding: 10px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); position: relative; }
+        .panel-box::before { content: ''; position: absolute; top: -5px; left: 10%; right: 10%; height: 15px; background: linear-gradient(180deg, #fff 0%, #e8e8e8 100%); border-radius: 10px 10px 50% 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10; }
+        .panel-label { font-size: 0.65rem; color: #4ecdc4; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
+        .panel-value { font-size: 1rem; font-weight: 700; color: #f0f8ff; }
 
-        .cell {
-            width: 28px;
-            height: 28px;
-            background: rgba(20, 20, 40, 0.8);
-            border-radius: 2px;
-            transition: background 0.1s;
-        }
+        .next-preview, .hold-preview { display: grid; grid-template-columns: repeat(4, 18px); grid-template-rows: repeat(4, 18px); gap: 1px; justify-content: center; background: #0a0a15; border-radius: 5px; padding: 4px; margin: 0 auto; }
+        .next-preview .cell, .hold-preview .cell { width: 18px; height: 18px; }
 
-        .cell.filled {
-            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.3);
-        }
+        .menu-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, #87ceeb 0%, #e8f4f8 50%, #d4e8ed 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        .menu-title { font-size: 2.5rem; font-weight: 900; margin-bottom: 40px; background: linear-gradient(90deg, #4ecdc4, #45b7aa, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .menu-btn { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border: 3px solid #4ecdc4; color: #f0f8ff; padding: 15px 50px; font-size: 1rem; font-family: 'Fredoka One', sans-serif; border-radius: 30px; cursor: pointer; margin: 10px; transition: all 0.3s; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+        .menu-btn:hover { background: #4ecdc4; color: #1a1a24; transform: scale(1.05); box-shadow: 0 0 30px rgba(78,205,196,0.5); }
+        .menu-btn.secondary { border-color: #ff6b6b; }
+        .menu-btn.secondary:hover { background: #ff6b6b; box-shadow: 0 0 30px rgba(255,107,107,0.5); }
 
-        /* 方塊顏色 - 繽紛冬日主題（手機相容） */
-        .cell.i { 
-            background: #00d4ff !important;
-            background: -webkit-linear-gradient(135deg, #00d4ff, #0099cc) !important;
-            background: linear-gradient(135deg, #00d4ff, #0099cc) !important;
-            border: 2px solid #00aadd;
-        }
-        .cell.o { 
-            background: #ffdd00 !important;
-            background: -webkit-linear-gradient(135deg, #ffdd00, #ffaa00) !important;
-            background: linear-gradient(135deg, #ffdd00, #ffaa00) !important;
-            border: 2px solid #ddbb00;
-        }
-        .cell.t { 
-            background: #cc66ff !important;
-            background: -webkit-linear-gradient(135deg, #cc66ff, #9933cc) !important;
-            background: linear-gradient(135deg, #cc66ff, #9933cc) !important;
-            border: 2px solid #aa44dd;
-        }
-        .cell.s { 
-            background: #66ff66 !important;
-            background: -webkit-linear-gradient(135deg, #66ff66, #33cc33) !important;
-            background: linear-gradient(135deg, #66ff66, #33cc33) !important;
-            border: 2px solid #44dd44;
-        }
-        .cell.z { 
-            background: #ff4466 !important;
-            background: -webkit-linear-gradient(135deg, #ff4466, #cc2244) !important;
-            background: linear-gradient(135deg, #ff4466, #cc2244) !important;
-            border: 2px solid #dd3355;
-        }
-        .cell.j { 
-            background: #4488ff !important;
-            background: -webkit-linear-gradient(135deg, #4488ff, #2266cc) !important;
-            background: linear-gradient(135deg, #4488ff, #2266cc) !important;
-            border: 2px solid #3366dd;
-        }
-        .cell.l { 
-            background: #ff9933 !important;
-            background: -webkit-linear-gradient(135deg, #ff9933, #cc6600) !important;
-            background: linear-gradient(135deg, #ff9933, #cc6600) !important;
-            border: 2px solid #dd7722;
-        }
-        .cell.garbage { 
-            background: linear-gradient(135deg, #555566, #333344);
-            border: 1px solid #666677;
-        }
-        .cell.bomb {
-            background: radial-gradient(circle, #ff4444 30%, #aa0000 70%);
-            animation: pulse 0.5s infinite alternate;
-        }
+        .game-over-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,10,30,0.9); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        .game-over-title { font-size: 2rem; font-weight: 900; color: #ff6b6b; margin-bottom: 20px; }
+        .winner-text { font-size: 1.2rem; color: #4ecdc4; margin-bottom: 30px; }
 
-        @keyframes pulse {
-            from { box-shadow: 0 0 5px #ff0000; }
-            to { box-shadow: 0 0 15px #ff0000; }
-        }
+        .controls-info { position: fixed; bottom: 15px; background: rgba(30,30,50,0.9); padding: 8px 15px; border-radius: 20px; font-size: 0.65rem; color: #aaa; }
+        .controls-info span { color: #4ecdc4; }
 
-        /* 側邊資訊面板 */
-        .side-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            min-width: 120px;
-        }
+        .vs-indicator { display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900; color: #ff6b6b; }
+        .hidden { display: none !important; }
 
-        .panel-box {
-            background: var(--frame-dark);
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            position: relative;
-        }
-
-        .panel-box::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 25px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%);
-            border-radius: 12px 12px 0 0;
-            pointer-events: none;
-        }
-
-        .panel-label {
-            font-size: 0.7rem;
-            color: var(--accent-cyan);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .panel-value {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--snow-white);
-        }
-
-        /* Next 預覽 */
-        .next-preview {
-            display: grid;
-            grid-template-columns: repeat(4, 22px);
-            grid-template-rows: repeat(4, 22px);
-            gap: 1px;
-            justify-content: center;
-            background: #0a0a15;
-            border-radius: 5px;
-            padding: 5px;
-        }
-
-        .next-preview .cell {
-            width: 22px;
-            height: 22px;
-        }
-
-        /* Hold 方塊 */
-        .hold-preview {
-            display: grid;
-            grid-template-columns: repeat(4, 22px);
-            grid-template-rows: repeat(4, 22px);
-            gap: 1px;
-            justify-content: center;
-            background: #0a0a15;
-            border-radius: 5px;
-            padding: 5px;
-        }
-
-        .hold-preview .cell {
-            width: 22px;
-            height: 22px;
-        }
-
-        /* 統計數據 */
-        .stats-panel {
-            background: var(--frame-dark);
-            border-radius: 12px;
-            padding: 15px;
-            min-width: 150px;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 0.8rem;
-        }
-
-        .stat-label {
-            color: #888;
-        }
-
-        .stat-value {
-            color: var(--accent-cyan);
-            font-weight: 700;
-        }
-
-        /* 玩家資訊 */
-        .player-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .player-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-pink));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 1.2rem;
-        }
-
-        .player-name {
-            font-size: 0.9rem;
-            font-weight: 700;
-        }
-
-        /* 選單畫面 */
-        .menu-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 10, 30, 0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-
-        .menu-title {
-            font-size: 3rem;
-            font-weight: 900;
-            margin-bottom: 50px;
-            background: linear-gradient(90deg, var(--accent-cyan), #fff, var(--accent-pink));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: glow 2s infinite alternate;
-        }
-
-        @keyframes glow {
-            from { filter: drop-shadow(0 0 10px var(--accent-cyan)); }
-            to { filter: drop-shadow(0 0 30px var(--accent-pink)); }
-        }
-
-        .menu-btn {
-            background: linear-gradient(135deg, var(--frame-dark), var(--frame-light));
-            border: 2px solid var(--accent-cyan);
-            color: var(--snow-white);
-            padding: 15px 50px;
-            font-size: 1.2rem;
-            font-family: 'Orbitron', sans-serif;
-            border-radius: 30px;
-            cursor: pointer;
-            margin: 10px;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-        }
-
-        .menu-btn:hover {
-            background: var(--accent-cyan);
-            color: var(--bg-dark);
-            transform: scale(1.05);
-            box-shadow: 0 0 30px var(--accent-cyan);
-        }
-
-        .menu-btn.secondary {
-            border-color: var(--accent-pink);
-        }
-
-        .menu-btn.secondary:hover {
-            background: var(--accent-pink);
-            box-shadow: 0 0 30px var(--accent-pink);
-        }
-
-        /* 遊戲結束畫面 */
-        .game-over-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 10, 30, 0.9);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-
-        .game-over-title {
-            font-size: 2.5rem;
-            font-weight: 900;
-            color: var(--accent-pink);
-            margin-bottom: 20px;
-        }
-
-        .winner-text {
-            font-size: 1.5rem;
-            color: var(--accent-cyan);
-            margin-bottom: 30px;
-        }
-
-        /* 控制說明 */
-        .controls-info {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(30, 30, 50, 0.8);
-            padding: 10px 20px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            color: #888;
-            text-align: center;
-        }
-
-        .controls-info span {
-            color: var(--accent-cyan);
-        }
-
-        /* 對戰布局 */
-        .battle-mode .game-area {
-            gap: 30px;
-        }
-
-        .vs-indicator {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: 900;
-            color: var(--accent-pink);
-            text-shadow: 0 0 20px var(--accent-pink);
-        }
-
-        .attack-animation {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 3rem;
-            color: var(--accent-pink);
-            animation: attackFlash 0.5s ease-out;
-            pointer-events: none;
-            z-index: 50;
-        }
-
-        @keyframes attackFlash {
-            0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
-        }
-
-        /* 暫時隱藏 */
-        .hidden {
-            display: none !important;
+        @media (max-width: 600px) {
+            .board { grid-template-columns: repeat(10, 18px); grid-template-rows: repeat(20, 18px); }
+            .cell { width: 18px; height: 18px; }
+            .game-container { padding: 15px; gap: 15px; }
+            .game-frame { padding: 12px; }
+            .side-panel { min-width: 70px; gap: 8px; }
+            .panel-box { padding: 8px; }
+            .panel-label { font-size: 0.55rem; }
+            .panel-value { font-size: 0.8rem; }
+            .next-preview, .hold-preview { grid-template-columns: repeat(4, 14px); grid-template-rows: repeat(4, 14px); }
+            .next-preview .cell, .hold-preview .cell { width: 14px; height: 14px; }
+            .game-title { font-size: 1rem; }
         }
     </style>
 </head>
 <body>
-    <!-- 雪花背景 -->
     <div class="snowflakes" id="snowflakes"></div>
-
-    <!-- 選單畫面 -->
     <div class="menu-screen" id="menuScreen">
-        <div class="menu-title">TETRIS BATTLE</div>
-        <button class="menu-btn" onclick="startGame(1)">單人模式</button>
-        <button class="menu-btn secondary" onclick="startGame(2)">雙人對戰</button>
+        <div class="menu-title">🧊 TETRIS BATTLE</div>
+        <button class="menu-btn" onclick="startGame(1)">🎮 單人模式</button>
+        <button class="menu-btn secondary" onclick="startGame(2)">⚔️ 雙人對戰</button>
     </div>
-
-    <!-- 遊戲結束畫面 -->
     <div class="game-over-screen" id="gameOverScreen">
-        <div class="game-over-title">GAME OVER</div>
+        <div class="game-over-title">💀 GAME OVER</div>
         <div class="winner-text" id="winnerText"></div>
-        <button class="menu-btn" onclick="returnToMenu()">返回選單</button>
+        <button class="menu-btn" onclick="returnToMenu()">🔙 返回選單</button>
     </div>
-
-    <!-- 遊戲區域 -->
     <div class="game-container" id="gameContainer">
-        <!-- 玩家 1 -->
         <div class="player-section" id="player1Section">
             <div class="game-frame">
-                <div class="game-title">PLAYER 1</div>
-                <div class="game-area">
-                    <div class="side-panel">
-                        <div class="panel-box">
-                            <div class="panel-label">HOLD</div>
-                            <div class="hold-preview" id="hold1"></div>
+                <div class="game-title">P1</div>
+                <div class="screen-area">
+                    <div class="game-area">
+                        <div class="side-panel">
+                            <div class="panel-box"><div class="panel-label">HOLD</div><div class="hold-preview" id="hold1"></div></div>
+                            <div class="panel-box"><div class="panel-label">SENT</div><div class="panel-value" id="linesSent1">0</div></div>
+                            <div class="panel-box"><div class="panel-label">KO</div><div class="panel-value" id="ko1">0</div></div>
                         </div>
-                        <div class="panel-box">
-                            <div class="panel-label">LINES SENT</div>
-                            <div class="panel-value" id="linesSent1">0</div>
-                        </div>
-                        <div class="panel-box">
-                            <div class="panel-label">KO</div>
-                            <div class="panel-value" id="ko1">0</div>
-                        </div>
-                    </div>
-                    <div class="board-container">
                         <div class="board" id="board1"></div>
-                    </div>
-                    <div class="side-panel">
-                        <div class="panel-box">
-                            <div class="panel-label">NEXT</div>
-                            <div class="next-preview" id="next1"></div>
-                        </div>
-                        <div class="panel-box">
-                            <div class="panel-label">SCORE</div>
-                            <div class="panel-value" id="score1">0</div>
-                        </div>
-                        <div class="panel-box">
-                            <div class="panel-label">LEVEL</div>
-                            <div class="panel-value" id="level1">1</div>
+                        <div class="side-panel">
+                            <div class="panel-box"><div class="panel-label">NEXT</div><div class="next-preview" id="next1"></div></div>
+                            <div class="panel-box"><div class="panel-label">SCORE</div><div class="panel-value" id="score1">0</div></div>
+                            <div class="panel-box"><div class="panel-label">LV</div><div class="panel-value" id="level1">1</div></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- VS 標誌 -->
-        <div class="vs-indicator hidden" id="vsIndicator">VS</div>
-
-        <!-- 玩家 2 -->
+        <div class="vs-indicator hidden" id="vsIndicator">⚔️</div>
         <div class="player-section hidden" id="player2Section">
             <div class="game-frame">
-                <div class="game-title">PLAYER 2</div>
-                <div class="game-area">
-                    <div class="side-panel">
-                        <div class="panel-box">
-                            <div class="panel-label">HOLD</div>
-                            <div class="hold-preview" id="hold2"></div>
+                <div class="game-title">P2</div>
+                <div class="screen-area">
+                    <div class="game-area">
+                        <div class="side-panel">
+                            <div class="panel-box"><div class="panel-label">HOLD</div><div class="hold-preview" id="hold2"></div></div>
+                            <div class="panel-box"><div class="panel-label">SENT</div><div class="panel-value" id="linesSent2">0</div></div>
+                            <div class="panel-box"><div class="panel-label">KO</div><div class="panel-value" id="ko2">0</div></div>
                         </div>
-                        <div class="panel-box">
-                            <div class="panel-label">LINES SENT</div>
-                            <div class="panel-value" id="linesSent2">0</div>
-                        </div>
-                        <div class="panel-box">
-                            <div class="panel-label">KO</div>
-                            <div class="panel-value" id="ko2">0</div>
-                        </div>
-                    </div>
-                    <div class="board-container">
                         <div class="board" id="board2"></div>
-                    </div>
-                    <div class="side-panel">
-                        <div class="panel-box">
-                            <div class="panel-label">NEXT</div>
-                            <div class="next-preview" id="next2"></div>
-                        </div>
-                        <div class="panel-box">
-                            <div class="panel-label">SCORE</div>
-                            <div class="panel-value" id="score2">0</div>
-                        </div>
-                        <div class="panel-box">
-                            <div class="panel-label">LEVEL</div>
-                            <div class="panel-value" id="level2">1</div>
+                        <div class="side-panel">
+                            <div class="panel-box"><div class="panel-label">NEXT</div><div class="next-preview" id="next2"></div></div>
+                            <div class="panel-box"><div class="panel-label">SCORE</div><div class="panel-value" id="score2">0</div></div>
+                            <div class="panel-box"><div class="panel-label">LV</div><div class="panel-value" id="level2">1</div></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- 控制說明 -->
-    <div class="controls-info" id="controlsInfo">
-        <span>P1:</span> WASD移動 | Q旋轉 | Ehold | 空白軟掉 &nbsp;&nbsp;
-        <span>P2:</span> 方向鍵移動 | Z旋轉 | Xhold | Enter軟掉
-    </div>
-
+    <div class="controls-info"><span>P1:</span> WASD移動 | Q旋轉 | Ehold | 空白軟掉 &nbsp; <span>P2:</span> 方向鍵移動 | Z旋轉 | Xhold | Enter軟掉</div>
     <script>
-        // 遊戲配置
-        const COLS = 10;
-        const ROWS = 20;
-        const EMPTY = 'empty';
-
-        // 音效系統 (Web Audio API)
-        let audioCtx = null;
-        
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }
-        
-        function playSound(type) {
-            if (!audioCtx) return;
-            try {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                
-                switch(type) {
-                    case 'move':
-                        osc.frequency.value = 220;
-                        osc.type = 'sine';
-                        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.05);
-                        break;
-                    case 'rotate':
-                        osc.frequency.value = 330;
-                        osc.type = 'sine';
-                        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.08);
-                        break;
-                    case 'drop':
-                        osc.frequency.value = 150;
-                        osc.type = 'square';
-                        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.03);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.03);
-                        break;
-                    case 'clear':
-                        // 清除行音效 - 上升的音階
-                        for (let i = 0; i < 4; i++) {
-                            const o = audioCtx.createOscillator();
-                            const g = audioCtx.createGain();
-                            o.connect(g);
-                            g.connect(audioCtx.destination);
-                            o.frequency.value = 440 + i * 110;
-                            o.type = 'sine';
-                            g.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.08);
-                            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.08 + 0.15);
-                            o.start(audioCtx.currentTime + i * 0.08);
-                            o.stop(audioCtx.currentTime + i * 0.08 + 0.15);
-                        }
-                        break;
-                    case 'hold':
-                        osc.frequency.value = 550;
-                        osc.type = 'sine';
-                        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.1);
-                        break;
-                    case 'gameover':
-                        osc.frequency.value = 200;
-                        osc.type = 'sawtooth';
-                        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                        osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5);
-                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.5);
-                        break;
-                    case 'attack':
-                        osc.frequency.value = 120;
-                        osc.type = 'square';
-                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                        osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.15);
-                        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.15);
-                        break;
-                }
-            } catch(e) {}
-        }
-
-        // 方塊形狀定義
-        const SHAPES = {
-            I: [[0,0,0,0], [1,1,1,1], [0,0,0,0], [0,0,0,0]],
-            O: [[1,1], [1,1]],
-            T: [[0,1,0], [1,1,1], [0,0,0]],
-            S: [[0,1,1], [1,1,0], [0,0,0]],
-            Z: [[1,1,0], [0,1,1], [0,0,0]],
-            J: [[1,0,0], [1,1,1], [0,0,0]],
-            L: [[0,0,1], [1,1,1], [0,0,0]]
-        };
-
-        const PIECES = 'IJLOSTZ';
-
-        // 遊戲狀態
-        let gameMode = 1; // 1: 單人, 2: 雙人
-        let games = [];
-        let isPaused = false;
-        let isGameOver = false;
-
-        // 玩家類
-        class TetrisGame {
-            constructor(playerId) {
-                this.playerId = playerId;
-                this.board = this.createBoard();
-                this.score = 0;
-                this.level = 1;
-                this.lines = 0;
-                this.linesSent = 0;
-                this.ko = 0;
-                this.currentPiece = null;
-                this.nextPiece = null;
-                this.holdPiece = null;
-                this.canHold = true;
-                this.gameOver = false;
-                this.dropInterval = 1000;
-                this.lastDrop = 0;
-            }
-
-            createBoard() {
-                return Array(ROWS).fill(null).map(() => Array(COLS).fill(EMPTY));
-            }
-
-            randomPiece() {
-                const type = PIECES[Math.floor(Math.random() * PIECES.length)];
-                return {
-                    type: type,
-                    shape: SHAPES[type].map(row => [...row]),
-                    x: Math.floor(COLS / 2) - 1,
-                    y: 0
-                };
-            }
-
-            spawnPiece() {
-                this.currentPiece = this.nextPiece || this.randomPiece();
-                this.nextPiece = this.randomPiece();
-                this.canHold = true;
-                
-                // 檢查遊戲結束
-                if (!this.isValidPosition(this.currentPiece, this.currentPiece.x, this.currentPiece.y)) {
-                    this.gameOver = true;
-                    return false;
-                }
-                return true;
-            }
-
-            isValidPosition(piece, newX, newY) {
-                for (let y = 0; y < piece.shape.length; y++) {
-                    for (let x = 0; x < piece.shape[y].length; x++) {
-                        if (piece.shape[y][x]) {
-                            const boardX = newX + x;
-                            const boardY = newY + y;
-                            if (boardX < 0 || boardX >= COLS || boardY >= ROWS) {
-                                return false;
-                            }
-                            if (boardY >= 0 && this.board[boardY][boardX] !== EMPTY) {
-                                return false;
-                            }
-                        }
-                    }
-                }
-                return true;
-            }
-
-            rotate() {
-                const rotated = this.currentPiece.shape[0].map((_, i) =>
-                    this.currentPiece.shape.map(row => row[i]).reverse()
-                );
-                const original = this.currentPiece.shape;
-                this.currentPiece.shape = rotated;
-                
-                // 踢牆機制
-                if (!this.isValidPosition(this.currentPiece, this.currentPiece.x, this.currentPiece.y)) {
-                    // 嘗試左右位移
-                    for (let offset of [-1, 1, -2, 2]) {
-                        if (this.isValidPosition(this.currentPiece, this.currentPiece.x + offset, this.currentPiece.y)) {
-                            this.currentPiece.x += offset;
-                            playSound('rotate');
-                            return;
-                        }
-                    }
-                    this.currentPiece.shape = original;
-                } else {
-                    playSound('rotate');
-                }
-            }
-
-            move(dir) {
-                if (this.isValidPosition(this.currentPiece, this.currentPiece.x + dir, this.currentPiece.y)) {
-                    this.currentPiece.x += dir;
-                    playSound('move');
-                }
-            }
-
-            drop() {
-                if (this.isValidPosition(this.currentPiece, this.currentPiece.x, this.currentPiece.y + 1)) {
-                    this.currentPiece.y++;
-                    playSound('drop');
-                    return true;
-                }
-                return false;
-            }
-
-            hardDrop() {
-                while (this.isValidPosition(this.currentPiece, this.currentPiece.x, this.currentPiece.y + 1)) {
-                    this.currentPiece.y++;
-                }
-                this.lockPiece();
-            }
-
-            lockPiece() {
-                for (let y = 0; y < this.currentPiece.shape.length; y++) {
-                    for (let x = 0; x < this.currentPiece.shape[y].length; x++) {
-                        if (this.currentPiece.shape[y][x]) {
-                            const boardY = this.currentPiece.y + y;
-                            const boardX = this.currentPiece.x + x;
-                            if (boardY >= 0) {
-                                this.board[boardY][boardX] = this.currentPiece.type;
-                            }
-                        }
-                    }
-                }
-
-                const linesCleared = this.clearLines();
-                this.updateScore(linesCleared);
-                this.spawnPiece();
-            }
-
-            clearLines() {
-                let linesCleared = 0;
-                for (let y = ROWS - 1; y >= 0; y--) {
-                    if (this.board[y].every(cell => cell !== EMPTY)) {
-                        this.board.splice(y, 1);
-                        this.board.unshift(Array(COLS).fill(EMPTY));
-                        linesCleared++;
-                        y++;
-                    }
-                }
-                return linesCleared;
-            }
-
-            updateScore(linesCleared) {
-                if (linesCleared > 0) {
-                    playSound('clear');
-                    const points = [0, 100, 300, 500, 800];
-                    this.score += points[linesCleared] * this.level;
-                    this.lines += linesCleared;
-                    this.level = Math.floor(this.lines / 10) + 1;
-                    this.dropInterval = Math.max(100, 1000 - (this.level - 1) * 100);
-                    
-                    // 對戰模式：傳送垃圾行
-                    if (gameMode === 2 && linesCleared >= 2) {
-                        const garbageLines = linesCleared - 1; // 2行送1行, 3行送2行, 4行送3行
-                        sendGarbage(this.playerId === 1 ? 2 : 1, garbageLines);
-                        playSound('attack');
-                    }
-                }
-            }
-
-            hold() {
-                if (!this.canHold) return;
-                playSound('hold');
-                
-                const currentType = this.currentPiece.type;
-                if (this.holdPiece) {
-                    const temp = this.holdPiece;
-                    this.holdPiece = currentType;
-                    this.currentPiece = {
-                        type: temp,
-                        shape: SHAPES[temp].map(row => [...row]),
-                        x: Math.floor(COLS / 2) - 1,
-                        y: 0
-                    };
-                } else {
-                    this.holdPiece = currentType;
-                    this.spawnPiece();
-                }
-                this.canHold = false;
-            }
-
-            addGarbage(lines) {
-                for (let i = 0; i < lines; i++) {
-                    this.board.pop();
-                    const garbageRow = Array(COLS).fill('garbage');
-                    // 保留1-2個空位
-                    const hole = Math.floor(Math.random() * COLS);
-                    garbageRow[hole] = EMPTY;
-                    this.board.unshift(garbageRow);
-                }
-            }
-
-            render() {
-                const boardEl = document.getElementById(`board${this.playerId}`);
-                boardEl.innerHTML = '';
-
-                // 創建臨時棋盤顯示
-                const displayBoard = this.board.map(row => [...row]);
-
-                // 顯示當前方塊
-                if (this.currentPiece) {
-                    for (let y = 0; y < this.currentPiece.shape.length; y++) {
-                        for (let x = 0; x < this.currentPiece.shape[y].length; x++) {
-                            if (this.currentPiece.shape[y][x]) {
-                                const boardY = this.currentPiece.y + y;
-                                const boardX = this.currentPiece.x + x;
-                                if (boardY >= 0 && boardY < ROWS && boardX >= 0 && boardX < COLS) {
-                                    displayBoard[boardY][boardX] = this.currentPiece.type;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 渲染棋盤
-                for (let y = 0; y < ROWS; y++) {
-                    for (let x = 0; x < COLS; x++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'cell';
-                        if (displayBoard[y][x] !== EMPTY) {
-                            cell.classList.add('filled', displayBoard[y][x].toLowerCase());
-                        }
-                        boardEl.appendChild(cell);
-                    }
-                }
-
-                // 渲染 Next 預覽
-                renderPreview(`next${this.playerId}`, this.nextPiece ? this.nextPiece.type : null);
-                
-                // 渲染 Hold
-                renderPreview(`hold${this.playerId}`, this.holdPiece);
-
-                // 更新 UI
-                document.getElementById(`score${this.playerId}`).textContent = this.score;
-                document.getElementById(`level${this.playerId}`).textContent = this.level;
-                document.getElementById(`linesSent${this.playerId}`).textContent = this.linesSent;
-                document.getElementById(`ko${this.playerId}`).textContent = this.ko;
-            }
-        }
-
-        function renderPreview(containerId, pieceType) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            
-            const preview = document.createElement('div');
-            preview.className = 'preview-grid';
-            
-            if (pieceType && SHAPES[pieceType]) {
-                const shape = SHAPES[pieceType];
-                const offsetX = pieceType === 'O' ? 0 : (pieceType === 'I' ? 0 : 1);
-                const offsetY = pieceType === 'I' ? 1 : (pieceType === 'O' ? 0 : 1);
-                
-                for (let y = 0; y < 4; y++) {
-                    for (let x = 0; x < 4; x++) {
-                        const cell = document.createElement('div');
-                        cell.className = 'cell';
-                        const shapeY = y - offsetY;
-                        const shapeX = x - offsetX;
-                        if (shapeY >= 0 && shapeY < shape.length && 
-                            shapeX >= 0 && shapeX < shape[0].length &&
-                            shape[shapeY][shapeX]) {
-                            cell.classList.add('filled', pieceType.toLowerCase());
-                        }
-                        container.appendChild(cell);
-                    }
-                }
-            } else {
-                for (let i = 0; i < 16; i++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'cell';
-                    container.appendChild(cell);
-                }
-            }
-        }
-
-        // 對戰功能
-        function sendGarbage(toPlayer, lines) {
-            const targetGame = games[toPlayer - 1];
-            if (targetGame) {
-                targetGame.addGarbage(lines);
-                games[toPlayer === 1 ? 0 : 1].linesSent += lines;
-            }
-        }
-
-        // 遊戲控制
-        function startGame(mode) {
-            initAudio(); // 初始化音效
-            gameMode = mode;
-            document.getElementById('menuScreen').classList.add('hidden');
-            document.getElementById('gameOverScreen').style.display = 'none';
-            
-            games = [new TetrisGame(1)];
-            
-            if (mode === 2) {
-                games.push(new TetrisGame(2));
-                document.getElementById('vsIndicator').classList.remove('hidden');
-                document.getElementById('player2Section').classList.remove('hidden');
-                document.getElementById('gameContainer').classList.add('battle-mode');
-            } else {
-                document.getElementById('vsIndicator').classList.add('hidden');
-                document.getElementById('player2Section').classList.add('hidden');
-                document.getElementById('gameContainer').classList.remove('battle-mode');
-            }
-
-            games[0].spawnPiece();
-            if (mode === 2) {
-                games[1].spawnPiece();
-            }
-
-            isGameOver = false;
-            isPaused = false;
-            
-            gameLoop();
-        }
-
-        function returnToMenu() {
-            document.getElementById('gameOverScreen').style.display = 'none';
-            document.getElementById('menuScreen').classList.remove('hidden');
-        }
-
-        function gameLoop(timestamp = 0) {
-            if (isGameOver) return;
-
-            for (let i = 0; i < games.length; i++) {
-                const game = games[i];
-                if (game.gameOver) {
-                    endGame(i + 1);
-                    return;
-                }
-
-                if (timestamp - game.lastDrop > game.dropInterval) {
-                    if (!game.drop()) {
-                        game.lockPiece();
-                    }
-                    game.lastDrop = timestamp;
-                }
-                game.render();
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        function endGame(loser) {
-            isGameOver = true;
-            playSound('gameover');
-            const winner = loser === 1 ? 'PLAYER 2' : 'PLAYER 1';
-            document.getElementById('winnerText').textContent = 
-                gameMode === 1 ? '遊戲結束!' : `${winner} Wins!`;
-            document.getElementById('gameOverScreen').style.display = 'flex';
-        }
-
-        // 鍵盤控制
-        document.addEventListener('keydown', (e) => {
-            if (games.length === 0 || isGameOver) return;
-
-            switch(e.key) {
-                // 玩家 1 控制
-                case 'a': case 'A':
-                    games[0].move(-1);
-                    break;
-                case 'd': case 'D':
-                    games[0].move(1);
-                    break;
-                case 's': case 'S':
-                    games[0].drop();
-                    break;
-                case 'w': case 'W':
-                    games[0].rotate();
-                    break;
-                case 'q': case 'Q':
-                    games[0].rotate();
-                    break;
-                case 'e': case 'E':
-                    games[0].hold();
-                    break;
-                case ' ':
-                    e.preventDefault();
-                    games[0].hardDrop();
-                    break;
-
-                // 玩家 2 控制（雙人模式）
-                case 'ArrowLeft':
-                    if (gameMode === 2) games[1].move(-1);
-                    break;
-                case 'ArrowRight':
-                    if (gameMode === 2) games[1].move(1);
-                    break;
-                case 'ArrowDown':
-                    if (gameMode === 2) games[1].drop();
-                    break;
-                case 'ArrowUp':
-                    if (gameMode === 2) games[1].rotate();
-                    break;
-                case 'z': case 'Z':
-                    if (gameMode === 2) games[1].rotate();
-                    break;
-                case 'x': case 'X':
-                    if (gameMode === 2) games[1].hold();
-                    break;
-                case 'Enter':
-                    if (gameMode === 2) {
-                        e.preventDefault();
-                        games[1].hardDrop();
-                    }
-                    break;
-
-                // 暫停
-                case 'p': case 'P':
-                    isPaused = !isPaused;
-                    if (!isPaused) gameLoop();
-                    break;
-            }
-        });
-
-        // 雪花效果
-        function createSnowflakes() {
-            const container = document.getElementById('snowflakes');
-            for (let i = 0; i < 50; i++) {
-                const snowflake = document.createElement('div');
-                snowflake.className = 'snowflake';
-                snowflake.textContent = '❄';
-                snowflake.style.left = Math.random() * 100 + '%';
-                snowflake.style.animationDuration = (Math.random() * 5 + 5) + 's';
-                snowflake.style.animationDelay = Math.random() * 10 + 's';
-                snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
-                container.appendChild(snowflake);
-            }
-        }
-
-        // 初始化
-        createSnowflakes();
+const COLS=10,ROWS=20,EMPTY='empty';
+const SHAPES={I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],O:[[1,1],[1,1]],T:[[0,1,0],[1,1,1],[0,0,0]],S:[[0,1,1],[1,1,0],[0,0,0]],Z:[[1,1,0],[0,1,1],[0,0,0]],J:[[1,0,0],[1,1,1],[0,0,0]],L:[[0,0,1],[1,1,1],[0,0,0]]};
+const PIECES='IJLOSTZ';
+let gameMode=1,games=[],isPaused=false,isGameOver=false,audioCtx=null;
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}
+function playSound(type){if(!audioCtx)return;try{const osc=audioCtx.createOscillator(),gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);switch(type){case'move':osc.frequency.value=220;osc.type='sine';gain.gain.setValueAtTime(.08,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(.01,audioCtx.currentTime+.05);osc.start();osc.stop(audioCtx.currentTime+.05);break;case'rotate':osc.frequency.value=330;osc.type='sine';gain.gain.setValueAtTime(.08,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(.01,audioCtx.currentTime+.08);osc.start();osc.stop(audioCtx.currentTime+.08);break;case'drop':osc.frequency.value=150;osc.type='square';gain.gain.setValueAtTime(.05,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(.01,audioCtx.currentTime+.03);osc.start();osc.stop(audioCtx.currentTime+.03);break;case'clear':for(let i=0;i<4;i++){const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=440+i*110;o.type='sine';g.gain.setValueAtTime(.12,audioCtx.currentTime+i*.08);g.gain.exponentialRampToValueAtTime(.01,audioCtx.currentTime+i*.08+.15);o.start(audioCtx.currentTime+i*.08);o.stop(audioCtx.currentTime+i*.08+.15);}break;case'hold':osc.frequency.value=550;osc.type='sine';gain.gain.setValueAtTime(.1,audioCtx.currentTime);gain.gain.exponentialRampToValueAtTime(.01,audioCtx.currentTime+.1);osc.start();osc.stop(audioCtx.currentTime+.1);break;case'gameover':osc.frequency.value=200;osc.type='sawtooth';gain.gain.setValueAtTime(.15,audioCtx.currentTime);osc.frequency.exponentialRampToValueAtTime(50,audioCtx.currentTime+.5);gain.gain.exponentialRampToValueAtTime(.01,audioCtx.currentTime+.5);osc.start();osc.stop(audioCtx.currentTime+.5);break;case'attack':osc.frequency.value=100;osc.type='square';gain.gain.setValueAtTime(.12,audioCtx.currentTime);osc.frequency.exponentialRampToValueAtTime(500,audioCtx.currentTime+.2);gain.gain.exponentialRampToValueAtTime(.01,audioCtx.currentTime+.2);osc.start();osc.stop(audioCtx.currentTime+.2);break;}}catch(e){}}
+class TetrisGame{constructor(playerId){this.playerId=playerId;this.board=this.createBoard();this.score=0;this.level=1;this.lines=0;this.linesSent=0;this.ko=0;this.currentPiece=null;this.nextPiece=null;this.holdPiece=null;this.canHold=true;this.gameOver=false;this.dropInterval=1000;this.lastDrop=0;}
+createBoard(){return Array(ROWS).fill(null).map(()=>Array(COLS).fill(EMPTY));}
+randomPiece(){const type=PIECES[Math.floor(Math.random()*PIECES.length)];return{type:type,shape:SHAPES[type].map(row=>[...row]),x:Math.floor(COLS/2)-1,y:0};}
+spawnPiece(){this.currentPiece=this.nextPiece||this.randomPiece();this.nextPiece=this.randomPiece();this.canHold=true;if(!this.isValidPosition(this.currentPiece,this.currentPiece.x,this.currentPiece.y)){this.gameOver=true;return false;}return true;}
+isValidPosition(piece,newX,newY){for(let y=0;y<piece.shape.length;y++){for(let x=0;x<piece.shape[y].length;x++){if(piece.shape[y][x]){const boardX=newX+x,boardY=newY+y;if(boardX<0||boardX>=COLS||boardY>=ROWS)return false;if(boardY>=0&&this.board[boardY][boardX]!==EMPTY)return false;}}}return true;}
+rotate(){const rotated=this.currentPiece.shape[0].map((_,i)=>this.currentPiece.shape.map(row=>row[i]).reverse()),original=this.currentPiece.shape;this.currentPiece.shape=rotated;if(!this.isValidPosition(this.currentPiece,this.currentPiece.x,this.currentPiece.y)){for(let offset of[-1,1,-2,2]){if(this.isValidPosition(this.currentPiece,this.currentPiece.x+offset,this.currentPiece.y)){this.currentPiece.x+=offset;playSound('rotate');return;}}this.currentPiece.shape=original;}else{playSound('rotate');}}
+move(dir){if(this.isValidPosition(this.currentPiece,this.currentPiece.x+dir,this.currentPiece.y)){this.currentPiece.x+=dir;playSound('move');}}
+drop(){if(this.isValidPosition(this.currentPiece,this.currentPiece.x,this.currentPiece.y+1)){this.currentPiece.y++;playSound('drop');return true;}return false;}
+hardDrop(){while(this.isValidPosition(this.currentPiece,this.currentPiece.x,this.currentPiece.y+1)){this.currentPiece.y++;}playSound('drop');this.lockPiece();}
+lockPiece(){for(let y=0;y<this.currentPiece.shape.length;y++){for(let x=0;x<this.currentPiece.shape[y].length;x++){if(this.currentPiece.shape[y][x]){const boardY=this.currentPiece.y+y,boardX=this.currentPiece.x+x;if(boardY>=0)this.board[boardY][boardX]=this.currentPiece.type.toLowerCase();}}}const linesCleared=this.clearLines();this.updateScore(linesCleared);this.spawnPiece();}
+clearLines(){let linesCleared=0;for(let y=ROWS-1;y>=0;y--){if(this.board[y].every(cell=>cell!==EMPTY)){this.board.splice(y,1);this.board.unshift(Array(COLS).fill(EMPTY));linesCleared++;y++;}}return linesCleared;}
+updateScore(linesCleared){if(linesCleared>0){playSound('clear');const points=[0,100,300,500,800];this.score+=points[linesCleared]*this.level;this.lines+=linesCleared;this.level=Math.floor(this.lines/10)+1;this.dropInterval=Math.max(100,1000-(this.level-1)*100);if(gameMode===2&&linesCleared>=2){const garbageLines=linesCleared-1;sendGarbage(this.playerId===1?2:1,garbageLines);playSound('attack');}}}
+hold(){if(!this.canHold)return;playSound('hold');const currentType=this.currentPiece.type;if(this.holdPiece){const temp=this.holdPiece;this.holdPiece=currentType;this.currentPiece={type:temp,shape:SHAPES[temp].map(row=>[...row]),x:Math.floor(COLS/2)-1,y:0};}else{this.holdPiece=currentType;this.spawnPiece();}this.canHold=false;}
+addGarbage(lines){for(let i=0;i<lines;i++){this.board.pop();const garbageRow=Array(COLS).fill('garbage'),hole=Math.floor(Math.random()*COLS);garbageRow[hole]=EMPTY;this.board.unshift(garbageRow);}}
+render(){const boardEl=document.getElementById('board'+this.playerId);boardEl.innerHTML='';const displayBoard=this.board.map(row=>[...row]);if(this.currentPiece){for(let y=0;y<this.currentPiece.shape.length;y++){for(let x=0;x<this.currentPiece.shape[y].length;x++){if(this.currentPiece.shape[y][x]){const boardY=this.currentPiece.y+y,boardX=this.currentPiece.x+x;if(boardY>=0&&boardY<ROWS&&boardX>=0&&boardX<COLS)displayBoard[boardY][boardX]=this.currentPiece.type.toLowerCase();}}}}for(let y=0;y<ROWS;y++){for(let x=0;x<COLS;x++){const cell=document.createElement('div');cell.className='cell';if(displayBoard[y][x]!==EMPTY)cell.classList.add('filled',displayBoard[y][x]);boardEl.appendChild(cell);}}renderPreview('next'+this.playerId,this.nextPiece?this.nextPiece.type:null);renderPreview('hold'+this.playerId,this.holdPiece);document.getElementById('score'+this.playerId).textContent=this.score;document.getElementById('level'+this.playerId).textContent=this.level;document.getElementById('linesSent'+this.playerId).textContent=this.linesSent;document.getElementById('ko'+this.playerId).textContent=this.ko;}}
+function renderPreview(containerId,pieceType){const container=document.getElementById(containerId);container.innerHTML='';if(pieceType&&SHAPES[pieceType]){const shape=SHAPES[pieceType],offsetX=pieceType==='O'?0:(pieceType==='I'?0:1),offsetY=pieceType==='I'?1:(pieceType==='O'?0:1);for(let y=0;y<4;y++){for(let x=0;x<4;x++){const cell=document.createElement('div');cell.className='cell';const shapeY=y-offsetY,shapeX=x-offsetX;if(shapeY>=0&&shapeY<shape.length&&shapeX>=0&&shapeX<shape[0].length&&shape[shapeY][shapeX])cell.classList.add('filled',pieceType.toLowerCase());container.appendChild(cell);}}}else{for(let i=0;i<16;i++){const cell=document.createElement('div');cell.className='cell';container.appendChild(cell);}}}
+function sendGarbage(toPlayer,lines){const targetGame=games[toPlayer-1];if(targetGame){targetGame.addGarbage(lines);games[toPlayer===1?0:1].linesSent+=lines;}}
+function startGame(mode){initAudio();gameMode=mode;document.getElementById('menuScreen').classList.add('hidden');document.getElementById('gameOverScreen').style.display='none';games=[new TetrisGame(1)];if(mode===2){games.push(new TetrisGame(2));document.getElementById('vsIndicator').classList.remove('hidden');document.getElementById('player2Section').classList.remove('hidden');}else{document.getElementById('vsIndicator').classList.add('hidden');document.getElementById('player2Section').classList.add('hidden');}games[0].spawnPiece();if(mode===2)games[1].spawnPiece();isGameOver=false;isPaused=false;gameLoop();}
+function returnToMenu(){document.getElementById('gameOverScreen').style.display='none';document.getElementById('menuScreen').classList.remove('hidden');}
+function gameLoop(timestamp=0){if(isGameOver)return;for(let i=0;i<games.length;i++){const game=games[i];if(game.gameOver){endGame(i+1);return;}if(timestamp-game.lastDrop>game.dropInterval){if(!game.drop())game.lockPiece();game.lastDrop=timestamp;}game.render();}requestAnimationFrame(gameLoop);}
+function endGame(loser){isGameOver=true;playSound('gameover');const winner=loser===1?'PLAYER 2':'PLAYER 1';document.getElementById('winnerText').textContent=gameMode===1?'遊戲結束!':winner+' Wins!';document.getElementById('gameOverScreen').style.display='flex';}
+document.addEventListener('keydown',(e)=>{if(games.length===0||isGameOver)return;switch(e.key){case'a':case'A':games[0].move(-1);break;case'd':case'D':games[0].move(1);break;case's':case'S':games[0].drop();break;case'w':case'W':case'q':case'Q':games[0].rotate();break;case'e':case'E':games[0].hold();break;case' ':e.preventDefault();games[0].hardDrop();break;case'ArrowLeft':if(gameMode===2)games[1].move(-1);break;case'ArrowRight':if(gameMode===2)games[1].move(1);break;case'ArrowDown':if(gameMode===2)games[1].drop();break;case'ArrowUp':case'z':case'Z':if(gameMode===2)games[1].rotate();break;case'x':case'X':if(gameMode===2)games[1].hold();break;case'Enter':if(gameMode===2){e.preventDefault();games[1].hardDrop();}break;case'p':case'P':isPaused=!isPaused;if(!isPaused)gameLoop();break;}});
+function createSnowflakes(){const container=document.getElementById('snowflakes');for(let i=0;i<50;i++){const snowflake=document.createElement('div');snowflake.className='snowflake';snowflake.textContent='❄';snowflake.style.left=Math.random()*100+'%';snowflake.style.animationDuration=Math.random()*5+5+'s';snowflake.style.animationDelay=Math.random()*10+'s';snowflake.style.fontSize=Math.random()*10+10+'px';container.appendChild(snowflake);}}
+createSnowflakes();
     </script>
 </body>
 </html>
