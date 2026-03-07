@@ -1,4 +1,4 @@
-// ==================== 7-Bag 方块系统 ====================
+// ==================== 7-Bag 方塊系統 ====================
 const PIECES = 'IJLOSTZ';
 const SHAPES = {
     I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
@@ -14,13 +14,37 @@ const COLORS = {
     S: '#33ff00', Z: '#ff0055', J: '#0066ff', L: '#ff9900'
 };
 
+// ==================== SRS 踢牆數據庫 (Wall Kick Data) ====================
+const SRS_KICK_DATA = {
+    JLSTZ: {
+        '0->1': [[0,0], [-1,0], [-1,-1], [0, 2], [-1, 2]],
+        '1->0': [[0,0], [ 1,0], [ 1, 1], [0,-2], [ 1,-2]],
+        '1->2': [[0,0], [ 1,0], [ 1, 1], [0,-2], [ 1,-2]],
+        '2->1': [[0,0], [-1,0], [-1,-1], [0, 2], [-1, 2]],
+        '2->3': [[0,0], [ 1,0], [ 1,-1], [0, 2], [ 1, 2]],
+        '3->2': [[0,0], [-1,0], [-1, 1], [0,-2], [-1,-2]],
+        '3->0': [[0,0], [-1,0], [-1, 1], [0,-2], [-1,-2]],
+        '0->3': [[0,0], [ 1,0], [ 1,-1], [0, 2], [ 1, 2]]
+    },
+    I: {
+        '0->1': [[0,0], [-2,0], [ 1,0], [-2, 1], [ 1,-2]],
+        '1->0': [[0,0], [ 2,0], [-1,0], [ 2,-1], [-1, 2]],
+        '1->2': [[0,0], [-1,0], [ 2,0], [-1,-2], [ 2, 1]],
+        '2->1': [[0,0], [ 1,0], [-2,0], [ 1, 2], [-2,-1]],
+        '2->3': [[0,0], [ 2,0], [-1,0], [ 2,-1], [-1, 2]],
+        '3->2': [[0,0], [-2,0], [ 1,0], [-2, 1], [ 1,-2]],
+        '3->0': [[0,0], [ 1,0], [-2,0], [ 1, 2], [-2,-1]],
+        '0->3': [[0,0], [-1,0], [ 2,0], [-1,-2], [ 2, 1]]
+    }
+};
+
 class Bag7 {
     constructor() { this.bag = []; this.refill(); }
     refill() { this.bag = [...PIECES].sort(() => Math.random() - 0.5); }
     next() { if (this.bag.length === 0) this.refill(); return this.bag.pop(); }
 }
 
-// ==================== 方块类 ====================
+// ==================== 方塊類 ====================
 class Piece {
     constructor(type, board) {
         this.type = type;
@@ -29,6 +53,7 @@ class Piece {
         this.board = board;
         this.x = 3;
         this.y = 0;
+        this.rotIndex = 0; // 🌟 追蹤目前旋轉狀態
     }
 
     getGhostY() {
@@ -261,18 +286,44 @@ class Tetris {
         return true;
     }
 
-    rotate() {
-        const old = this.piece.shape;
-        const rot = old[0].map((_, i) => old.map(r => r[i]).reverse());
-        this.piece.shape = rot;
-        for (let o of [0, -1, 1, -2, 2]) {
-            if (this.valid(this.piece, this.piece.x + o, this.piece.y)) {
-                this.piece.x += o;
+    // 🌟 核心升級：SRS 旋轉與踢牆引擎 (dir: 1順轉, -1逆轉)
+    rotate(dir = 1) {
+        if (this.piece.type === 'O') return; // O方塊不旋轉
+
+        const oldShape = this.piece.shape;
+        const N = oldShape.length;
+        const newShape = Array.from({ length: N }, () => Array(N).fill(0));
+
+        // 1. 矩陣旋轉
+        for (let r = 0; r < N; r++) {
+            for (let c = 0; c < N; c++) {
+                if (dir === 1) newShape[r][c] = oldShape[N - 1 - c][r];
+                else newShape[r][c] = oldShape[c][N - 1 - r];
+            }
+        }
+
+        // 2. 獲取踢牆數據表
+        const nextRotIndex = (this.piece.rotIndex + dir + 4) % 4;
+        const kickKey = `${this.piece.rotIndex}->${nextRotIndex}`;
+        const kickTable = (this.piece.type === 'I') ? SRS_KICK_DATA.I : SRS_KICK_DATA.JLSTZ;
+        const tests = kickTable[kickKey];
+
+        // 3. 執行 5 次探測
+        this.piece.shape = newShape;
+        for (let i = 0; i < tests.length; i++) {
+            const dx = tests[i][0];
+            const dy = tests[i][1];
+            if (this.valid(this.piece, this.piece.x + dx, this.piece.y + dy)) {
+                this.piece.x += dx;
+                this.piece.y += dy;
+                this.piece.rotIndex = nextRotIndex;
                 play('rotate');
                 return;
             }
         }
-        this.piece.shape = old;
+
+        // 4. 探測失敗，復原形狀
+        this.piece.shape = oldShape;
     }
 
     move(dir) { if (this.piece.move(dir, 0)) play('move'); }
@@ -421,7 +472,8 @@ class InputManager {
             case 'ArrowLeft': this.game.move(-1); break;
             case 'ArrowRight': this.game.move(1); break;
             case 'ArrowDown': this.game.drop(); break;
-            case 'ArrowUp': case 'KeyZ': this.game.rotate(); break;
+            case 'ArrowUp': this.game.rotate(1); break; // 🌟 順轉
+            case 'KeyZ': this.game.rotate(-1); break;   // 🌟 逆轉
             case 'KeyC': this.game.holdPiece(); break;
             case 'Space': this.game.hardDrop(); this.keys['Space'] = false; break;
         }
@@ -489,7 +541,7 @@ document.addEventListener('keydown', e => {
     if (e.key === 'p' || e.key === 'P') togglePause();
 });
 
-// 雪花
+// 雪花特效
 const snow = document.createElement('div');
 snow.className = 'snow';
 document.body.appendChild(snow);
@@ -504,7 +556,7 @@ for (let i = 0; i < 25; i++) {
     snow.appendChild(s);
 }
 
-// 窗口大小改变时调整
+// 視窗大小改變時調整
 window.addEventListener('resize', () => {
     if (game && game.renderer) {
         game.renderer.resize();
