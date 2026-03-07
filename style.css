@@ -4,15 +4,18 @@
     --border-color: rgba(255, 255, 255, 0.08);
     --neon-blue: #00f3ff;
     --neon-pink: #ff00ff;
+    --neon-yellow: #ffee00;
     --neon-purple: #9d4edd;
     --text-color: #f8fafc;
-    --classic-cyan: #00ffff;
-    --classic-blue: #0000ff;
-    --classic-orange: #ff7f00;
-    --classic-yellow: #ffff00;
-    --classic-green: #00ff00;
-    --classic-purple: #bf00ff;
-    --classic-red: #ff0000;
+    
+    /* 🌟 復刻經典方塊色彩 (飽和度高) */
+    --classic-orange: #ff9900;
+    --classic-blue: #0066ff;
+    --classic-yellow: #ffee00;
+    --classic-purple: #9d4edd;
+    --classic-red: #ff0055;
+    --classic-green: #33ff00;
+    --classic-cyan: #00f3ff;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -23,6 +26,7 @@ body {
     color: var(--text-color);
     font-family: 'Segoe UI', 'Roboto', helvetica, sans-serif;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
@@ -77,16 +81,11 @@ body {
 /* 全螢幕佈局 */
 .full-arena {
     display: flex;
-    gap: 20px;
-    padding: 20px;
-    background: var(--panel-bg);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--border-color);
-    border-radius: 24px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
-    align-items: stretch;
-    height: 95vh;
-    max-height: 900px;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 0;
+    gap: 0;
 }
 
 .side-panel {
@@ -94,6 +93,7 @@ body {
     flex-direction: column;
     gap: 15px;
     width: 180px;
+    padding: 20px;
 }
 
 /* 霓虹視窗 */
@@ -141,26 +141,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    flex: 1;
     position: relative;
-}
-
-.arena-stats {
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    padding: 0 10px;
-    margin-bottom: 10px;
-}
-
-.ko-stars {
-    font-size: 1rem;
-    letter-spacing: -3px;
-}
-
-.lines-sent {
-    color: var(--neon-pink);
-    font-size: 0.9rem;
 }
 
 .vs-text {
@@ -211,7 +192,7 @@ body {
 }
 
 /* COMBO 顯示 */
-.combo-display {
+.combo-display, #combo-display {
     font-size: 2rem;
     font-weight: bold;
     color: #ffe66d;
@@ -220,13 +201,8 @@ body {
     transition: opacity 0.3s;
     margin-top: 10px;
 }
-.combo-display.show { opacity: 1; animation: comboPulse 0.5s ease-out; }
-
-@keyframes comboPulse {
-    0% { transform: scale(0.5); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
+.combo-display.show, #combo-display.show { opacity: 1; }
+.combo-hidden { display: none; }
 
 /* 暫停遮罩 */
 .paused-overlay {
@@ -248,22 +224,61 @@ body {
 }
 .paused-overlay p { color: #94a3b8; margin-top: 10px; }
 
-/* 得分面板 */
-.score-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 6px;
-    margin-bottom: 6px;
-    font-size: 0.85rem;
+/* NEXT Queue SVG */
+.small-queue {
+    width: 100px;
+    height: 80px;
+    margin: 2px 0;
 }
-.score-row span:last-child {
-    color: var(--neon-blue);
-    font}
 
-/* 結束-weight: bold;
-畫面 */
+/* ARENA STATS */
+.ko-stars {
+    font-size: 1rem;
+    letter-spacing: -3px;
+    text-align: center;
+    margin-bottom: 10px;
+}
+.stat-item {
+    font-size: 0.85rem;
+    color: var(--neon-pink);
+    margin: 5px 0;
+}
+.val-count {
+    color: var(--neon-blue);
+    font-weight: bold;
+}
+.huge-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+.neon-text {
+    color: var(--neon-yellow);
+    text-shadow: 0 0 10px var(--neon-yellow);
+}
+
+/* 底部面板 */
+.bottom-panel-row {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 30px;
+}
+.full-width { width: auto; }
+
+.stat-box {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 25px;
+    font-size: 1rem;
+    font-weight: bold;
+}
+.score-box { border-color: var(--neon-blue); }
+.level-box { border-color: var(--neon-pink); }
+
+/* 結束畫面 */
 .gameover-screen {
     position: fixed;
     inset: 0;
@@ -282,7 +297,7 @@ body {
 }
 .gameover-screen p { font-size: 2rem; color: var(--neon-blue); margin: 1rem 0; }
 
-/* 經典色方塊 */
+/* 🌟 經典方塊色彩 */
 .classic-cyan { fill: var(--classic-cyan); }
 .classic-blue { fill: var(--classic-blue); }
 .classic-orange { fill: var(--classic-orange); }
@@ -304,3 +319,9 @@ body {
     animation: fall linear infinite;
 }
 @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
+
+/* Flex column */
+.flex-column {
+    display: flex;
+    flex-direction: column;
+}

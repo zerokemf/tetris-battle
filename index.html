@@ -45,13 +45,7 @@
         </div>
 
         <!-- 中央競技場 -->
-        <div class="center-arena flex-column">
-            <!-- 競技統計 -->
-            <div class="arena-stats">
-                <div class="ko-stars" id="stars1">⭐⭐⭐⭐⭐</div>
-                <div class="lines-sent" id="sent1">Lines: 0</div>
-            </div>
-            
+        <div class="center-arena">
             <h1 class="vs-text">TETRIS</h1>
             
             <button id="pauseBtn" class="neon-btn pause-btn" onclick="togglePause()">
@@ -81,23 +75,56 @@
             <!-- NEXT Queue -->
             <div class="neon-window next-panel">
                 <div class="panel-header">NEXT</div>
-                <div class="panel-content">
-                    <canvas id="next1" width="120" height="200"></canvas>
+                <div class="panel-content flex-column">
+                    <svg viewBox="0 0 120 120" class="svg-tetromino small-queue">
+                        <rect x="0" y="0" width="30" height="30" class="classic-blue" />
+                        <rect x="0" y="30" width="30" height="30" class="classic-blue" />
+                        <rect x="30" y="30" width="30" height="30" class="classic-blue" />
+                        <rect x="60" y="30" width="30" height="30" class="classic-blue" />
+                    </svg>
+                    <svg viewBox="0 0 120 120" class="svg-tetromino small-queue">
+                        <rect x="0" y="30" width="30" height="30" class="classic-purple" />
+                        <rect x="30" y="30" width="30" height="30" class="classic-purple" />
+                        <rect x="60" y="30" width="30" height="30" class="classic-purple" />
+                        <rect x="30" y="0" width="30" height="30" class="classic-purple" />
+                    </svg>
+                    <svg viewBox="0 0 120 120" class="svg-tetromino small-queue">
+                        <rect x="30" y="0" width="30" height="30" class="classic-yellow"/>
+                        <rect x="60" y="0" width="30" height="30" class="classic-yellow"/>
+                        <rect x="30" y="30" width="30" height="30" class="classic-yellow"/>
+                        <rect x="60" y="30" width="30" height="30" class="classic-yellow"/>
+                    </svg>
+                    <svg viewBox="0 0 120 120" class="svg-tetromino small-queue">
+                        <rect x="0" y="0" width="30" height="30" class="classic-red"/>
+                        <rect x="30" y="0" width="30" height="30" class="classic-red"/>
+                        <rect x="30" y="30" width="30" height="30" class="classic-red"/>
+                        <rect x="60" y="30" width="30" height="30" class="classic-red"/>
+                    </svg>
+                    <svg viewBox="0 0 120 120" class="svg-tetromino small-queue">
+                        <rect x="0" y="0" width="30" height="30" class="classic-cyan"/>
+                        <rect x="30" y="0" width="30" height="30" class="classic-cyan"/>
+                        <rect x="60" y="0" width="30" height="30" class="classic-cyan"/>
+                        <rect x="90" y="0" width="30" height="30" class="classic-cyan"/>
+                    </svg>
                 </div>
             </div>
             
-            <!-- 得分/等級 -->
-            <div class="neon-window score-panel">
-                <div class="score-row">
-                    <span>SCORE</span>
-                    <span id="score1">0</span>
-                </div>
-                <div class="score-row">
-                    <span>LEVEL</span>
-                    <span id="level1">1</span>
+            <!-- ARENA STATS -->
+            <div class="neon-window arena-statsPanel">
+                <div class="panel-header">ARENA STATS</div>
+                <div class="panel-content">
+                    <div class="ko-stars" id="stars1">⭐️⭐️⭐️⭐️⭐️</div>
+                    <div class="stat-item">LINE CLEARS: <span class="val-count" id="sent1">0</span></div>
+                    <div id="combo-display" class="combo-hidden huge-text neon-text"></div>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- 底部面板 -->
+    <div class="bottom-panel-row full-width">
+        <div class="stat-box score-box">SCORE: <span class="val-count" id="score1">0</span></div>
+        <div class="stat-box level-box">LEVEL: <span class="val-count" id="level1">1</span></div>
     </div>
 
     <!-- 結束畫面 -->
