@@ -42,16 +42,16 @@
 
         .board { display: grid; grid-template-columns: repeat(10, 25px); grid-template-rows: repeat(20, 25px); gap: 1px; background: #0a0a15; border-radius: 8px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
 
-        .cell { width: 25px; height: 25px; background: rgba(30,30,50,0.6); border-radius: 2px; }
+        .cell { width: 25px; height: 25px; background: #1e1e32; border-radius: 2px; }
         .cell.filled { box-shadow: inset 0 0 8px rgba(255,255,255,0.4); }
-        .cell.i { background: linear-gradient(135deg, #00d4ff, #0099cc); border: 1px solid #00aadd; }
-        .cell.o { background: linear-gradient(135deg, #ffdd00, #ffaa00); border: 1px solid #ddbb00; }
-        .cell.t { background: linear-gradient(135deg, #cc66ff, #9933cc); border: 1px solid #aa44dd; }
-        .cell.s { background: linear-gradient(135deg, #66ff66, #33cc33); border: 1px solid #44dd44; }
-        .cell.z { background: linear-gradient(135deg, #ff4466, #cc2244); border: 1px solid #dd3355; }
- { background: linear        .cell.j-gradient(135deg, #4488ff, #2266cc); border: 1px solid #3366dd; }
-        .cell.l { background: linear-gradient(135deg, #ff9933, #cc6600); border: 1px solid #dd7722; }
-        .cell.garbage { background: linear-gradient(135deg, #555566, #333344); border: 1px solid #666677; }
+        .cell.i, .cell.i.filled { background: #00d4ff !important; border: 1px solid #00aadd; }
+        .cell.o, .cell.o.filled { background: #ffdd00 !important; border: 1px solid #ddbb00; }
+        .cell.t, .cell.t.filled { background: #cc66ff !important; border: 1px solid #aa44dd; }
+        .cell.s, .cell.s.filled { background: #66ff66 !important; border: 1px solid #44dd44; }
+        .cell.z, .cell.z.filled { background: #ff4466 !important; border: 1px solid #dd3355; }
+        .cell.j, .cell.j.filled { background: #4488ff !important; border: 1px solid #3366dd; }
+        .cell.l, .cell.l.filled { background: #ff9933 !important; border: 1px solid #dd7722; }
+        .cell.garbage, .cell.garbage.filled { background: #555566 !important; border: 1px solid #666677; }
         .cell.bomb { background: radial-gradient(circle, #ff4444 30%, #aa0000 70%); position: relative; }
         .cell.bomb::after { content: '☢'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 14px; color: #ffff00; }
 
