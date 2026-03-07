@@ -6,107 +6,34 @@
     <title>Tetris Battle</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --frame-dark: #1a1a24;
-            --accent-cyan: #4ecdc4;
-            --accent-pink: #ff6b6b;
-        }
-
+        :root { --accent-cyan: #4ecdc4; --accent-pink: #ff6b6b; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Fredoka One', 'Orbitron', sans-serif;
-            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            overflow: hidden;
-        }
-
-        .snowflakes { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
-        .snowflake { position: absolute; color: rgba(255,255,255,0.6); font-size: 1.5rem; animation: fall linear infinite; }
+        body { font-family: 'Fredoka One', 'Orbitron', sans-serif; background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; }
+        .snowflakes { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+        .snowflake { position: absolute; color: rgba(255,255,255,0.6); animation: fall linear infinite; }
         @keyframes fall { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0.3; } }
 
-        /* 全螢幕遊戲容器 */
-        .game-container { 
-            display: flex; 
-            gap: 5vh; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 1; 
-            padding: 2vh;
-            width: 100vw;
-            height: 100vh;
-            max-width: 100%;
-            max-height: 100%;
-        }
+        /* 選單 - 全螢幕 */
+        .menu-screen { position: fixed; inset: 0; background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        .menu-title { font-size: 15vw; font-weight: 900; margin-bottom: 8vh; background: linear-gradient(90deg, #4ecdc4, #45b7aa, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 3vw rgba(78,205,196,0.8)); }
+        .menu-btn { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border: 0.6vh solid #4ecdc4; color: #f0f8ff; padding: 3vh 12vw; font-size: 4vw; font-family: 'Fredoka One', sans-serif; border-radius: 4vh; cursor: pointer; margin: 2vh; transition: all 0.3s; text-transform: uppercase; letter-spacing: 0.5vh; box-shadow: 0 2vh 5vh rgba(0,0,0,0.5); width: 55vw; }
+        .menu-btn:hover { background: #4ecdc4; color: #1a1a24; transform: scale(1.08); box-shadow: 0 0 8vw rgba(78,205,196,0.6); }
+        .menu-btn.secondary { border-color: #ff6b6b; }
+        .menu-btn.secondary:hover { background: #ff6b6b; box-shadow: 0 0 8vw rgba(255,107,107,0.6); }
+        .menu-controls { display: flex; gap: 8vw; margin-top: 8vh; }
+        .control-group { background: rgba(255,255,255,0.95); border-radius: 3vh; padding: 3vh 5vw; text-align: center; box-shadow: 0 3vh 8vh rgba(0,0,0,0.3); }
+        .control-title { font-size: 2.5vw; color: #1a1a24; margin-bottom: 1vh; font-weight: bold; }
+        .control-row { font-size: 1.8vw; color: #555; margin: 0.8vh 0; }
 
-        .player-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 95vh;
-        }
-
-        .game-frame { 
-            background: linear-gradient(145deg, #2a2a3a, #1a1a24); 
-            border-radius: 2vh; 
-            padding: 2vh; 
-            box-shadow: 0 1vh 4vh rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1); 
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .screen-area { 
-            background: #0a0a15; 
-            border-radius: 1vh; 
-            padding: 1vh; 
-            box-shadow: inset 0 0 3vh rgba(0,0,0,0.8), 0 0 2vh rgba(78,205,196,0.3); 
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .game-title { 
-            text-align: center; 
-            font-size: 3vh; 
-            font-weight: 900; 
-            margin-bottom: 1vh; 
-            color: #4ecdc4; 
-            text-shadow: 0 0 2vh rgba(78,205,196,0.5); 
-            letter-spacing: 0.5vh;
-        }
-
-        .game-area { 
-            display: flex; 
-            gap: 2vh; 
-            flex: 1;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* 棋盤 - 自適應大小 */
-        .board { 
-            display: grid; 
-            grid-template-columns: repeat(10, 1fr); 
-            grid-template-rows: repeat(20, 1fr); 
-            gap: 1px; 
-            background: #0a0a15; 
-            border-radius: 0.5vh; 
-            box-shadow: inset 0 0 2vh rgba(0,0,0,0.8); 
-            aspect-ratio: 1/2;
-            height: 85vh;
-            width: auto;
-        }
-
-        .cell { 
-            background: #1e1e32; 
-            border-radius: 2px; 
-        }
+        /* 遊戲區 */
+        .game-container { display: flex; gap: 8vw; align-items: center; justify-content: center; z-index: 1; width: 100vw; height: 100vh; }
+        .player-section { display: flex; flex-direction: column; align-items: center; height: 95vh; }
+        .game-frame { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border-radius: 2vh; padding: 3vh; box-shadow: 0 2vh 6vh rgba(0,0,0,0.6); height: 92vh; display: flex; flex-direction: column; }
+        .screen-area { background: #0a0a15; border-radius: 1.5vh; padding: 2vh; box-shadow: inset 0 0 4vh rgba(0,0,0,0.8), 0 0 3vh rgba(78,205,196,0.4); flex: 1; display: flex; flex-direction: column; }
+        .game-title { text-align: center; font-size: 5vh; font-weight: 900; margin-bottom: 2vh; color: #4ecdc4; text-shadow: 0 0 3vh rgba(78,205,196,0.8); }
+        .game-area { display: flex; gap: 3vh; flex: 1; align-items: center; justify-content: center; }
+        .board { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); gap: 1px; background: #0a0a15; border-radius: 0.8vh; box-shadow: inset 0 0 3vh rgba(0,0,0,0.8); aspect-ratio: 1/2; height: 75vh; width: auto; }
+        .cell { background: #1e1e32; border-radius: 2px; }
         .cell.filled { box-shadow: inset 0 0 8px rgba(255,255,255,0.4); }
         .cell.i, .cell.i.filled { background: #00d4ff !important; border: 1px solid #00aadd; }
         .cell.o, .cell.o.filled { background: #ffdd00 !important; border: 1px solid #ddbb00; }
@@ -116,154 +43,26 @@
         .cell.j, .cell.j.filled { background: #4488ff !important; border: 1px solid #3366dd; }
         .cell.l, .cell.l.filled { background: #ff9933 !important; border: 1px solid #dd7722; }
         .cell.garbage, .cell.garbage.filled { background: #555566 !important; border: 1px solid #666677; }
-
-        .side-panel { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 1.5vh; 
-            min-width: 12vh;
-        }
-
-        .panel-box { 
-            background: linear-gradient(145deg, #2a2a3a, #1a1a24); 
-            border-radius: 1vh; 
-            padding: 1vh; 
-            text-align: center; 
-            box-shadow: 0 0.5vh 1.5vh rgba(0,0,0,0.3); 
-            position: relative;
-        }
-        .panel-box::before { 
-            content: ''; 
-            position: absolute; 
-            top: -0.5vh; 
-            left: 10%; 
-            right: 10%; 
-            height: 1.5vh; 
-            background: linear-gradient(180deg, #fff 0%, #e8e8e8 100%); 
-            border-radius: 1vh 1vh 50% 50%; 
-            box-shadow: 0 0.2vh 0.5vh rgba(0,0,0,0.2); 
-            z-index: 10; 
-        }
-        .panel-label { 
-            font-size: 1vh; 
-            color: #4ecdc4; 
-            margin-bottom: 0.5vh; 
-            text-transform: uppercase; 
-            letter-spacing: 0.1vh; 
-            margin-top: 1vh;
-        }
-        .panel-value { 
-            font-size: 2vh; 
-            font-weight: 700; 
-            color: #f0f8ff; 
-        }
-
-        .next-preview, .hold-preview { 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            grid-template-rows: repeat(4, 1fr); 
-            gap: 1px; 
-            background: #0a0a15; 
-            border-radius: 0.5vh; 
-            padding: 0.5vh; 
-            margin: 0 auto; 
-            aspect-ratio: 1;
-            width: 8vh;
-            height: 8vh;
-        }
-        .next-preview .cell, .hold-preview .cell { }
-
-        .vs-indicator { 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 5vh; 
-            font-weight: 900; 
-            color: #ff6b6b; 
-            text-shadow: 0 0 3vh rgba(255,107,107,0.5);
-        }
+        .side-panel { display: flex; flex-direction: column; gap: 2vh; min-width: 14vh; }
+        .panel-box { background: linear-gradient(145deg, #2a2a3a, #1a1a24); border-radius: 1.5vh; padding: 1.5vh; text-align: center; box-shadow: 0 1vh 2vh rgba(0,0,0,0.4); position: relative; }
+        .panel-box::before { content: ''; position: absolute; top: -0.8vh; left: 10%; right: 10%; height: 2vh; background: linear-gradient(180deg, #fff 0%, #e8e8e8 100%); border-radius: 1vh 1vh 50% 50%; box-shadow: 0 0.3vh 0.6vh rgba(0,0,0,0.2); z-index: 10; }
+        .panel-label { font-size: 1.3vh; color: #4ecdc4; margin-bottom: 0.8vh; text-transform: uppercase; letter-spacing: 0.2vh; margin-top: 1.5vh; }
+        .panel-value { font-size: 2.5vh; font-weight: 700; color: #f0f8ff; }
+        .next-preview, .hold-preview { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 1px; background: #0a0a15; border-radius: 0.8vh; padding: 0.8vh; margin: 0 auto; aspect-ratio: 1; width: 10vh; height: 10vh; }
+        .vs-indicator { display: flex; align-items: center; justify-content: center; font-size: 8vw; font-weight: 900; color: #ff6b6b; text-shadow: 0 0 5vh rgba(255,107,107,0.6); }
         .hidden { display: none !important; }
-
-        /* 選單 */
-        .menu-screen { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100vw; 
-            height: 100vh; 
-            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 100; 
-        }
-        .menu-title { 
-            font-size: 8vh; 
-            font-weight: 900; 
-            margin-bottom: 5vh; 
-            background: linear-gradient(90deg, #4ecdc4, #45b7aa, #ff6b6b); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
-        }
-        .menu-btn { 
-            background: linear-gradient(145deg, #2a2a3a, #1a1a24); 
-            border: 0.5vh solid #4ecdc4; 
-            color: #f0f8ff; 
-            padding: 2vh 6vw; 
-            font-size: 2.5vh; 
-            font-family: 'Fredoka One', sans-serif; 
-            border-radius: 3vh; 
-            cursor: pointer; 
-            margin: 1.5vh; 
-            transition: all 0.3s; 
-            text-transform: uppercase; 
-            letter-spacing: 0.3vh; 
-            box-shadow: 0 1vh 3vh rgba(0,0,0,0.3); 
-        }
-        .menu-btn:hover { 
-            background: #4ecdc4; 
-            color: #1a1a24; 
-            transform: scale(1.05); 
-            box-shadow: 0 0 5vh rgba(78,205,196,0.5); 
-        }
-        .menu-btn.secondary { border-color: #ff6b6b; }
-        .menu-btn.secondary:hover { background: #ff6b6b; box-shadow: 0 0 5vh rgba(255,107,107,0.5); }
-
-        .menu-controls { display: flex; gap: 5vw; margin-top: 5vh; }
-        .control-group { background: rgba(255,255,255,0.9); border-radius: 2vh; padding: 2vh 3vw; text-align: center; box-shadow: 0 1vh 3vh rgba(0,0,0,0.1); }
-        .control-title { font-size: 1.5vh; color: #1a1a24; margin-bottom: 1vh; font-weight: bold; }
-        .control-row { font-size: 1.2vh; color: #555; margin: 0.5vh 0; }
-
-        .game-over-screen { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100vw; 
-            height: 100vh; 
-            background: rgba(10,10,30,0.95); 
-            display: none; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 100; 
-        }
-        .game-over-title { font-size: 8vh; font-weight: 900; color: #ff6b6b; margin-bottom: 3vh; }
-        .winner-text { font-size: 3vh; color: #4ecdc4; margin-bottom: 5vh; }
-
-        /* 手機 */
-        @media (max-width: 800px) {
-            .board { height: 60vh; }
-            .side-panel { min-width: 8vh; }
-            .next-preview, .hold-preview { width: 6vh; height: 6vh; }
-            .menu-title { font-size: 5vh; }
-            .menu-btn { font-size: 1.8vh; padding: 1.5vh 4vw; }
-            .menu-controls { flex-direction: column; gap: 1.5vh; }
-            .control-group { padding: 1.5vh 4vw; }
-            .game-title { font-size: 2vh; }
-            .panel-label { font-size: 0.8vh; }
-            .panel-value { font-size: 1.5vh; }
-            .vs-indicator { font-size: 3vh; }
+        .game-over-screen { position: fixed; inset: 0; background: rgba(10,10,30,0.95); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        .game-over-title { font-size: 12vw; font-weight: 900; color: #ff6b6b; margin-bottom: 5vh; }
+        .winner-text { font-size: 5vw; color: #4ecdc4; margin-bottom: 8vh; }
+        @media (max-width: 900px) {
+            .board { height: 55vh; }
+            .side-panel { min-width: 10vh; }
+            .next-preview, .hold-preview { width: 8vh; height: 8vh; }
+            .menu-title { font-size: 12vw; }
+            .menu-btn { font-size: 3.5vw; padding: 2.5vh 8vw; width: 50vw; }
+            .menu-controls { flex-direction: column; gap: 2vh; }
+            .control-title { font-size: 2vw; }
+            .control-row { font-size: 1.5vw; }
         }
     </style>
 </head>
@@ -274,16 +73,8 @@
         <button class="menu-btn" onclick="startGame(1)">🎮 單人模式</button>
         <button class="menu-btn secondary" onclick="startGame(2)">⚔️ 雙人對戰</button>
         <div class="menu-controls">
-            <div class="control-group">
-                <div class="control-title">🎮 P1 操作</div>
-                <div class="control-row">移動 ← → | 旋轉 Q | Hold E</div>
-                <div class="control-row">軟掉 空白鍵 | 暫停 P</div>
-            </div>
-            <div class="control-group">
-                <div class="control-title">🎮 P2 操作</div>
-                <div class="control-row">移動 ← → | 旋轉 Z | Hold X</div>
-                <div class="control-row">軟掉 Enter | 暫停 P</div>
-            </div>
+            <div class="control-group"><div class="control-title">🎮 P1 操作</div><div class="control-row">移動 ← → | 旋轉 Q | Hold E</div><div class="control-row">軟掉 空白鍵 | 暫停 P</div></div>
+            <div class="control-group"><div class="control-title">🎮 P2 操作</div><div class="control-row">移動 ← → | 旋轉 Z | Hold X</div><div class="control-row">軟掉 Enter | 暫停 P</div></div>
         </div>
     </div>
     <div class="game-over-screen" id="gameOverScreen">
@@ -293,46 +84,10 @@
     </div>
     <div class="game-container" id="gameContainer">
         <div class="player-section" id="player1Section">
-            <div class="game-frame">
-                <div class="game-title">P1</div>
-                <div class="screen-area">
-                    <div class="game-area">
-                        <div class="side-panel">
-                            <div class="panel-box"><div class="panel-label">HOLD</div><div class="hold-preview" id="hold1"></div></div>
-                            <div class="panel-box"><div class="panel-label">SENT</div><div class="panel-value" id="linesSent1">0</div></div>
-                            <div class="panel-box"><div class="panel-label">KO</div><div class="panel-value" id="ko1">0</div></div>
-                        </div>
-                        <div class="board" id="board1"></div>
-                        <div class="side-panel">
-                            <div class="panel-box"><div class="panel-label">NEXT</div><div class="next-preview" id="next1"></div></div>
-                            <div class="panel-box"><div class="panel-label">SCORE</div><div class="panel-value" id="score1">0</div></div>
-                            <div class="panel-box"><div class="panel-label">LV</div><div class="panel-value" id="level1">1</div></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <div class="game-frame"><div class="game-title">P1</div><div class="screen-area"><div class="game-area"><div class="side-panel"><div class="panel-box"><div class="panel-label">HOLD</div><div class="hold-preview" id="hold1"></div></div><div class="panel-box"><div class="panel-label">SENT</div><div class="panel-value" id="linesSent1">0</div></div><div class="panel-box"><div class="panel-label">KO</div><div class="panel-value" id="ko1">0</div></div></div><div class="board" id="board1"></div><div class="side-panel"><div class="panel-box"><div class="panel-label">NEXT</div><div class="next-preview" id="next1"></div></div><div class="panel-box"><div class="panel-label">SCORE</div><div class="panel-value" id="score1">0</div></div><div class="panel-box"><div class="panel-label">LV</div><div class="panel-value" id="level1">1</div></div></div></div></div></div></div>
         <div class="vs-indicator hidden" id="vsIndicator">⚔️</div>
         <div class="player-section hidden" id="player2Section">
-            <div class="game-frame">
-                <div class="game-title">P2</div>
-                <div class="screen-area">
-                    <div class="game-area">
-                        <div class="side-panel">
-                            <div class="panel-box"><div class="panel-label">HOLD</div><div class="hold-preview" id="hold2"></div></div>
-                            <div class="panel-box"><div class="panel-label">SENT</div><div class="panel-value" id="linesSent2">0</div></div>
-                            <div class="panel-box"><div class="panel-label">KO</div><div class="panel-value" id="ko2">0</div></div>
-                        </div>
-                        <div class="board" id="board2"></div>
-                        <div class="side-panel">
-                            <div class="panel-box"><div class="panel-label">NEXT</div><div class="next-preview" id="next2"></div></div>
-                            <div class="panel-box"><div class="panel-label">SCORE</div><div class="panel-value" id="score2">0</div></div>
-                            <div class="panel-box"><div class="panel-label">LV</div><div class="panel-value" id="level2">1</div></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            <div class="game-frame"><div class="game-title">P2</div><div class="screen-area"><div class="game-area"><div class="side-panel"><div class="panel-box"><div class="panel-label">HOLD</div><div class="hold-preview" id="hold2"></div></div><div class="panel-box"><div class="panel-label">SENT</div><div class="panel-value" id="linesSent2">0</div></div><div class="panel-box"><div class="panel-label">KO</div><div class="panel-value" id="ko2">0</div></div></div><div class="board" id="board2"></div><div class="side-panel"><div class="panel-box"><div class="panel-label">NEXT</div><div class="next-preview" id="next2"></div></div><div class="panel-box"><div class="panel-label">SCORE</div><div class="panel-value" id="score2">0</div></div><div class="panel-box"><div class="panel-label">LV</div><div class="panel-value" id="level2">1</div></div></div></div></div></div></div>
     </div>
     <script>
 const COLS=10,ROWS=20,EMPTY='empty';
@@ -363,7 +118,7 @@ function returnToMenu(){document.getElementById('gameOverScreen').style.display=
 function gameLoop(timestamp=0){if(isGameOver)return;for(let i=0;i<games.length;i++){const game=games[i];if(game.gameOver){endGame(i+1);return;}if(timestamp-game.lastDrop>game.dropInterval){if(!game.drop())game.lockPiece();game.lastDrop=timestamp;}game.render();}requestAnimationFrame(gameLoop);}
 function endGame(loser){isGameOver=true;playSound('gameover');const winner=loser===1?'PLAYER 2':'PLAYER 1';document.getElementById('winnerText').textContent=gameMode===1?'遊戲結束!':winner+' Wins!';document.getElementById('gameOverScreen').style.display='flex';}
 document.addEventListener('keydown',(e)=>{if(games.length===0||isGameOver)return;switch(e.key){case'a':case'A':games[0].move(-1);break;case'd':case'D':games[0].move(1);break;case's':case'S':games[0].drop();break;case'w':case'W':case'q':case'Q':games[0].rotate();break;case'e':case'E':games[0].hold();break;case' ':e.preventDefault();games[0].hardDrop();break;case'ArrowLeft':if(gameMode===2)games[1].move(-1);break;case'ArrowRight':if(gameMode===2)games[1].move(1);break;case'ArrowDown':if(gameMode===2)games[1].drop();break;case'ArrowUp':case'z':case'Z':if(gameMode===2)games[1].rotate();break;case'x':case'X':if(gameMode===2)games[1].hold();break;case'Enter':if(gameMode===2){e.preventDefault();games[1].hardDrop();}break;case'p':case'P':isPaused=!isPaused;if(!isPaused)gameLoop();break;}});
-function createSnowflakes(){const container=document.getElementById('snowflakes');for(let i=0;i<50;i++){const snowflake=document.createElement('div');snowflake.className='snowflake';snowflake.textContent='❄';snowflake.style.left=Math.random()*100+'%';snowflake.style.animationDuration=Math.random()*5+5+'s';snowflake.style.animationDelay=Math.random()*10+'s';snowflake.style.fontSize=Math.random()*10+10+'px';container.appendChild(snowflake);}}
+function createSnowflakes(){const container=document.getElementById('snowflakes');for(let i=0;i<50;i++){const snowflake=document.createElement('div');snowflake.className='snowflake';snowflake.textContent='❄';snowflake.style.left=Math.random()*100+'%';snowflake.style.animationDuration=Math.random()*5+5+'s';snowflake.style.animationDelay=Math.random()*10+'s';snowflake.style.fontSize=Math.random()*2+2+'vw';container.appendChild(snowflake);}}
 createSnowflakes();
     </script>
 </body>
