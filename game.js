@@ -311,6 +311,14 @@ class Tetris {
         this.interval = 1000;
         this.lastTime = 0;
         
+        // 鎖定延遲與移動重置機制 (Tetris Guideline)
+        this.lockDelay = 500; // 鎖定延遲時間 (毫秒)
+        this.lockTimer = 0; // 觸底後的累積時間
+        this.lockResets = 0; // 已重置次數
+        this.maxLockResets = 15; // 最大重置次數上限
+        this.isTouchingBottom = false; // 是否正在觸底
+        this.dropTimer = 0; // 自然掉落計時器
+        
         this.renderer = new GameRenderer('board1', 'fx1');
         this.holdCanvas = document.getElementById('hold1');
         this.nextCanvas = document.getElementById('next1');
@@ -322,6 +330,11 @@ class Tetris {
         this.next = bag.next();
         this.canHold = true;
         if (!this.valid(this.piece, this.piece.x, this.piece.y)) this.over = true;
+        // 重置鎖定計數器
+        this.lockTimer = 0;
+        this.lockResets = 0;
+        this.isTouchingBottom = false;
+        this.dropTimer = 0;
     }
 
     valid(p, x, y) {
@@ -369,6 +382,11 @@ class Tetris {
                 this.piece.y += dy;
                 this.piece.rotIndex = nextRotIndex;
                 play('rotate');
+                // 旋轉重置機制
+                if (this.isTouchingBottom && this.lockResets < this.maxLockResets) {
+                    this.lockTimer = 0;
+                    this.lockResets++;
+                }
                 return;
             }
         }
@@ -377,7 +395,16 @@ class Tetris {
         this.piece.shape = oldShape;
     }
 
-    move(dir) { if (this.piece.move(dir, 0)) play('move'); }
+    move(dir) { 
+        if (this.piece.move(dir, 0)) {
+            play('move');
+            // 移動重置機制
+            if (this.isTouchingBottom && this.lockResets < this.maxLockResets) {
+                this.lockTimer = 0;
+                this.lockResets++;
+            }
+        }
+    }
 
     drop() {
         if (this.piece.move(0, 1)) { play('drop'); return true; }
@@ -429,13 +456,37 @@ class Tetris {
         else { this.spawn(); }
         this.hold = t;
         this.canHold = false;
+        // 重置鎖定計數器
+        this.lockTimer = 0;
+        this.lockResets = 0;
+        this.isTouchingBottom = false;
+        this.dropTimer = 0;
     }
 
     update(time) {
         if (this.over || isPaused) return;
-        if (time - this.lastTime > this.interval) {
-            if (!this.drop()) this.lockPiece();
-            this.lastTime = time;
+        
+        const deltaTime = time - this.lastTime;
+        this.lastTime = time;
+        
+        // 檢查是否觸底
+        const canMoveDown = this.valid(this.piece, this.piece.x, this.piece.y + 1);
+        this.isTouchingBottom = !canMoveDown;
+        
+        if (canMoveDown) {
+            // 下方有空間：自然掉落邏輯
+            this.lockTimer = 0; // 重置鎖定計時器
+            this.dropTimer += deltaTime;
+            while (this.dropTimer >= this.interval) {
+                this.drop();
+                this.dropTimer -= this.interval;
+            }
+        } else {
+            // 觸底：累積鎖定時間
+            this.lockTimer += deltaTime;
+            if (this.lockTimer >= this.lockDelay) {
+                this.lockPiece();
+            }
         }
     }
 
