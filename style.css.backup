@@ -81,8 +81,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: clamp(15px, 3vw, 37.5px); /* 放大1.5倍 */
-    width: min(clamp(180px, 22.5vw, 330px), 30vw); /* 限制最大寬度 */
-    min-width: 120px; /* 最小寬度避免太小 */
+    width: clamp(180px, 22.5vw, 330px); /* 放大1.5倍 */
 }
 
 .center-arena {
@@ -148,12 +147,8 @@ body {
     background: rgba(0, 0, 0, 0.85);
     border-radius: clamp(4px, 1vw, 6px);
     box-shadow: 0 0 30px rgba(0, 243, 255, 0.25);
-    /* 自動適應視窗大小，保持1:2寬高比 */
-    aspect-ratio: 1 / 2;
-    max-width: min(52.5vw, 450px);
-    max-height: min(90vh, 900px);
-    width: 100%;
-    height: auto;
+    width: clamp(375px, 52.5vw, 450px); /* 放大1.5倍 */
+    height: clamp(750px, 105vw, 900px); /* 放大1.5倍 */
 }
 
 #board1, #fx1 {
