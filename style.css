@@ -126,13 +126,13 @@ body {
 .panel-header {
     background: rgba(0, 243, 255, 0.2);
     text-align: center;
-    padding: clamp(9px, 2.25vw, 18px); /* 放大1.5倍 */
+    padding: clamp(8px, 2vw, 16px); /* 稍微縮小 */
     color: var(--neon-blue);
     font-weight: bold;
-    font-size: clamp(0.9rem, 1.8vw, 1.5rem); /* 放大1.5倍 */
-    letter-spacing: 1.5px; /* 放大1.5倍 */
-    border-top-left-radius: clamp(15px, 3vw, 24px); /* 放大1.5倍 */
-    border-top-right-radius: clamp(15px, 3vw, 24px); /* 放大1.5倍 */
+    font-size: clamp(0.8rem, 1.5vw, 1.3rem); /* 調整為更小的範圍，適應小螢幕 */
+    letter-spacing: 1px; /* 稍微縮小 */
+    border-top-left-radius: clamp(12px, 2.5vw, 20px); /* 稍微縮小 */
+    border-top-right-radius: clamp(12px, 2.5vw, 20px); /* 稍微縮小 */
 }
 
 .panel-content {
@@ -152,8 +152,8 @@ body {
 }
 
 .controls-text, .stats-text {
-    line-height: clamp(2.4, 4.5vw, 3); /* 放大1.5倍 */
-    font-size: clamp(1.05rem, 1.95vw, 1.65rem); /* 放大1.5倍 */
+    line-height: clamp(1.6, 3vw, 2.2); /* 調整為更小的範圍 */
+    font-size: clamp(0.85rem, 1.5vw, 1.4rem); /* 調整為更小的範圍，適應小螢幕 */
     color: #94a3b8;
 }
 
