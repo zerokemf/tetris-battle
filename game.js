@@ -159,9 +159,14 @@ class GameRenderer {
                     const py = (offsetY + y) * this.blockSize;
                     this.boardCtx.save();
                     if (isGhost) {
-                        this.boardCtx.globalAlpha = 0.25;
-                        this.boardCtx.strokeStyle = color;
-                        this.boardCtx.lineWidth = 2;
+                        // 更明显的幽灵方块：半透明填充 + 粗边框
+                        this.boardCtx.globalAlpha = 0.2;
+                        this.boardCtx.fillStyle = color;
+                        this.boardCtx.fillRect(px + 2, py + 2, this.blockSize - 4, this.blockSize - 4);
+                        
+                        this.boardCtx.globalAlpha = 0.8;
+                        this.boardCtx.strokeStyle = '#ffffff'; // 白色边框更醒目
+                        this.boardCtx.lineWidth = 3;
                         this.boardCtx.strokeRect(px + 2, py + 2, this.blockSize - 4, this.blockSize - 4);
                     } else {
                         this.boardCtx.fillStyle = color;
