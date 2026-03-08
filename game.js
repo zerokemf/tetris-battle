@@ -237,9 +237,12 @@ class GameRenderer {
         // 根據形狀寬高計算大小，確保置中且不超過畫布
         const shapeW = shape[0].length;
         const shapeH = shape.length;
+        // 限制最大尺寸，避免O方塊過大
+        const maxBlockSize = Math.min(w, h) * 0.3;
         const sizeX = (w - 4) / shapeW;
         const sizeY = (h - 4) / shapeH;
-        const size = Math.min(sizeX, sizeY);
+        let size = Math.min(sizeX, sizeY);
+        size = Math.min(size, maxBlockSize);
         const ox = (w - shapeW * size) / 2;
         const oy = (h - shapeH * size) / 2;
         for (let r = 0; r < shapeH; r++) {
