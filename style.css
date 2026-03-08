@@ -71,7 +71,7 @@ body {
 .game-container {
     display: flex;
     flex-direction: row;
-    gap: clamp(22.5px, 6vw, 75px); /* 放大1.5倍 */
+    gap: clamp(15px, 4vw, 50px); /* 減少間距，讓整體更緊湊 */
     align-items: flex-start;
     max-width: 95vw;
     max-height: 95vh;
@@ -80,9 +80,9 @@ body {
 .side-panel {
     display: flex;
     flex-direction: column;
-    gap: clamp(15px, 3vw, 37.5px); /* 放大1.5倍 */
-    width: min(clamp(180px, 22.5vw, 330px), 30vw); /* 限制最大寬度 */
-    min-width: 120px; /* 最小寬度避免太小 */
+    gap: clamp(12px, 2.5vw, 30px); /* 稍微減少間距 */
+    width: min(clamp(150px, 18vw, 280px), 25vw); /* 縮減寬度 */
+    min-width: 110px; /* 稍微減小最小寬度 */
 }
 
 .center-arena {
@@ -97,7 +97,7 @@ body {
     font-size: clamp(2.25rem, 6vw, 3.75rem); /* 放大1.5倍 */
     font-weight: 900;
     letter-spacing: clamp(4.5px, 1.5vw, 9px); /* 放大1.5倍 */
-    margin-bottom: clamp(12px, 3vw, 30px); /* 放大1.5倍 */
+    margin-bottom: clamp(8px, 2vw, 20px); /* 減少間距 */
 }
 
 /* 霓虹視窗 */
@@ -170,8 +170,8 @@ body {
     box-shadow: 0 0 30px rgba(0, 243, 255, 0.25);
     /* 容器保持1:2寬高比，canvas會根據容器尺寸計算精確像素 */
     aspect-ratio: 1 / 2;
-    max-width: min(52.5vw, 450px);
-    max-height: min(90vh, 900px);
+    max-width: min(60vw, 500px); /* 增加最大寬度 */
+    max-height: min(85vh, 850px); /* 稍微降低最大高度 */
     width: 100%;
     height: auto;
     display: flex;
@@ -227,7 +227,7 @@ body {
     font-size: clamp(0.9rem, 1.8vw, 1.5rem); /* 放大1.5倍 */
     border-radius: 25px;
     cursor: pointer;
-    margin-top: clamp(12px, 3vw, 22.5px); /* 放大1.5倍 */
+    margin-top: clamp(8px, 2vw, 15px); /* 減少間距 */
     transition: all 0.3s;
 }
 .pause-btn:hover {
