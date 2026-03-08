@@ -72,7 +72,7 @@ body {
     display: flex;
     flex-direction: row;
     gap: clamp(15px, 4vw, 50px); /* 減少間距，讓整體更緊湊 */
-    align-items: flex-start;
+    align-items: stretch; /* 讓側邊欄高度一致 */
     max-width: 95vw;
     max-height: 95vh;
 }
@@ -109,16 +109,18 @@ body {
     width: 100%;
 }
 
-/* HOLD 窗口 - 正方形 */
-.side-panel:first-child .neon-window:first-child {
-    aspect-ratio: 1 / 1; /* 正方形 */
-    max-height: 200px; /* 限制最大高度 */
+/* HOLD 和 NEXT 窗口 - 统一为正方形 */
+.side-panel:first-child .neon-window:first-child,
+.side-panel:last-child .neon-window:first-child {
+    aspect-ratio: 1 / 1; /* 正方形，确保对称 */
+    max-height: 220px; /* 统一最大高度 */
 }
 
-/* NEXT 窗口 - 长方形 (适合显示多个方块) */
-.side-panel:last-child .neon-window:first-child {
-    aspect-ratio: 2 / 3; /* 宽:高 = 2:3 */
-    max-height: 300px; /* 限制最大高度 */
+/* 操作說明和ARENA STATS窗口 - 统一高度确保对称 */
+.side-panel:first-child .neon-window:nth-child(2),
+.side-panel:last-child .neon-window:nth-child(2) {
+    min-height: 180px; /* 确保最小高度相同 */
+    flex-grow: 1; /* 填充剩余空间 */
 }
 
 .panel-header {
