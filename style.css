@@ -109,6 +109,18 @@ body {
     width: 100%;
 }
 
+/* HOLD 窗口 - 正方形 */
+.side-panel:first-child .neon-window:first-child {
+    aspect-ratio: 1 / 1; /* 正方形 */
+    max-height: 200px; /* 限制最大高度 */
+}
+
+/* NEXT 窗口 - 长方形 (适合显示多个方块) */
+.side-panel:last-child .neon-window:first-child {
+    aspect-ratio: 2 / 3; /* 宽:高 = 2:3 */
+    max-height: 300px; /* 限制最大高度 */
+}
+
 .panel-header {
     background: rgba(0, 243, 255, 0.2);
     text-align: center;
@@ -127,6 +139,14 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* HOLD 和 NEXT 的內容區域減少padding */
+.side-panel:first-child .neon-window:first-child .panel-content,
+.side-panel:last-child .neon-window:first-child .panel-content {
+    padding: clamp(8px, 2vw, 16px);
 }
 
 .controls-text, .stats-text {

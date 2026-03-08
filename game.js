@@ -472,8 +472,8 @@ class InputManager {
         this.game = game;
         this.keys = {};
         this.keyTimers = {};
-        this.DAS = 130;
-        this.ARR = 30;
+        this.DAS = 200; // 增加延迟，减少靈敏度
+        this.ARR = 60;  // 增加重複間隔
         this.lastTime = performance.now();
         this.initListeners();
     }
