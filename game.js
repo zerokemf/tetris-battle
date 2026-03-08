@@ -10,8 +10,8 @@ const SHAPES = {
     L: [[0,0,1],[1,1,1],[0,0,0]]
 };
 const COLORS = {
-    I: '#00f3ff', O: '#ffee00', T: '#9d4edd',
-    S: '#33ff00', Z: '#ff0055', J: '#0066ff', L: '#ff9900'
+    I: '#00ffff', O: '#ffff00', T: '#a000f0',
+    S: '#00d800', Z: '#f00000', J: '#0000f0', L: '#f0a000'
 };
 
 // ==================== SRS 踢牆數據庫 (Wall Kick Data) ====================
@@ -165,10 +165,14 @@ class GameRenderer {
                         this.boardCtx.strokeRect(px + 2, py + 2, this.blockSize - 4, this.blockSize - 4);
                     } else {
                         this.boardCtx.fillStyle = color;
-                        this.boardCtx.shadowBlur = 8;
-                        this.boardCtx.shadowColor = color;
-                        this.boardCtx.fillRect(px, py, this.blockSize, this.blockSize);
-                        this.boardCtx.strokeStyle = 'rgba(255,255,255,0.4)';
+                    this.boardCtx.fillRect(px, py, this.blockSize, this.blockSize);
+                    // 经典立体效果 - 高光和阴影
+                    this.boardCtx.fillStyle = 'rgba(255,255,255,0.3)';
+                    this.boardCtx.fillRect(px + 2, py + 2, this.blockSize - 4, 3);
+                    this.boardCtx.fillRect(px + 2, py + 2, 3, this.blockSize - 4);
+                    this.boardCtx.fillStyle = 'rgba(0,0,0,0.3)';
+                    this.boardCtx.fillRect(px + this.blockSize - 5, py + 2, 3, this.blockSize - 4);
+                    this.boardCtx.fillRect(px + 2, py + this.blockSize - 5, this.blockSize - 4, 3);
                         this.boardCtx.lineWidth = 1;
                         this.boardCtx.strokeRect(px, py, this.blockSize, this.blockSize);
                     }
@@ -237,8 +241,8 @@ class GameRenderer {
             for (let c = 0; c < shapeW; c++) {
                 if (shape[r][c]) {
                     ctx.fillStyle = COLORS[type];
-                    ctx.shadowBlur = 3;
-                    ctx.shadowColor = COLORS[type];
+                    
+                    
                     ctx.fillRect(ox + c * size, oy + r * size, size - 1, size - 1);
                 }
             }
