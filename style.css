@@ -71,7 +71,7 @@ body {
 .game-container {
     display: flex;
     flex-direction: row;
-    gap: clamp(15px, 4vw, 50px);
+    gap: clamp(22.5px, 6vw, 75px); /* 放大1.5倍 */
     align-items: flex-start;
     max-width: 95vw;
     max-height: 95vh;
@@ -80,8 +80,8 @@ body {
 .side-panel {
     display: flex;
     flex-direction: column;
-    gap: clamp(10px, 2vw, 25px);
-    width: clamp(120px, 15vw, 220px);
+    gap: clamp(15px, 3vw, 37.5px); /* 放大1.5倍 */
+    width: clamp(180px, 22.5vw, 330px); /* 放大1.5倍 */
 }
 
 .center-arena {
@@ -93,10 +93,10 @@ body {
 .vs-text {
     color: var(--neon-pink);
     text-shadow: 0 0 15px var(--neon-pink);
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    font-size: clamp(2.25rem, 6vw, 3.75rem); /* 放大1.5倍 */
     font-weight: 900;
-    letter-spacing: clamp(3px, 1vw, 6px);
-    margin-bottom: clamp(8px, 2vw, 20px);
+    letter-spacing: clamp(4.5px, 1.5vw, 9px); /* 放大1.5倍 */
+    margin-bottom: clamp(12px, 3vw, 30px); /* 放大1.5倍 */
 }
 
 /* 霓虹視窗 */
@@ -111,17 +111,17 @@ body {
 .panel-header {
     background: rgba(0, 243, 255, 0.2);
     text-align: center;
-    padding: clamp(6px, 1.5vw, 12px);
+    padding: clamp(9px, 2.25vw, 18px); /* 放大1.5倍 */
     color: var(--neon-blue);
     font-weight: bold;
-    font-size: clamp(0.6rem, 1.2vw, 1rem);
-    letter-spacing: 1px;
-    border-top-left-radius: clamp(10px, 2vw, 16px);
-    border-top-right-radius: clamp(10px, 2vw, 16px);
+    font-size: clamp(0.9rem, 1.8vw, 1.5rem); /* 放大1.5倍 */
+    letter-spacing: 1.5px; /* 放大1.5倍 */
+    border-top-left-radius: clamp(15px, 3vw, 24px); /* 放大1.5倍 */
+    border-top-right-radius: clamp(15px, 3vw, 24px); /* 放大1.5倍 */
 }
 
 .panel-content {
-    padding: clamp(10px, 2vw, 20px);
+    padding: clamp(15px, 3vw, 30px); /* 放大1.5倍 */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -129,15 +129,15 @@ body {
 }
 
 .controls-text, .stats-text {
-    line-height: clamp(1.6, 3vw, 2);
-    font-size: clamp(0.7rem, 1.3vw, 1.1rem);
+    line-height: clamp(2.4, 4.5vw, 3); /* 放大1.5倍 */
+    font-size: clamp(1.05rem, 1.95vw, 1.65rem); /* 放大1.5倍 */
     color: #94a3b8;
 }
 
 .flex-column {
     display: flex;
     flex-direction: column;
-    gap: clamp(8px, 1.5vw, 15px);
+    gap: clamp(12px, 2.25vw, 22.5px); /* 放大1.5倍 */
 }
 
 /* 畫布 */
@@ -147,8 +147,8 @@ body {
     background: rgba(0, 0, 0, 0.85);
     border-radius: clamp(4px, 1vw, 6px);
     box-shadow: 0 0 30px rgba(0, 243, 255, 0.25);
-    width: clamp(250px, 35vw, 300px);
-    height: clamp(500px, 70vw, 600px);
+    width: clamp(375px, 52.5vw, 450px); /* 放大1.5倍 */
+    height: clamp(750px, 105vw, 900px); /* 放大1.5倍 */
 }
 
 #board1, #fx1 {
@@ -190,13 +190,13 @@ body {
 /* 暫停按鈕 */
 .pause-btn {
     background: transparent;
-    border: clamp(1px, 0.3vw, 2px) solid var(--neon-pink);
+    border: clamp(1.5px, 0.45vw, 3px) solid var(--neon-pink); /* 放大1.5倍 */
     color: var(--neon-pink);
-    padding: clamp(5px, 1vw, 10px) clamp(12px, 2.5vw, 25px);
-    font-size: clamp(0.6rem, 1.2vw, 1rem);
+    padding: clamp(7.5px, 1.5vw, 15px) clamp(18px, 3.75vw, 37.5px); /* 放大1.5倍 */
+    font-size: clamp(0.9rem, 1.8vw, 1.5rem); /* 放大1.5倍 */
     border-radius: 25px;
     cursor: pointer;
-    margin-top: clamp(8px, 2vw, 15px);
+    margin-top: clamp(12px, 3vw, 22.5px); /* 放大1.5倍 */
     transition: all 0.3s;
 }
 .pause-btn:hover {
