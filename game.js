@@ -119,12 +119,26 @@ class GameRenderer {
     }
 
     resize() {
-        const rect = this.boardCanvas.getBoundingClientRect();
-        this.boardCanvas.width = rect.width;
-        this.boardCanvas.height = rect.height;
-        this.fxCanvas.width = rect.width;
-        this.fxCanvas.height = rect.height;
-        this.blockSize = rect.width / 10;
+        const container = this.boardCanvas.parentElement;
+        const containerRect = container.getBoundingClientRect();
+        
+        // 计算最大可能的blockSize，保持10:20比例
+        const maxBlockWidth = Math.floor(containerRect.width / 10);
+        const maxBlockHeight = Math.floor(containerRect.height / 20);
+        let blockSize = Math.min(maxBlockWidth, maxBlockHeight);
+        
+        // 确保blockSize至少为1，且是整数
+        blockSize = Math.max(1, Math.floor(blockSize));
+        
+        // 设置精确的画布尺寸（10x20网格）
+        const canvasWidth = blockSize * 10;
+        const canvasHeight = blockSize * 20;
+        
+        this.boardCanvas.width = canvasWidth;
+        this.boardCanvas.height = canvasHeight;
+        this.fxCanvas.width = canvasWidth;
+        this.fxCanvas.height = canvasHeight;
+        this.blockSize = blockSize;
     }
 
     clear() {
@@ -229,8 +243,19 @@ class GameRenderer {
 
     renderPreview(canvas, type) {
         const ctx = canvas.getContext('2d');
-        const w = canvas.width || 80;
-        const h = canvas.height || 80;
+        // 根據容器尺寸設置canvas像素尺寸
+        const container = canvas.parentElement;
+        const containerRect = container.getBoundingClientRect();
+        const containerWidth = containerRect.width;
+        const containerHeight = containerRect.height;
+        
+        // 設置canvas像素尺寸（使用容器尺寸）
+        canvas.width = containerWidth;
+        canvas.height = containerHeight;
+        
+        const w = canvas.width;
+        const h = canvas.height;
+        
         ctx.clearRect(0, 0, w, h);
         if (!type || !SHAPES[type]) return;
         const shape = SHAPES[type];
