@@ -40,7 +40,7 @@ body {
 .menu-screen.hidden { display: none; }
 
 .title {
-    font-size: clamp(2rem, 8vw, 5rem);
+    font-size: clamp(3rem, 12vw, 7.5rem); /* 增大1.5倍 */
     font-weight: 900;
     background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
     -webkit-background-clip: text;
@@ -51,10 +51,10 @@ body {
 
 .neon-btn {
     background: transparent;
-    border: clamp(2px, 0.4vw, 4px) solid var(--neon-blue);
+    border: clamp(3px, 0.6vw, 6px) solid var(--neon-blue); /* 边框也加粗 */
     color: white;
-    padding: clamp(0.8rem, 2vw, 1.5rem) clamp(2rem, 5vw, 4rem);
-    font-size: clamp(1rem, 2.5vw, 1.8rem);
+    padding: clamp(1.2rem, 3vw, 2.25rem) clamp(3rem, 7.5vw, 6rem); /* 增大1.5倍 */
+    font-size: clamp(1.5rem, 3.75vw, 2.7rem); /* 增大1.5倍 */
     font-weight: bold;
     border-radius: 60px;
     cursor: pointer;
@@ -218,12 +218,12 @@ body {
 }
 .gameover-screen.show { display: flex; }
 .gameover-screen h1 {
-    font-size: clamp(2rem, 8vw, 5rem);
+    font-size: clamp(3rem, 12vw, 7.5rem); /* 增大1.5倍 */
     color: var(--neon-pink);
     text-shadow: 0 0 40px var(--neon-pink);
 }
 .gameover-screen p {
-    font-size: clamp(1.2rem, 3vw, 2rem);
+    font-size: clamp(1.8rem, 4.5vw, 3rem); /* 增大1.5倍 */
     color: var(--neon-blue);
     margin: 1.5rem 0 3rem;
 }
