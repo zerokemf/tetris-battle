@@ -259,32 +259,23 @@ class GameRenderer {
         ctx.clearRect(0, 0, w, h);
         if (!type || !SHAPES[type]) return;
         const shape = SHAPES[type];
-        
         // 根據形狀寬高計算大小，確保置中且不超過畫布
         const shapeW = shape[0].length;
         const shapeH = shape.length;
-        
-        // 以主遊戲區域的blockSize為基準，計算預覽方塊大小（約為主區域的65%）
-        const basePreviewSize = this.blockSize * 0.65;
-        
-        // 計算容器能容納的最大方塊尺寸
-        const maxSizeX = (w - 8) / shapeW;  // 減少padding
-        const maxSizeY = (h - 8) / shapeH;  // 減少padding
-        
-        // 取最小值，確保方塊不超出容器，且與主遊戲區域比例一致
-        let size = Math.min(basePreviewSize, maxSizeX, maxSizeY);
-        
-        // 最終限制：最大不超過主遊戲方塊的80%，最小不小於8px
-        size = Math.max(8, Math.min(size, this.blockSize * 0.8));
-        
+        // 限制最大尺寸，避免O方塊過大
+        const maxBlockSize = Math.min(w, h) * 0.3;
+        const sizeX = (w - 4) / shapeW;
+        const sizeY = (h - 4) / shapeH;
+        let size = Math.min(sizeX, sizeY);
+        size = Math.min(size, maxBlockSize);
         const ox = (w - shapeW * size) / 2;
         const oy = (h - shapeH * size) / 2;
-        
         for (let r = 0; r < shapeH; r++) {
             for (let c = 0; c < shapeW; c++) {
                 if (shape[r][c]) {
                     ctx.fillStyle = COLORS[type];
-                    // 繪製方塊主體
+                    
+                    
                     ctx.fillRect(ox + c * size, oy + r * size, size - 1, size - 1);
                 }
             }
