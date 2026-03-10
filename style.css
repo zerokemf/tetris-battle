@@ -75,6 +75,8 @@ body {
     align-items: stretch; /* 讓側邊欄高度一致 */
     max-width: 95vw;
     max-height: 95vh;
+    z-index: 10; /* 確保遊戲區域在雪花之上 */
+    position: relative;
 }
 
 .side-panel {
