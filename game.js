@@ -12,7 +12,6 @@ const SHAPES = {
     L: [[0,0,1],[1,1,1],[0,0,0]]
 };
 
-// Rich gradient color definitions for each piece
 const COLORS = {
     I: { base: '#00f3ff', light: '#80f9ff', dark: '#009aa3', glow: 'rgba(0,243,255,0.6)' },
     O: { base: '#ffe14d', light: '#fff0a0', dark: '#b89e20', glow: 'rgba(255,225,77,0.6)' },
@@ -23,7 +22,6 @@ const COLORS = {
     L: { base: '#ff8c2d', light: '#ffba7e', dark: '#b86010', glow: 'rgba(255,140,45,0.6)' }
 };
 
-// Tier colors for clear effects
 const TIER_COLORS = {
     1: { color: '#d0e0ff', glow: 'rgba(208,224,255,0.5)', name: 'SINGLE' },
     2: { color: '#00f3ff', glow: 'rgba(0,243,255,0.6)', name: 'DOUBLE' },
@@ -55,19 +53,13 @@ const SRS_KICK_DATA = {
 };
 
 const COLS = 10, ROWS = 20, EMPTY = 0;
+const MAX_PARTICLES = 120;
 
 // ==================== 7-Bag System ====================
 class Bag7 {
     constructor() { this.bag = []; this.refill(); }
     refill() { this.bag = [...PIECES].sort(() => Math.random() - 0.5); }
     next() { if (this.bag.length === 0) this.refill(); return this.bag.pop(); }
-    peek(count) {
-        while (this.bag.length < count) {
-            const extra = [...PIECES].sort(() => Math.random() - 0.5);
-            this.bag = extra.concat(this.bag);
-        }
-        return this.bag.slice(-count).reverse();
-    }
 }
 
 // ==================== Piece ====================
@@ -109,142 +101,29 @@ class Piece {
     }
 }
 
-// ==================== Enhanced Particle System ====================
+// ==================== Lightweight Particle ====================
 class Particle {
-    constructor(x, y, color, options = {}) {
+    constructor(x, y, color, vx, vy, size, life, decay, gravity) {
         this.x = x;
         this.y = y;
-        const speed = options.speed || 1;
-        const spread = options.spread || 10;
-        this.vx = (Math.random() - 0.5) * spread * speed;
-        this.vy = (Math.random() - 0.5) * spread * speed - (options.upward || 0);
-        this.gravity = options.gravity !== undefined ? options.gravity : 0.15;
         this.color = color;
-        this.size = (Math.random() * (options.maxSize || 5) + (options.minSize || 2)) * (options.sizeScale || 1);
-        this.life = options.life || 1;
-        this.decay = options.decay || 0.018;
-        this.type = options.type || 'square'; // square, circle, star, spark
-        this.rotation = Math.random() * Math.PI * 2;
-        this.rotSpeed = (Math.random() - 0.5) * 0.2;
-        this.trail = options.trail || false;
-        this.prevX = x;
-        this.prevY = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.size = size;
+        this.life = life;
+        this.decay = decay;
+        this.gravity = gravity;
     }
 
     update() {
-        this.prevX = this.x;
-        this.prevY = this.y;
         this.vy += this.gravity;
         this.x += this.vx;
         this.y += this.vy;
-        this.vx *= 0.99;
-        this.rotation += this.rotSpeed;
         this.life -= this.decay;
     }
-
-    draw(ctx) {
-        if (this.life <= 0) return;
-        ctx.save();
-        ctx.globalAlpha = Math.min(this.life, 1);
-
-        if (this.trail) {
-            ctx.beginPath();
-            ctx.moveTo(this.prevX, this.prevY);
-            ctx.lineTo(this.x, this.y);
-            ctx.strokeStyle = this.color;
-            ctx.lineWidth = this.size * 0.5;
-            ctx.stroke();
-        }
-
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation);
-
-        if (this.type === 'circle') {
-            ctx.beginPath();
-            ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
-            ctx.fillStyle = this.color;
-            ctx.shadowBlur = this.size * 2;
-            ctx.shadowColor = this.color;
-            ctx.fill();
-        } else if (this.type === 'star') {
-            this.drawStar(ctx, 0, 0, 5, this.size, this.size * 0.4);
-            ctx.fillStyle = this.color;
-            ctx.shadowBlur = this.size * 3;
-            ctx.shadowColor = this.color;
-            ctx.fill();
-        } else if (this.type === 'spark') {
-            ctx.beginPath();
-            ctx.moveTo(-this.size, 0);
-            ctx.lineTo(0, -this.size * 0.3);
-            ctx.lineTo(this.size, 0);
-            ctx.lineTo(0, this.size * 0.3);
-            ctx.closePath();
-            ctx.fillStyle = this.color;
-            ctx.shadowBlur = this.size * 2;
-            ctx.shadowColor = this.color;
-            ctx.fill();
-        } else {
-            // Square with inner glow
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
-            ctx.fillStyle = this.color;
-            ctx.shadowBlur = this.size;
-            ctx.shadowColor = this.color;
-            ctx.fillRect(-this.size*0.35, -this.size*0.35, this.size*0.7, this.size*0.7);
-        }
-
-        ctx.restore();
-    }
-
-    drawStar(ctx, cx, cy, spikes, outerR, innerR) {
-        let rot = Math.PI / 2 * 3;
-        const step = Math.PI / spikes;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - outerR);
-        for (let i = 0; i < spikes; i++) {
-            ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
-            rot += step;
-            ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
-            rot += step;
-        }
-        ctx.lineTo(cx, cy - outerR);
-        ctx.closePath();
-    }
 }
 
-// ==================== Shockwave Effect ====================
-class Shockwave {
-    constructor(x, y, color, maxRadius) {
-        this.x = x;
-        this.y = y;
-        this.color = color;
-        this.radius = 0;
-        this.maxRadius = maxRadius || 150;
-        this.life = 1;
-        this.lineWidth = 3;
-    }
-
-    update() {
-        this.radius += (this.maxRadius - this.radius) * 0.12;
-        this.life -= 0.03;
-    }
-
-    draw(ctx) {
-        if (this.life <= 0) return;
-        ctx.save();
-        ctx.globalAlpha = this.life * 0.6;
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = this.lineWidth * this.life;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-    }
-}
-
-// ==================== Enhanced Renderer ====================
+// ==================== Renderer ====================
 class GameRenderer {
     constructor(boardId, fxId) {
         this.boardCanvas = document.getElementById(boardId);
@@ -253,34 +132,39 @@ class GameRenderer {
         this.fxCtx = this.fxCanvas.getContext('2d');
         this.blockSize = 36;
         this.particles = [];
-        this.shockwaves = [];
-        this.flashLines = []; // { row, life, tier }
+        this.flashLines = [];
         this.screenFlash = 0;
         this.screenFlashColor = '#fff';
+        this.displayWidth = 0;
+        this.displayHeight = 0;
+        this._lastW = 0;
+        this._lastH = 0;
         this.resize();
     }
 
     resize() {
         const rect = this.boardCanvas.getBoundingClientRect();
+        const w = Math.round(rect.width);
+        const h = Math.round(rect.height);
+        // Only resize if dimensions actually changed
+        if (w === this._lastW && h === this._lastH) return;
+        this._lastW = w;
+        this._lastH = h;
         const dpr = window.devicePixelRatio || 1;
-        this.boardCanvas.width = rect.width * dpr;
-        this.boardCanvas.height = rect.height * dpr;
-        this.fxCanvas.width = rect.width * dpr;
-        this.fxCanvas.height = rect.height * dpr;
+        this.boardCanvas.width = w * dpr;
+        this.boardCanvas.height = h * dpr;
+        this.fxCanvas.width = w * dpr;
+        this.fxCanvas.height = h * dpr;
         this.boardCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
         this.fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        this.displayWidth = rect.width;
-        this.displayHeight = rect.height;
-        this.blockSize = rect.width / COLS;
+        this.displayWidth = w;
+        this.displayHeight = h;
+        this.blockSize = w / COLS;
     }
 
     clear() {
-        // Dark gradient background
         const ctx = this.boardCtx;
-        const grad = ctx.createLinearGradient(0, 0, 0, this.displayHeight);
-        grad.addColorStop(0, '#080c1a');
-        grad.addColorStop(1, '#0a0e20');
-        ctx.fillStyle = grad;
+        ctx.fillStyle = '#090d1c';
         ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
         this.fxCtx.clearRect(0, 0, this.displayWidth, this.displayHeight);
     }
@@ -288,19 +172,7 @@ class GameRenderer {
     drawGrid() {
         const ctx = this.boardCtx;
         const bs = this.blockSize;
-
-        // Subtle grid dots at intersections
-        ctx.fillStyle = 'rgba(255,255,255,0.04)';
-        for (let x = 1; x < COLS; x++) {
-            for (let y = 1; y < ROWS; y++) {
-                ctx.beginPath();
-                ctx.arc(x * bs, y * bs, 1, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        // Very subtle column lines
-        ctx.strokeStyle = 'rgba(255,255,255,0.02)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.03)';
         ctx.lineWidth = 1;
         for (let x = 1; x < COLS; x++) {
             ctx.beginPath();
@@ -308,59 +180,40 @@ class GameRenderer {
             ctx.lineTo(x * bs, this.displayHeight);
             ctx.stroke();
         }
+        for (let y = 1; y < ROWS; y++) {
+            ctx.beginPath();
+            ctx.moveTo(0, y * bs);
+            ctx.lineTo(this.displayWidth, y * bs);
+            ctx.stroke();
+        }
     }
 
-    drawBlock(x, y, colorObj, ctx, alpha = 1) {
-        if (!ctx) ctx = this.boardCtx;
+    drawBlock(x, y, colorObj) {
+        const ctx = this.boardCtx;
         const bs = this.blockSize;
         const px = x * bs;
         const py = y * bs;
-        const pad = 1;
 
-        ctx.save();
-        ctx.globalAlpha = alpha;
-
-        // Main block with gradient
+        // Main fill with gradient
         const grad = ctx.createLinearGradient(px, py, px + bs, py + bs);
         grad.addColorStop(0, colorObj.light);
-        grad.addColorStop(0.4, colorObj.base);
+        grad.addColorStop(0.5, colorObj.base);
         grad.addColorStop(1, colorObj.dark);
         ctx.fillStyle = grad;
+        ctx.fillRect(px + 1, py + 1, bs - 2, bs - 2);
 
-        // Rounded rect
-        const r = 3;
-        ctx.beginPath();
-        ctx.moveTo(px + pad + r, py + pad);
-        ctx.lineTo(px + bs - pad - r, py + pad);
-        ctx.quadraticCurveTo(px + bs - pad, py + pad, px + bs - pad, py + pad + r);
-        ctx.lineTo(px + bs - pad, py + bs - pad - r);
-        ctx.quadraticCurveTo(px + bs - pad, py + bs - pad, px + bs - pad - r, py + bs - pad);
-        ctx.lineTo(px + pad + r, py + bs - pad);
-        ctx.quadraticCurveTo(px + pad, py + bs - pad, px + pad, py + bs - pad - r);
-        ctx.lineTo(px + pad, py + pad + r);
-        ctx.quadraticCurveTo(px + pad, py + pad, px + pad + r, py + pad);
-        ctx.closePath();
-        ctx.fill();
+        // Top highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
+        ctx.fillRect(px + 2, py + 2, bs - 4, 3);
 
-        // Top-left highlight
-        ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        ctx.fillRect(px + pad + 2, py + pad + 2, bs - pad*2 - 4, 3);
+        // Left highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        ctx.fillRect(px + 1, py + 2, 2, bs - 4);
 
-        // Outer glow
-        ctx.shadowBlur = 6;
-        ctx.shadowColor = colorObj.glow;
-        ctx.strokeStyle = colorObj.base;
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
-
-        // Inner shine dot
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgba(255,255,255,0.15)';
-        ctx.beginPath();
-        ctx.arc(px + bs * 0.3, py + bs * 0.3, bs * 0.1, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
+        // Border
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px + 0.5, py + 0.5, bs - 1, bs - 1);
     }
 
     drawGhostBlock(x, y, colorObj) {
@@ -370,17 +223,12 @@ class GameRenderer {
         const ctx = this.boardCtx;
 
         ctx.save();
-        ctx.globalAlpha = 0.2;
+        ctx.globalAlpha = 0.18;
         ctx.strokeStyle = colorObj.base;
         ctx.lineWidth = 1.5;
         ctx.setLineDash([3, 3]);
         ctx.strokeRect(px + 2, py + 2, bs - 4, bs - 4);
         ctx.setLineDash([]);
-
-        // Faint fill
-        ctx.globalAlpha = 0.05;
-        ctx.fillStyle = colorObj.base;
-        ctx.fillRect(px + 2, py + 2, bs - 4, bs - 4);
         ctx.restore();
     }
 
@@ -403,29 +251,24 @@ class GameRenderer {
         // Flash lines (clearing animation)
         for (let i = this.flashLines.length - 1; i >= 0; i--) {
             const fl = this.flashLines[i];
-            fl.life -= 0.04;
+            fl.life -= 0.05;
             if (fl.life <= 0) {
                 this.flashLines.splice(i, 1);
                 continue;
             }
             const ctx = this.boardCtx;
             ctx.save();
-            ctx.globalAlpha = fl.life;
-            const py = fl.row * this.blockSize;
-            const grad = ctx.createLinearGradient(0, py, this.displayWidth, py);
-            grad.addColorStop(0, 'transparent');
-            grad.addColorStop(0.3, fl.color);
-            grad.addColorStop(0.5, '#fff');
-            grad.addColorStop(0.7, fl.color);
-            grad.addColorStop(1, 'transparent');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, py, this.displayWidth, this.blockSize);
+            ctx.globalAlpha = fl.life * 0.7;
+            ctx.fillStyle = fl.color;
+            ctx.fillRect(0, fl.row * this.blockSize, this.displayWidth, this.blockSize);
+            ctx.fillStyle = '#fff';
+            ctx.globalAlpha = fl.life * 0.4;
+            ctx.fillRect(0, fl.row * this.blockSize + this.blockSize * 0.3, this.displayWidth, this.blockSize * 0.4);
             ctx.restore();
         }
 
         // Draw piece
         if (piece) {
-            // Ghost
             const ghostY = piece.getGhostY();
             if (ghostY !== piece.y) {
                 piece.shape.forEach((row, r) => {
@@ -434,8 +277,6 @@ class GameRenderer {
                     });
                 });
             }
-
-            // Actual piece
             piece.shape.forEach((row, r) => {
                 row.forEach((val, c) => {
                     if (val && piece.y + r >= 0) {
@@ -445,7 +286,7 @@ class GameRenderer {
             });
         }
 
-        // FX layer
+        // FX layer - particles
         const fctx = this.fxCtx;
 
         // Screen flash
@@ -455,134 +296,83 @@ class GameRenderer {
             fctx.fillStyle = this.screenFlashColor;
             fctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
             fctx.restore();
-            this.screenFlash -= 0.04;
+            this.screenFlash -= 0.05;
         }
 
-        // Shockwaves
-        fctx.save();
+        // Batch-draw particles (no per-particle save/restore or shadowBlur)
         fctx.globalCompositeOperation = 'lighter';
-        for (let i = this.shockwaves.length - 1; i >= 0; i--) {
-            this.shockwaves[i].update();
-            this.shockwaves[i].draw(fctx);
-            if (this.shockwaves[i].life <= 0) this.shockwaves.splice(i, 1);
-        }
-
-        // Particles
         for (let i = this.particles.length - 1; i >= 0; i--) {
-            this.particles[i].update();
-            this.particles[i].draw(fctx);
-            if (this.particles[i].life <= 0) this.particles.splice(i, 1);
+            const p = this.particles[i];
+            p.update();
+            if (p.life <= 0) {
+                // Fast swap-remove
+                this.particles[i] = this.particles[this.particles.length - 1];
+                this.particles.pop();
+                continue;
+            }
+            fctx.globalAlpha = Math.min(p.life, 1);
+            fctx.fillStyle = p.color;
+            fctx.fillRect(p.x - p.size * 0.5, p.y - p.size * 0.5, p.size, p.size);
         }
-        fctx.restore();
+        fctx.globalAlpha = 1;
+        fctx.globalCompositeOperation = 'source-over';
     }
 
-    // Spawn particles scaled by tier
+    // Spawn particles scaled by tier (with hard cap)
     spawnClearEffect(rows, tier) {
         const bs = this.blockSize;
-        const centerX = this.displayWidth / 2;
-        const particleMultiplier = [0, 1, 1.8, 3, 5][tier];
         const tierColor = TIER_COLORS[tier];
 
         rows.forEach(r => {
             const cy = r * bs + bs / 2;
 
             // Line flash
-            this.flashLines.push({
-                row: r,
-                life: 1,
-                color: tierColor.color
-            });
+            this.flashLines.push({ row: r, life: 1, color: tierColor.color });
 
-            // Row particles
-            for (let c = 0; c < COLS; c++) {
-                const cx2 = c * bs + bs / 2;
-                const count = Math.floor(4 * particleMultiplier);
-                for (let i = 0; i < count; i++) {
-                    this.particles.push(new Particle(cx2, cy, tierColor.color, {
-                        speed: 0.5 + tier * 0.3,
-                        spread: 6 + tier * 2,
-                        upward: tier * 1.5,
-                        gravity: 0.12,
-                        minSize: 1.5,
-                        maxSize: 3 + tier,
-                        sizeScale: 0.8 + tier * 0.2,
-                        decay: 0.015 + (4 - tier) * 0.003,
-                        type: tier >= 3 ? (Math.random() > 0.5 ? 'star' : 'circle') : 'square'
-                    }));
-                }
-            }
-
-            // Spark trails for tier 2+
-            if (tier >= 2) {
-                for (let i = 0; i < 6 * tier; i++) {
-                    this.particles.push(new Particle(
-                        Math.random() * this.displayWidth,
-                        cy,
-                        tier >= 4 ? '#ffe14d' : tierColor.color,
-                        {
-                            speed: 1 + tier * 0.5,
-                            spread: 15,
-                            upward: 3 + tier,
-                            gravity: 0.05,
-                            minSize: 2,
-                            maxSize: 4 + tier,
-                            decay: 0.012,
-                            type: 'spark',
-                            trail: true
-                        }
-                    ));
-                }
+            // Particles per row: tier1=8, tier2=14, tier3=18, tier4=24
+            const count = [0, 8, 14, 18, 24][tier];
+            for (let i = 0; i < count; i++) {
+                const cx = Math.random() * this.displayWidth;
+                const speed = 1 + tier * 0.5;
+                this.addParticle(cx, cy, tierColor.color,
+                    (Math.random() - 0.5) * 8 * speed,
+                    (Math.random() - 0.5) * 6 * speed - tier * 1.5,
+                    Math.random() * (2 + tier) + 1.5,
+                    1, 0.02, 0.12
+                );
             }
         });
 
-        // Shockwave for tier 3+
-        if (tier >= 3) {
-            const avgRow = rows.reduce((a, b) => a + b, 0) / rows.length;
-            this.shockwaves.push(new Shockwave(
-                centerX,
-                avgRow * bs + bs / 2,
-                tierColor.color,
-                this.displayWidth * (tier === 4 ? 1.2 : 0.8)
-            ));
-        }
-
-        // Tetris: extra star burst from center
+        // Tetris: star burst
         if (tier === 4) {
             const avgRow = rows.reduce((a, b) => a + b, 0) / rows.length;
             const cy = avgRow * bs + bs / 2;
-            for (let i = 0; i < 40; i++) {
-                const angle = (i / 40) * Math.PI * 2;
-                const speed = 4 + Math.random() * 4;
-                const p = new Particle(centerX, cy, Math.random() > 0.5 ? '#ff2d95' : '#ffe14d', {
-                    speed: 1,
-                    spread: 1,
-                    gravity: 0.08,
-                    minSize: 3,
-                    maxSize: 7,
-                    decay: 0.01,
-                    type: 'star'
-                });
-                p.vx = Math.cos(angle) * speed;
-                p.vy = Math.sin(angle) * speed;
-                this.particles.push(p);
+            const cx = this.displayWidth / 2;
+            for (let i = 0; i < 20; i++) {
+                const angle = (i / 20) * Math.PI * 2;
+                const spd = 3 + Math.random() * 3;
+                this.addParticle(cx, cy,
+                    Math.random() > 0.5 ? '#ff2d95' : '#ffe14d',
+                    Math.cos(angle) * spd, Math.sin(angle) * spd,
+                    Math.random() * 4 + 3, 1, 0.012, 0.06
+                );
             }
-
-            // Second shockwave
-            this.shockwaves.push(new Shockwave(centerX, cy, '#ffe14d', this.displayWidth * 1.5));
-
-            // Screen flash
-            this.screenFlash = 0.5;
-            this.screenFlashColor = 'rgba(255,45,149,0.3)';
-        }
-
-        // Triple: moderate screen flash
-        if (tier === 3) {
-            this.screenFlash = 0.25;
-            this.screenFlashColor = 'rgba(180,77,255,0.2)';
+            this.screenFlash = 0.4;
+            this.screenFlashColor = 'rgba(255,45,149,0.25)';
+        } else if (tier === 3) {
+            this.screenFlash = 0.2;
+            this.screenFlashColor = 'rgba(180,77,255,0.15)';
         }
     }
 
-    // Hard drop trail effect
+    addParticle(x, y, color, vx, vy, size, life, decay, gravity) {
+        if (this.particles.length >= MAX_PARTICLES) {
+            // Replace oldest
+            this.particles.shift();
+        }
+        this.particles.push(new Particle(x, y, color, vx, vy, size, life, decay, gravity));
+    }
+
     spawnDropTrail(piece) {
         const bs = this.blockSize;
         piece.shape.forEach((row, r) => {
@@ -590,24 +380,15 @@ class GameRenderer {
                 if (val) {
                     const px = (piece.x + c) * bs + bs / 2;
                     const py = (piece.y + r) * bs + bs / 2;
-                    for (let i = 0; i < 3; i++) {
-                        this.particles.push(new Particle(px, py, piece.color.base, {
-                            speed: 0.3,
-                            spread: 4,
-                            upward: 2,
-                            gravity: 0.2,
-                            minSize: 1,
-                            maxSize: 3,
-                            decay: 0.04,
-                            type: 'circle'
-                        }));
-                    }
+                    this.addParticle(px, py, piece.color.base,
+                        (Math.random() - 0.5) * 3, -Math.random() * 2 - 1,
+                        Math.random() * 2 + 1, 0.6, 0.04, 0.15
+                    );
                 }
             });
         });
     }
 
-    // Lock flash effect
     spawnLockFlash(piece) {
         const bs = this.blockSize;
         piece.shape.forEach((row, r) => {
@@ -615,29 +396,22 @@ class GameRenderer {
                 if (val) {
                     const px = (piece.x + c) * bs + bs / 2;
                     const py = (piece.y + r) * bs + bs / 2;
-                    this.particles.push(new Particle(px, py, '#fff', {
-                        speed: 0,
-                        spread: 0,
-                        gravity: 0,
-                        minSize: bs * 0.8,
-                        maxSize: bs * 0.8,
-                        decay: 0.08,
-                        type: 'circle',
-                        life: 0.5
-                    }));
+                    this.addParticle(px, py, '#fff',
+                        0, 0, bs * 0.4, 0.4, 0.06, 0
+                    );
                 }
             });
         });
     }
 
-    renderPreview(canvas, type, opacity = 1) {
+    renderPreview(canvas, type, opacity) {
         const ctx = canvas.getContext('2d');
         const rect = canvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         const w = rect.width, h = rect.height;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         ctx.clearRect(0, 0, w, h);
         ctx.fillStyle = 'rgba(8,12,26,0.6)';
@@ -650,30 +424,24 @@ class GameRenderer {
         const ox = (w - shape[0].length * size) / 2;
         const oy = (h - shape.length * size) / 2;
 
-        ctx.save();
-        ctx.globalAlpha = opacity;
+        ctx.globalAlpha = opacity !== undefined ? opacity : 1;
         for (let r = 0; r < shape.length; r++) {
             for (let c = 0; c < shape[r].length; c++) {
                 if (shape[r][c]) {
                     const px = ox + c * size;
                     const py = oy + r * size;
-                    const pad = 1;
-
                     const grad = ctx.createLinearGradient(px, py, px + size, py + size);
                     grad.addColorStop(0, colorObj.light);
-                    grad.addColorStop(0.4, colorObj.base);
+                    grad.addColorStop(0.5, colorObj.base);
                     grad.addColorStop(1, colorObj.dark);
                     ctx.fillStyle = grad;
-                    ctx.shadowBlur = 4;
-                    ctx.shadowColor = colorObj.glow;
-                    ctx.fillRect(px + pad, py + pad, size - pad*2, size - pad*2);
-
+                    ctx.fillRect(px + 1, py + 1, size - 2, size - 2);
                     ctx.fillStyle = 'rgba(255,255,255,0.15)';
-                    ctx.fillRect(px + pad + 2, py + pad + 2, size - pad*2 - 4, 2);
+                    ctx.fillRect(px + 2, py + 2, size - 4, 2);
                 }
             }
         }
-        ctx.restore();
+        ctx.globalAlpha = 1;
     }
 }
 
@@ -715,7 +483,6 @@ class Tetris {
     spawn() {
         const nextType = this.nextQueue.length > 0 ? this.nextQueue.shift() : bag.next();
         this.piece = new Piece(nextType, this);
-        // Fill next queue
         while (this.nextQueue.length < 3) {
             this.nextQueue.push(bag.next());
         }
@@ -740,23 +507,19 @@ class Tetris {
 
     rotate(dir = 1) {
         if (this.piece.type === 'O') return;
-
         const oldShape = this.piece.shape;
         const N = oldShape.length;
         const newShape = Array.from({ length: N }, () => Array(N).fill(0));
-
         for (let r = 0; r < N; r++) {
             for (let c = 0; c < N; c++) {
                 if (dir === 1) newShape[r][c] = oldShape[N-1-c][r];
                 else newShape[r][c] = oldShape[c][N-1-r];
             }
         }
-
         const nextRotIndex = (this.piece.rotIndex + dir + 4) % 4;
         const kickKey = `${this.piece.rotIndex}->${nextRotIndex}`;
         const kickTable = (this.piece.type === 'I') ? SRS_KICK_DATA.I : SRS_KICK_DATA.JLSTZ;
         const tests = kickTable[kickKey];
-
         this.piece.shape = newShape;
         for (let i = 0; i < tests.length; i++) {
             const dx = tests[i][0], dy = tests[i][1];
@@ -768,26 +531,24 @@ class Tetris {
                 return;
             }
         }
-
         this.piece.shape = oldShape;
     }
 
     move(dir) { if (this.piece.move(dir, 0)) playSound('move'); }
 
     drop() {
-        if (this.piece.move(0, 1)) { return true; }
+        if (this.piece.move(0, 1)) return true;
         return false;
     }
 
     hardDrop() {
-        const dist = this.piece.hardDrop();
+        this.piece.hardDrop();
         this.renderer.spawnDropTrail(this.piece);
         playSound('hardDrop');
     }
 
     lockPiece() {
         this.renderer.spawnLockFlash(this.piece);
-
         for (let r = 0; r < this.piece.shape.length; r++) {
             for (let c = 0; c < this.piece.shape[r].length; c++) {
                 if (this.piece.shape[r][c]) {
@@ -801,31 +562,35 @@ class Tetris {
     }
 
     clearLines() {
-        const clearedRows = [];
-        for (let r = ROWS - 1; r >= 0; r--) {
+        // FIXED: Scan from top to bottom, collect full rows
+        let linesCleared = 0;
+        // Use a write pointer to compact the grid in-place
+        // This avoids index-shifting bugs with splice
+        const newGrid = [];
+        const clearedRowIndices = [];
+
+        for (let r = 0; r < ROWS; r++) {
             if (this.grid[r].every(c => c)) {
-                clearedRows.push(r);
+                clearedRowIndices.push(r);
+                linesCleared++;
+            } else {
+                newGrid.push(this.grid[r]);
             }
         }
 
-        if (clearedRows.length > 0) {
-            const tier = Math.min(clearedRows.length, 4);
-
-            // Spawn tiered visual effects
-            this.renderer.spawnClearEffect(clearedRows, tier);
-
-            // Screen shake
-            this.triggerShake(tier);
-
-            // Play tiered sound
-            playSound('clear', tier);
-
-            // Remove lines (after collecting all)
-            clearedRows.sort((a, b) => b - a);
-            for (const row of clearedRows) {
-                this.grid.splice(row, 1);
-                this.grid.unshift(Array(COLS).fill(EMPTY));
+        if (linesCleared > 0) {
+            // Pad top with empty rows
+            while (newGrid.length < ROWS) {
+                newGrid.unshift(Array(COLS).fill(EMPTY));
             }
+            this.grid = newGrid;
+
+            const tier = Math.min(linesCleared, 4);
+
+            // Visual effects
+            this.renderer.spawnClearEffect(clearedRowIndices, tier);
+            this.triggerShake(tier);
+            playSound('clear', tier);
 
             // Scoring
             const baseScore = [0, 100, 300, 500, 800][tier];
@@ -833,19 +598,12 @@ class Tetris {
             this.maxCombo = Math.max(this.maxCombo, this.combo);
             const comboBonus = this.combo > 1 ? 50 * (this.combo - 1) * this.level : 0;
             this.score += baseScore * this.level + comboBonus;
-            this.lines += clearedRows.length;
+            this.lines += linesCleared;
             this.level = Math.floor(this.lines / 10) + 1;
             this.interval = Math.max(80, 1000 - (this.level - 1) * 90);
 
-            // Show action text
             this.showActionText(TIER_COLORS[tier].name, tier);
-
-            // Show combo
-            if (this.combo >= 2) {
-                this.showCombo(this.combo);
-            }
-
-            // Update stats with pop animation
+            if (this.combo >= 2) this.showCombo(this.combo);
             this.popStat('score1');
             if (this.combo >= 2) this.popStat('combo1');
         } else {
@@ -855,12 +613,9 @@ class Tetris {
 
     triggerShake(tier) {
         this.wrapper.classList.remove('shake', 'shake-heavy');
-        void this.wrapper.offsetWidth; // reflow
-        if (tier >= 4) {
-            this.wrapper.classList.add('shake-heavy');
-        } else if (tier >= 2) {
-            this.wrapper.classList.add('shake');
-        }
+        void this.wrapper.offsetWidth;
+        if (tier >= 4) this.wrapper.classList.add('shake-heavy');
+        else if (tier >= 2) this.wrapper.classList.add('shake');
     }
 
     showActionText(text, tier) {
@@ -868,9 +623,7 @@ class Tetris {
         el.textContent = text;
         el.className = 'action-text show tier-' + tier;
         clearTimeout(this.actionTimer);
-        this.actionTimer = setTimeout(() => {
-            el.className = 'action-text hidden';
-        }, 1200);
+        this.actionTimer = setTimeout(() => { el.className = 'action-text hidden'; }, 1200);
     }
 
     showCombo(count) {
@@ -878,9 +631,7 @@ class Tetris {
         el.textContent = count + 'x COMBO';
         el.className = 'combo-display show';
         clearTimeout(this.comboTimer);
-        this.comboTimer = setTimeout(() => {
-            el.className = 'combo-display hidden';
-        }, 1500);
+        this.comboTimer = setTimeout(() => { el.className = 'combo-display hidden'; }, 1500);
     }
 
     popStat(id) {
@@ -917,10 +668,8 @@ class Tetris {
         this.renderer.renderPreview(this.holdCanvas, this.hold);
         for (let i = 0; i < this.nextCanvases.length; i++) {
             const type = this.nextQueue[i] || null;
-            const opacity = i === 0 ? 1 : 0.6;
-            this.renderer.renderPreview(this.nextCanvases[i], type, opacity);
+            this.renderer.renderPreview(this.nextCanvases[i], type, i === 0 ? 1 : 0.6);
         }
-
         document.getElementById('score1').textContent = this.score.toLocaleString();
         document.getElementById('level1').textContent = this.level;
         document.getElementById('sent1').textContent = this.lines;
@@ -940,18 +689,15 @@ function playSound(type, tier) {
     if (!audioCtx) return;
     try {
         const t = audioCtx.currentTime;
-
         if (type === 'move') {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.value = 280;
-            osc.type = 'sine';
+            osc.frequency.value = 280; osc.type = 'sine';
             gain.gain.setValueAtTime(0.025, t);
             gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
             osc.start(t); osc.stop(t + 0.04);
-        }
-        else if (type === 'rotate') {
+        } else if (type === 'rotate') {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
@@ -961,65 +707,30 @@ function playSound(type, tier) {
             gain.gain.setValueAtTime(0.03, t);
             gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
             osc.start(t); osc.stop(t + 0.08);
-        }
-        else if (type === 'hardDrop') {
-            // Impact sound
+        } else if (type === 'hardDrop') {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.value = 120;
-            osc.type = 'square';
+            osc.frequency.value = 120; osc.type = 'square';
             gain.gain.setValueAtTime(0.05, t);
             gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
             osc.start(t); osc.stop(t + 0.08);
-
-            // Click
-            const osc2 = audioCtx.createOscillator();
-            const gain2 = audioCtx.createGain();
-            osc2.connect(gain2); gain2.connect(audioCtx.destination);
-            osc2.frequency.value = 800;
-            osc2.type = 'sine';
-            gain2.gain.setValueAtTime(0.03, t);
-            gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
-            osc2.start(t); osc2.stop(t + 0.03);
-        }
-        else if (type === 'clear') {
+        } else if (type === 'clear') {
             tier = tier || 1;
-            const baseFreq = 440;
-            const notes = tier === 4 ? 6 : tier === 3 ? 5 : tier === 2 ? 4 : 3;
-
+            const notes = tier === 4 ? 5 : tier === 3 ? 4 : tier === 2 ? 3 : 2;
             for (let i = 0; i < notes; i++) {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.connect(gain); gain.connect(audioCtx.destination);
-
-                const freq = baseFreq + i * (40 + tier * 25);
-                osc.frequency.value = freq;
+                osc.frequency.value = 440 + i * (40 + tier * 25);
                 osc.type = tier >= 3 ? 'triangle' : 'sine';
-
-                const vol = 0.04 + tier * 0.01;
-                const delay = i * (0.06 + (4 - tier) * 0.01);
-                const duration = 0.12 + tier * 0.04;
-
-                gain.gain.setValueAtTime(vol, t + delay);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + delay + duration);
-                osc.start(t + delay);
-                osc.stop(t + delay + duration);
+                const delay = i * 0.07;
+                const dur = 0.1 + tier * 0.03;
+                gain.gain.setValueAtTime(0.04, t + delay);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + delay + dur);
+                osc.start(t + delay); osc.stop(t + delay + dur);
             }
-
-            // Tetris: add a triumphant final note
-            if (tier === 4) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.frequency.value = 880;
-                osc.type = 'sine';
-                gain.gain.setValueAtTime(0.06, t + 0.4);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
-                osc.start(t + 0.4); osc.stop(t + 0.8);
-            }
-        }
-        else if (type === 'hold') {
+        } else if (type === 'hold') {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain); gain.connect(audioCtx.destination);
@@ -1029,18 +740,16 @@ function playSound(type, tier) {
             gain.gain.setValueAtTime(0.03, t);
             gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
             osc.start(t); osc.stop(t + 0.1);
-        }
-        else if (type === 'over') {
-            for (let i = 0; i < 5; i++) {
+        } else if (type === 'over') {
+            for (let i = 0; i < 4; i++) {
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.frequency.value = 300 - i * 40;
-                osc.type = 'sawtooth';
+                osc.frequency.value = 300 - i * 50; osc.type = 'sawtooth';
                 const d = i * 0.12;
-                gain.gain.setValueAtTime(0.05, t + d);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + d + 0.3);
-                osc.start(t + d); osc.stop(t + d + 0.3);
+                gain.gain.setValueAtTime(0.04, t + d);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + d + 0.25);
+                osc.start(t + d); osc.stop(t + d + 0.25);
             }
         }
     } catch(e) {}
@@ -1067,7 +776,6 @@ class InputManager {
                 this.triggerAction(e.code);
             }
         });
-
         window.addEventListener('keyup', e => {
             this.keys[e.code] = false;
             this.keyTimers[e.code] = 0;
@@ -1078,7 +786,6 @@ class InputManager {
         const now = performance.now();
         const dt = now - this.lastTime;
         this.lastTime = now;
-
         for (const [key, pressed] of Object.entries(this.keys)) {
             if (pressed) {
                 this.keyTimers[key] += dt;
@@ -1141,8 +848,7 @@ function togglePause() {
     const overlay = document.getElementById('status-overlay');
     overlay.textContent = isPaused ? 'PAUSED' : '';
     overlay.classList.toggle('hidden', !isPaused);
-    const btn = document.getElementById('pause-btn');
-    btn.textContent = isPaused ? 'RESUME' : 'PAUSE';
+    document.getElementById('pause-btn').textContent = isPaused ? 'RESUME' : 'PAUSE';
     if (!isPaused) {
         game.lastTime = performance.now();
         inputManager.lastTime = performance.now();
@@ -1173,14 +879,13 @@ document.addEventListener('keydown', e => {
     if (e.key === 'p' || e.key === 'P') togglePause();
 });
 
-// Ensure focus on game start
+// Ensure focus
 document.addEventListener('click', () => { document.body.focus(); });
 document.body.setAttribute('tabindex', '-1');
 
 // ==================== Touch Controls ====================
 (function initTouchControls() {
-    let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
-    let touchMoved = false;
+    let touchStartX = 0, touchStartY = 0, touchStartTime = 0, touchMoved = false;
 
     document.addEventListener('touchstart', e => {
         if (!running || isPaused || !game) return;
@@ -1198,61 +903,51 @@ document.body.setAttribute('tabindex', '-1');
         const dy = t.clientY - touchStartY;
         const threshold = 30;
 
-        if (Math.abs(dx) > threshold && !touchMoved) {
-            touchMoved = true;
-            if (dx > 0) game.move(1);
-            else game.move(-1);
+        if (Math.abs(dx) > threshold) {
+            game.move(dx > 0 ? 1 : -1);
             touchStartX = t.clientX;
-            touchStartY = t.clientY;
-            touchMoved = false;
+            touchMoved = true;
         }
-
-        if (dy > threshold && !touchMoved) {
+        if (dy > threshold) {
             game.drop();
             touchStartY = t.clientY;
-        }
-
-        if (dy < -threshold && !touchMoved) {
             touchMoved = true;
+        }
+        if (dy < -threshold) {
             game.rotate(1);
             touchStartY = t.clientY;
+            touchMoved = true;
         }
-
         e.preventDefault();
     }, { passive: false });
 
     document.addEventListener('touchend', e => {
         if (!running || isPaused || !game) return;
-        const elapsed = Date.now() - touchStartTime;
-        if (!touchMoved && elapsed < 200) {
-            // Quick tap = hard drop
+        if (!touchMoved && Date.now() - touchStartTime < 200) {
             game.hardDrop();
         }
     }, { passive: true });
 })();
 
-// ==================== Animated Background Particles ====================
-function initBgParticles() {
+// ==================== Background Particles ====================
+(function initBgParticles() {
     const container = document.getElementById('bg-particles');
     if (!container) return;
-    const colors = ['rgba(0,243,255,0.15)', 'rgba(180,77,255,0.1)', 'rgba(255,45,149,0.08)', 'rgba(57,255,20,0.08)'];
-    for (let i = 0; i < 30; i++) {
+    const colors = ['rgba(0,243,255,0.12)', 'rgba(180,77,255,0.08)', 'rgba(255,45,149,0.06)'];
+    for (let i = 0; i < 15; i++) {
         const p = document.createElement('div');
         p.className = 'bg-particle';
-        const size = Math.random() * 4 + 1;
+        const size = Math.random() * 3 + 1;
         p.style.width = size + 'px';
         p.style.height = size + 'px';
         p.style.left = Math.random() * 100 + '%';
         p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+        p.style.animationDuration = (Math.random() * 15 + 12) + 's';
         p.style.animationDelay = (Math.random() * 15) + 's';
         container.appendChild(p);
     }
-}
+})();
 
-initBgParticles();
-
-// Handle window resize
 window.addEventListener('resize', () => {
     if (game && game.renderer) {
         game.renderer.resize();
