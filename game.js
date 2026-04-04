@@ -223,12 +223,21 @@ class GameRenderer {
         const ctx = this.boardCtx;
 
         ctx.save();
-        ctx.globalAlpha = 0.18;
-        ctx.strokeStyle = colorObj.base;
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([3, 3]);
-        ctx.strokeRect(px + 2, py + 2, bs - 4, bs - 4);
-        ctx.setLineDash([]);
+        // Visible fill
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = colorObj.base;
+        ctx.fillRect(px + 1, py + 1, bs - 2, bs - 2);
+
+        // Bright solid border
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = colorObj.light;
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(px + 1.5, py + 1.5, bs - 3, bs - 3);
+
+        // Top highlight
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(px + 3, py + 2, bs - 6, 2);
         ctx.restore();
     }
 
