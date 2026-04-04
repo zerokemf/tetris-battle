@@ -1173,6 +1173,64 @@ document.addEventListener('keydown', e => {
     if (e.key === 'p' || e.key === 'P') togglePause();
 });
 
+// Ensure focus on game start
+document.addEventListener('click', () => { document.body.focus(); });
+document.body.setAttribute('tabindex', '-1');
+
+// ==================== Touch Controls ====================
+(function initTouchControls() {
+    let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+    let touchMoved = false;
+
+    document.addEventListener('touchstart', e => {
+        if (!running || isPaused || !game) return;
+        const t = e.touches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        touchStartTime = Date.now();
+        touchMoved = false;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', e => {
+        if (!running || isPaused || !game) return;
+        const t = e.touches[0];
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+        const threshold = 30;
+
+        if (Math.abs(dx) > threshold && !touchMoved) {
+            touchMoved = true;
+            if (dx > 0) game.move(1);
+            else game.move(-1);
+            touchStartX = t.clientX;
+            touchStartY = t.clientY;
+            touchMoved = false;
+        }
+
+        if (dy > threshold && !touchMoved) {
+            game.drop();
+            touchStartY = t.clientY;
+        }
+
+        if (dy < -threshold && !touchMoved) {
+            touchMoved = true;
+            game.rotate(1);
+            touchStartY = t.clientY;
+        }
+
+        e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchend', e => {
+        if (!running || isPaused || !game) return;
+        const elapsed = Date.now() - touchStartTime;
+        if (!touchMoved && elapsed < 200) {
+            // Quick tap = hard drop
+            game.hardDrop();
+        }
+    }, { passive: true });
+})();
+
 // ==================== Animated Background Particles ====================
 function initBgParticles() {
     const container = document.getElementById('bg-particles');
