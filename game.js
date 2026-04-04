@@ -473,6 +473,13 @@ class Tetris {
         this.interval = 1000;
         this.lastTime = 0;
 
+        // Lock Delay system
+        this.lockDelay = 500;       // 0.5s lock timer
+        this.lockTimer = 0;         // current lock countdown (ms)
+        this.lockResets = 0;        // how many times lock has been reset
+        this.lockResetMax = 15;     // max resets per piece
+        this.isLocking = false;     // whether lock delay is active
+
         this.renderer = new GameRenderer('board1', 'fx1');
         this.holdCanvas = document.getElementById('hold1');
         this.nextCanvases = [
@@ -496,6 +503,9 @@ class Tetris {
             this.nextQueue.push(bag.next());
         }
         this.canHold = true;
+        this.isLocking = false;
+        this.lockTimer = 0;
+        this.lockResets = 0;
         if (!this.valid(this.piece, this.piece.x, this.piece.y)) {
             this.over = true;
         }
@@ -537,16 +547,51 @@ class Tetris {
                 this.piece.y += dy;
                 this.piece.rotIndex = nextRotIndex;
                 playSound('rotate');
+                this.resetLockDelay();
+                if (!this.isOnGround()) {
+                    this.isLocking = false;
+                    this.lockTimer = 0;
+                }
                 return;
             }
         }
         this.piece.shape = oldShape;
     }
 
-    move(dir) { if (this.piece.move(dir, 0)) playSound('move'); }
+    // Check if piece is resting on something (ground or other blocks)
+    isOnGround() {
+        return !this.valid(this.piece, this.piece.x, this.piece.y + 1);
+    }
+
+    // Reset lock delay timer (called on successful move/rotate while on ground)
+    resetLockDelay() {
+        if (this.isLocking && this.lockResets < this.lockResetMax) {
+            this.lockTimer = 0;
+            this.lockResets++;
+        }
+    }
+
+    move(dir) {
+        if (this.piece.move(dir, 0)) {
+            playSound('move');
+            this.resetLockDelay();
+            // If piece moved off the ground, cancel lock
+            if (!this.isOnGround()) {
+                this.isLocking = false;
+                this.lockTimer = 0;
+            }
+        }
+    }
 
     drop() {
-        if (this.piece.move(0, 1)) return true;
+        if (this.piece.move(0, 1)) {
+            // Moved down successfully — if now on ground, start lock delay
+            if (this.isOnGround() && !this.isLocking) {
+                this.isLocking = true;
+                this.lockTimer = 0;
+            }
+            return true;
+        }
         return false;
     }
 
@@ -662,13 +707,44 @@ class Tetris {
         }
         this.hold = t;
         this.canHold = false;
+        this.isLocking = false;
+        this.lockTimer = 0;
+        this.lockResets = 0;
     }
 
     update(time) {
         if (this.over || isPaused) return;
-        if (time - this.lastTime > this.interval) {
-            if (!this.drop()) this.lockPiece();
-            this.lastTime = time;
+        const dt = time - this.lastTime;
+
+        if (this.isLocking) {
+            // Lock delay active — count down
+            this.lockTimer += dt;
+            if (this.lockTimer >= this.lockDelay || this.lockResets >= this.lockResetMax) {
+                // Lock the piece
+                this.lockPiece();
+                this.lastTime = time;
+                return;
+            }
+            // Gravity still applies during lock delay
+            if (dt >= this.interval) {
+                if (!this.isOnGround()) {
+                    // Piece was lifted off ground (e.g. line clear below), cancel lock
+                    this.isLocking = false;
+                    this.lockTimer = 0;
+                    this.drop();
+                }
+                this.lastTime = time;
+            }
+        } else {
+            // Normal gravity
+            if (dt >= this.interval) {
+                if (!this.drop()) {
+                    // Piece can't move down — start lock delay
+                    this.isLocking = true;
+                    this.lockTimer = 0;
+                }
+                this.lastTime = time;
+            }
         }
     }
 
