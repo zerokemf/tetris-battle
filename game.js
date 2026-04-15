@@ -830,6 +830,137 @@ function playSound(type, tier) {
     } catch(e) {}
 }
 
+// ==================== Background Music (Korobeiniki / Tetris Theme A) ====================
+const MUSIC_NOTE_FREQ = {
+    'REST': 0,
+    'E2': 82.41, 'G2': 98.00, 'Gs2': 103.83, 'A2': 110.00, 'B2': 123.47,
+    'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00,
+    'A3': 220.00, 'B3': 246.94,
+    'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
+    'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00
+};
+
+// Melody encoded as [note, duration in eighth-notes]. Loop length = 64 eighths.
+const MUSIC_MELODY = [
+    ['E5', 2], ['B4', 1], ['C5', 1], ['D5', 2], ['C5', 1], ['B4', 1],
+    ['A4', 2], ['A4', 1], ['C5', 1], ['E5', 2], ['D5', 1], ['C5', 1],
+    ['B4', 3], ['C5', 1], ['D5', 2], ['E5', 2],
+    ['C5', 2], ['A4', 2], ['A4', 2], ['REST', 2],
+    ['D5', 3], ['F5', 1], ['A5', 2], ['G5', 1], ['F5', 1],
+    ['E5', 3], ['C5', 1], ['E5', 2], ['D5', 1], ['C5', 1],
+    ['B4', 2], ['B4', 1], ['C5', 1], ['D5', 2], ['E5', 2],
+    ['C5', 2], ['A4', 2], ['A4', 2], ['REST', 2]
+];
+
+// Bass line, also totalling 64 eighths.
+const MUSIC_BASS = [
+    ['E3', 4], ['B2', 4], ['E3', 4], ['B2', 4],
+    ['A2', 4], ['E3', 4], ['A2', 4], ['E3', 4],
+    ['D3', 4], ['A2', 4], ['E3', 4], ['B2', 4],
+    ['A2', 4], ['E3', 4], ['B2', 4], ['E3', 4]
+];
+
+let musicEnabled = (typeof localStorage !== 'undefined' && localStorage.getItem('tb-music') === 'off') ? false : true;
+let musicPlaying = false;
+let musicSessionGain = null;
+let musicLoopTimer = null;
+
+const MUSIC_BPM = 150;
+const MUSIC_EIGHTH = 60 / MUSIC_BPM / 2; // seconds per eighth note
+const MUSIC_LOOP_EIGHTHS = 64;
+
+function scheduleMusicTrack(track, startTime, gainNode, oscType, levelAtPeak) {
+    let t = startTime;
+    for (const [note, len] of track) {
+        const freq = MUSIC_NOTE_FREQ[note];
+        const dur = len * MUSIC_EIGHTH;
+        if (freq > 0) {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.connect(g); g.connect(gainNode);
+            osc.type = oscType;
+            osc.frequency.setValueAtTime(freq, t);
+            const atk = 0.015;
+            const rel = Math.min(0.08, dur * 0.3);
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(levelAtPeak, t + atk);
+            g.gain.setValueAtTime(levelAtPeak, t + Math.max(atk, dur - rel));
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            osc.start(t);
+            osc.stop(t + dur + 0.02);
+        }
+        t += dur;
+    }
+}
+
+function scheduleMusicLoop() {
+    if (!audioCtx || !musicPlaying || !musicSessionGain) return;
+    const sessionGain = musicSessionGain;
+    const startAt = audioCtx.currentTime + 0.06;
+    scheduleMusicTrack(MUSIC_MELODY, startAt, sessionGain, 'square', 0.09);
+    scheduleMusicTrack(MUSIC_BASS, startAt, sessionGain, 'triangle', 0.12);
+    const loopDur = MUSIC_LOOP_EIGHTHS * MUSIC_EIGHTH;
+    musicLoopTimer = setTimeout(() => {
+        if (musicPlaying && musicSessionGain === sessionGain) scheduleMusicLoop();
+    }, Math.max(50, loopDur * 1000 - 120));
+}
+
+function startMusic() {
+    if (!musicEnabled) return;
+    initAudio();
+    if (!audioCtx) return;
+    if (musicPlaying) return;
+    musicPlaying = true;
+    musicSessionGain = audioCtx.createGain();
+    const t = audioCtx.currentTime;
+    musicSessionGain.gain.setValueAtTime(0.0001, t);
+    musicSessionGain.gain.exponentialRampToValueAtTime(0.5, t + 0.3);
+    musicSessionGain.connect(audioCtx.destination);
+    scheduleMusicLoop();
+    updateMusicButton();
+}
+
+function stopMusic() {
+    musicPlaying = false;
+    if (musicLoopTimer) { clearTimeout(musicLoopTimer); musicLoopTimer = null; }
+    if (musicSessionGain && audioCtx) {
+        const g = musicSessionGain;
+        const t = audioCtx.currentTime;
+        try {
+            g.gain.cancelScheduledValues(t);
+            g.gain.setValueAtTime(g.gain.value, t);
+            g.gain.linearRampToValueAtTime(0.0001, t + 0.2);
+        } catch(e) {}
+        setTimeout(() => { try { g.disconnect(); } catch(e) {} }, 350);
+        musicSessionGain = null;
+    }
+    updateMusicButton();
+}
+
+function toggleMusic() {
+    musicEnabled = !musicEnabled;
+    try { localStorage.setItem('tb-music', musicEnabled ? 'on' : 'off'); } catch(e) {}
+    if (musicEnabled) {
+        if (running && !isPaused) startMusic();
+    } else {
+        stopMusic();
+    }
+    updateMusicButton();
+}
+
+function updateMusicButton() {
+    const btn = document.getElementById('music-toggle');
+    const label = document.getElementById('music-label');
+    if (!btn) return;
+    btn.classList.toggle('muted', !musicEnabled);
+    btn.classList.toggle('playing', musicEnabled && musicPlaying);
+    if (label) label.textContent = musicEnabled ? 'MUSIC' : 'MUTED';
+    btn.setAttribute('aria-pressed', musicEnabled ? 'true' : 'false');
+}
+
+// Initialize button state on load
+document.addEventListener('DOMContentLoaded', updateMusicButton);
+
 // ==================== Input Manager ====================
 class InputManager {
     constructor(game) {
@@ -908,6 +1039,7 @@ function startGame() {
 
     running = true;
     isPaused = false;
+    startMusic();
     loop();
 }
 
@@ -915,6 +1047,7 @@ function backMenu() {
     document.getElementById('gameover').classList.remove('show');
     document.getElementById('menu').classList.remove('hidden');
     running = false;
+    stopMusic();
 }
 
 function togglePause() {
@@ -924,9 +1057,12 @@ function togglePause() {
     overlay.textContent = isPaused ? 'PAUSED' : '';
     overlay.classList.toggle('hidden', !isPaused);
     document.getElementById('pause-btn').textContent = isPaused ? 'RESUME' : 'PAUSE';
-    if (!isPaused) {
+    if (isPaused) {
+        stopMusic();
+    } else {
         game.lastTime = performance.now();
         inputManager.lastTime = performance.now();
+        startMusic();
         loop();
     }
 }
@@ -938,6 +1074,7 @@ function loop(time = 0) {
     game.render();
     if (game.over) {
         running = false;
+        stopMusic();
         playSound('over');
         document.getElementById('final-score').textContent = game.score.toLocaleString();
         document.getElementById('final-lines').textContent = game.lines;
@@ -950,6 +1087,7 @@ function loop(time = 0) {
 }
 
 document.addEventListener('keydown', e => {
+    if (e.key === 'm' || e.key === 'M') { toggleMusic(); return; }
     if (!running) return;
     if (e.key === 'p' || e.key === 'P') togglePause();
 });
