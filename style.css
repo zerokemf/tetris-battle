@@ -502,6 +502,75 @@ body {
     box-shadow: 0 0 20px rgba(255, 45, 149, 0.3);
 }
 
+/* ==================== Music Toggle Button ==================== */
+.music-toggle {
+    position: fixed;
+    top: clamp(10px, 2vw, 20px);
+    right: clamp(10px, 2vw, 20px);
+    z-index: 100;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Orbitron', sans-serif;
+    background: rgba(8, 16, 40, 0.75);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(0, 243, 255, 0.45);
+    color: var(--neon-cyan);
+    padding: 8px 14px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 0 14px rgba(0, 243, 255, 0.18), inset 0 0 8px rgba(0, 243, 255, 0.08);
+    user-select: none;
+}
+.music-toggle:hover {
+    background: rgba(0, 243, 255, 0.12);
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 22px rgba(0, 243, 255, 0.45), inset 0 0 10px rgba(0, 243, 255, 0.18);
+    transform: translateY(-1px);
+}
+.music-toggle:active {
+    transform: translateY(0);
+}
+.music-toggle .music-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    filter: drop-shadow(0 0 4px rgba(0, 243, 255, 0.6));
+}
+.music-toggle .icon-off { display: none; }
+.music-toggle .icon-on { display: inline; }
+.music-toggle.muted {
+    color: var(--text-dim);
+    border-color: rgba(120, 135, 165, 0.35);
+    box-shadow: none;
+}
+.music-toggle.muted:hover {
+    background: rgba(120, 135, 165, 0.1);
+    border-color: rgba(180, 195, 225, 0.55);
+    box-shadow: 0 0 10px rgba(120, 135, 165, 0.2);
+}
+.music-toggle.muted .music-icon { filter: none; }
+.music-toggle.muted .icon-on { display: none; }
+.music-toggle.muted .icon-off { display: inline; }
+.music-toggle.playing .music-icon {
+    animation: musicPulse 1.4s ease-in-out infinite;
+}
+@keyframes musicPulse {
+    0%, 100% { filter: drop-shadow(0 0 4px rgba(0, 243, 255, 0.5)); transform: scale(1); }
+    50%      { filter: drop-shadow(0 0 10px rgba(0, 243, 255, 0.95)); transform: scale(1.08); }
+}
+@media (max-width: 600px) {
+    .music-toggle { padding: 6px 10px; font-size: 0.62rem; letter-spacing: 0.12em; }
+    .music-toggle .music-label { display: none; }
+}
+
 /* ==================== Game Over Screen ==================== */
 .gameover-screen {
     position: fixed;
