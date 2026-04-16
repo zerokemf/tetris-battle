@@ -752,95 +752,8 @@ class Tetris {
     }
 }
 
-// ==================== Sound Engine ====================
-let audioCtx = null;
-
-function initAudio() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-}
-
-function playSound(type, tier) {
-    if (!audioCtx) return;
-    try {
-        const t = audioCtx.currentTime;
-        if (type === 'move') {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.value = 280; osc.type = 'sine';
-            gain.gain.setValueAtTime(0.025, t);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-            osc.start(t); osc.stop(t + 0.04);
-        } else if (type === 'rotate') {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.value = 400;
-            osc.frequency.exponentialRampToValueAtTime(500, t + 0.06);
-            osc.type = 'sine';
-            gain.gain.setValueAtTime(0.03, t);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
-            osc.start(t); osc.stop(t + 0.08);
-        } else if (type === 'hardDrop') {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.value = 120; osc.type = 'square';
-            gain.gain.setValueAtTime(0.05, t);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
-            osc.start(t); osc.stop(t + 0.08);
-        } else if (type === 'clear') {
-            tier = tier || 1;
-            const notes = tier === 4 ? 5 : tier === 3 ? 4 : tier === 2 ? 3 : 2;
-            for (let i = 0; i < notes; i++) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.frequency.value = 440 + i * (40 + tier * 25);
-                osc.type = tier >= 3 ? 'triangle' : 'sine';
-                const delay = i * 0.07;
-                const dur = 0.1 + tier * 0.03;
-                gain.gain.setValueAtTime(0.04, t + delay);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + delay + dur);
-                osc.start(t + delay); osc.stop(t + delay + dur);
-            }
-        } else if (type === 'hold') {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.value = 600;
-            osc.frequency.exponentialRampToValueAtTime(700, t + 0.08);
-            osc.type = 'sine';
-            gain.gain.setValueAtTime(0.03, t);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-            osc.start(t); osc.stop(t + 0.1);
-        } else if (type === 'over') {
-            for (let i = 0; i < 4; i++) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.frequency.value = 300 - i * 50; osc.type = 'sawtooth';
-                const d = i * 0.12;
-                gain.gain.setValueAtTime(0.04, t + d);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + d + 0.25);
-                osc.start(t + d); osc.stop(t + d + 0.25);
-            }
-        }
-    } catch(e) {}
-}
-
-// ==================== Background Music (Korobeiniki / Tetris Theme A) ====================
-const MUSIC_NOTE_FREQ = {
-    'REST': 0,
-    'E2': 82.41, 'G2': 98.00, 'Gs2': 103.83, 'A2': 110.00, 'B2': 123.47,
-    'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00,
-    'A3': 220.00, 'B3': 246.94,
-    'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
-    'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00
-};
-
-// Melody encoded as [note, duration in eighth-notes]. Loop length = 64 eighths.
+// ==================== Tone.js Audio Engine ====================
+// Korobeiniki (Tetris Theme A) — melody, 64 eighth notes loop
 const MUSIC_MELODY = [
     ['E5', 2], ['B4', 1], ['C5', 1], ['D5', 2], ['C5', 1], ['B4', 1],
     ['A4', 2], ['A4', 1], ['C5', 1], ['E5', 2], ['D5', 1], ['C5', 1],
@@ -852,7 +765,6 @@ const MUSIC_MELODY = [
     ['C5', 2], ['A4', 2], ['A4', 2], ['REST', 2]
 ];
 
-// Bass line, also totalling 64 eighths.
 const MUSIC_BASS = [
     ['E3', 4], ['B2', 4], ['E3', 4], ['B2', 4],
     ['A2', 4], ['E3', 4], ['A2', 4], ['E3', 4],
@@ -860,80 +772,252 @@ const MUSIC_BASS = [
     ['A2', 4], ['E3', 4], ['B2', 4], ['E3', 4]
 ];
 
+const MUSIC_BPM = 150;
+const MUSIC_EIGHTH_SEC = 60 / MUSIC_BPM / 2;  // 0.2s at 150 BPM
+
 let musicEnabled = (typeof localStorage !== 'undefined' && localStorage.getItem('tb-music') === 'off') ? false : true;
 let musicPlaying = false;
-let musicSessionGain = null;
-let musicLoopTimer = null;
+let toneReady = false;
+let toneInitPromise = null;
+let audioNodes = null;
 
-const MUSIC_BPM = 150;
-const MUSIC_EIGHTH = 60 / MUSIC_BPM / 2; // seconds per eighth note
-const MUSIC_LOOP_EIGHTHS = 64;
-
-function scheduleMusicTrack(track, startTime, gainNode, oscType, levelAtPeak) {
-    let t = startTime;
-    for (const [note, len] of track) {
-        const freq = MUSIC_NOTE_FREQ[note];
-        const dur = len * MUSIC_EIGHTH;
-        if (freq > 0) {
-            const osc = audioCtx.createOscillator();
-            const g = audioCtx.createGain();
-            osc.connect(g); g.connect(gainNode);
-            osc.type = oscType;
-            osc.frequency.setValueAtTime(freq, t);
-            const atk = 0.015;
-            const rel = Math.min(0.08, dur * 0.3);
-            g.gain.setValueAtTime(0.0001, t);
-            g.gain.exponentialRampToValueAtTime(levelAtPeak, t + atk);
-            g.gain.setValueAtTime(levelAtPeak, t + Math.max(atk, dur - rel));
-            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-            osc.start(t);
-            osc.stop(t + dur + 0.02);
+async function initAudio() {
+    if (toneReady) return;
+    if (typeof Tone === 'undefined') return;
+    if (toneInitPromise) return toneInitPromise;
+    toneInitPromise = (async () => {
+        try {
+            await Tone.start();
+            buildAudioGraph();
+            setupMusicParts();
+            toneReady = true;
+        } catch (e) {
+            console.warn('Tone.js init failed', e);
         }
-        t += dur;
-    }
+    })();
+    return toneInitPromise;
 }
 
-function scheduleMusicLoop() {
-    if (!audioCtx || !musicPlaying || !musicSessionGain) return;
-    const sessionGain = musicSessionGain;
-    const startAt = audioCtx.currentTime + 0.06;
-    scheduleMusicTrack(MUSIC_MELODY, startAt, sessionGain, 'square', 0.09);
-    scheduleMusicTrack(MUSIC_BASS, startAt, sessionGain, 'triangle', 0.12);
-    const loopDur = MUSIC_LOOP_EIGHTHS * MUSIC_EIGHTH;
-    musicLoopTimer = setTimeout(() => {
-        if (musicPlaying && musicSessionGain === sessionGain) scheduleMusicLoop();
-    }, Math.max(50, loopDur * 1000 - 120));
+function buildAudioGraph() {
+    // ---------- Music bus ----------
+    const musicReverb = new Tone.Reverb({ decay: 3.5, wet: 0.22 }).toDestination();
+    const musicMaster = new Tone.Gain(0.55).connect(musicReverb);
+
+    // Lead: triangle → chorus → feedback delay → master
+    const leadDelay = new Tone.FeedbackDelay({ delayTime: '8n.', feedback: 0.15, wet: 0.18 }).connect(musicMaster);
+    const leadChorus = new Tone.Chorus({ frequency: 2.5, delayTime: 2.5, depth: 0.5, wet: 0.4 }).start().connect(leadDelay);
+    const lead = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.008, decay: 0.2, sustain: 0.35, release: 0.3 }
+    }).connect(leadChorus);
+    lead.volume.value = -8;
+
+    // Bass: filtered saw
+    const bassFilter = new Tone.Filter({ frequency: 600, type: 'lowpass', Q: 1 }).connect(musicMaster);
+    const bass = new Tone.MonoSynth({
+        oscillator: { type: 'sawtooth' },
+        envelope: { attack: 0.02, decay: 0.15, sustain: 0.6, release: 0.15 },
+        filterEnvelope: { attack: 0.02, decay: 0.3, sustain: 0.4, release: 0.2, baseFrequency: 120, octaves: 2.5 }
+    }).connect(bassFilter);
+    bass.volume.value = -11;
+
+    // Pad: soft AM chords, heavy reverb
+    const pad = new Tone.PolySynth(Tone.AMSynth, {
+        harmonicity: 2,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.6, decay: 0.3, sustain: 0.4, release: 1.4 }
+    }).connect(musicMaster);
+    pad.volume.value = -24;
+
+    // ---------- SFX bus ----------
+    const sfxReverb = new Tone.Reverb({ decay: 0.9, wet: 0.12 }).toDestination();
+    const sfxMaster = new Tone.Gain(0.8).connect(sfxReverb);
+
+    const sfxMove = new Tone.Synth({
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.05 }
+    }).connect(sfxMaster);
+    sfxMove.volume.value = -18;
+
+    const sfxRotate = new Tone.Synth({
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.003, decay: 0.08, sustain: 0, release: 0.08 }
+    }).connect(sfxMaster);
+    sfxRotate.volume.value = -14;
+
+    const sfxDrop = new Tone.MembraneSynth({
+        pitchDecay: 0.05,
+        octaves: 5,
+        envelope: { attack: 0.001, decay: 0.18, sustain: 0, release: 0.1 }
+    }).connect(sfxMaster);
+    sfxDrop.volume.value = -8;
+
+    const sfxHold = new Tone.Synth({
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.005, decay: 0.15, sustain: 0.1, release: 0.3 }
+    }).connect(sfxMaster);
+    sfxHold.volume.value = -14;
+
+    const sfxClear = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.01, decay: 0.3, sustain: 0.2, release: 0.7 }
+    }).connect(sfxMaster);
+    sfxClear.volume.value = -12;
+
+    const sfxOverFilter = new Tone.Filter({ frequency: 1200, type: 'lowpass' }).connect(sfxMaster);
+    const sfxOver = new Tone.MonoSynth({
+        oscillator: { type: 'sawtooth' },
+        envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 1.5 },
+        filterEnvelope: { attack: 0.01, decay: 0.6, sustain: 0.2, release: 1.2, baseFrequency: 1000, octaves: -3 }
+    }).connect(sfxOverFilter);
+    sfxOver.volume.value = -8;
+
+    audioNodes = {
+        music: { master: musicMaster, reverb: musicReverb, lead, bass, pad },
+        sfx: { move: sfxMove, rotate: sfxRotate, drop: sfxDrop, hold: sfxHold, clear: sfxClear, over: sfxOver }
+    };
+}
+
+function setupMusicParts() {
+    if (!audioNodes) return;
+    Tone.Transport.bpm.value = MUSIC_BPM;
+
+    const melodyEvents = [];
+    let t = 0;
+    for (const [note, len] of MUSIC_MELODY) {
+        if (note !== 'REST') {
+            melodyEvents.push({ time: t, note, dur: len * MUSIC_EIGHTH_SEC * 0.92 });
+        }
+        t += len * MUSIC_EIGHTH_SEC;
+    }
+    const loopLen = t;
+
+    const bassEvents = [];
+    t = 0;
+    for (const [note, len] of MUSIC_BASS) {
+        if (note !== 'REST') {
+            bassEvents.push({ time: t, note, dur: len * MUSIC_EIGHTH_SEC * 0.95 });
+        }
+        t += len * MUSIC_EIGHTH_SEC;
+    }
+
+    // Chord pad: 8 bars @ 1.6s each
+    const padEvents = [
+        { time: 0.0,  chord: ['A3', 'C4', 'E4'] },
+        { time: 1.6,  chord: ['A3', 'C4', 'E4'] },
+        { time: 3.2,  chord: ['E3', 'G#3', 'B3'] },
+        { time: 4.8,  chord: ['A3', 'C4', 'E4'] },
+        { time: 6.4,  chord: ['D3', 'F3', 'A3'] },
+        { time: 8.0,  chord: ['A3', 'C4', 'E4'] },
+        { time: 9.6,  chord: ['E3', 'G#3', 'B3'] },
+        { time: 11.2, chord: ['A3', 'C4', 'E4'] }
+    ];
+
+    const melodyPart = new Tone.Part((time, ev) => {
+        audioNodes.music.lead.triggerAttackRelease(ev.note, ev.dur, time, 0.65);
+    }, melodyEvents);
+    melodyPart.loop = true;
+    melodyPart.loopEnd = loopLen;
+
+    const bassPart = new Tone.Part((time, ev) => {
+        audioNodes.music.bass.triggerAttackRelease(ev.note, ev.dur, time, 0.6);
+    }, bassEvents);
+    bassPart.loop = true;
+    bassPart.loopEnd = loopLen;
+
+    const padPart = new Tone.Part((time, ev) => {
+        audioNodes.music.pad.triggerAttackRelease(ev.chord, 1.4, time, 0.4);
+    }, padEvents);
+    padPart.loop = true;
+    padPart.loopEnd = loopLen;
+
+    melodyPart.start(0);
+    bassPart.start(0);
+    padPart.start(0);
+
+    audioNodes.music.melodyPart = melodyPart;
+    audioNodes.music.bassPart = bassPart;
+    audioNodes.music.padPart = padPart;
+}
+
+function playSound(type, tier) {
+    if (!toneReady || !audioNodes) return;
+    try {
+        const sfx = audioNodes.sfx;
+        if (type === 'move') {
+            sfx.move.triggerAttackRelease('A5', '64n');
+        } else if (type === 'rotate') {
+            const now = Tone.now();
+            sfx.rotate.triggerAttackRelease('E5', '32n', now);
+            sfx.rotate.triggerAttackRelease('A5', '32n', now + 0.04);
+        } else if (type === 'hardDrop') {
+            sfx.drop.triggerAttackRelease('C2', '8n');
+        } else if (type === 'hold') {
+            const now = Tone.now();
+            sfx.hold.triggerAttackRelease('E6', '16n', now);
+            sfx.hold.triggerAttackRelease('A6', '16n', now + 0.06);
+        } else if (type === 'clear') {
+            tier = tier || 1;
+            const chordsByTier = {
+                1: [['C5', 'E5'], ['D5', 'F5']],
+                2: [['C5', 'E5', 'G5'], ['E5', 'G5', 'B5']],
+                3: [['C5', 'E5', 'G5'], ['F5', 'A5', 'C6'], ['G5', 'B5', 'D6']],
+                4: [['C5', 'E5', 'G5'], ['E5', 'G5', 'B5'], ['G5', 'B5', 'D6'], ['C6', 'E6', 'G6']]
+            };
+            const seq = chordsByTier[tier] || chordsByTier[1];
+            const base = Tone.now();
+            seq.forEach((c, i) => {
+                sfx.clear.triggerAttackRelease(c, '4n', base + i * 0.09);
+            });
+        } else if (type === 'over') {
+            const now = Tone.now();
+            sfx.over.triggerAttackRelease('A3', '1n', now);
+            sfx.over.frequency.cancelScheduledValues(now);
+            sfx.over.frequency.setValueAtTime(220, now);
+            sfx.over.frequency.exponentialRampToValueAtTime(55, now + 1.6);
+        }
+    } catch(e) {}
 }
 
 function startMusic() {
     if (!musicEnabled) return;
-    initAudio();
-    if (!audioCtx) return;
-    if (musicPlaying) return;
-    musicPlaying = true;
-    musicSessionGain = audioCtx.createGain();
-    const t = audioCtx.currentTime;
-    musicSessionGain.gain.setValueAtTime(0.0001, t);
-    musicSessionGain.gain.exponentialRampToValueAtTime(0.5, t + 0.3);
-    musicSessionGain.connect(audioCtx.destination);
-    scheduleMusicLoop();
-    updateMusicButton();
+    initAudio().then(() => {
+        if (!toneReady || !audioNodes) return;
+        if (musicPlaying) return;
+        musicPlaying = true;
+        Tone.Transport.stop();
+        Tone.Transport.position = 0;
+        const now = Tone.now();
+        const g = audioNodes.music.master.gain;
+        g.cancelScheduledValues(now);
+        g.setValueAtTime(0, now);
+        g.linearRampToValueAtTime(0.55, now + 0.4);
+        Tone.Transport.start();
+        updateMusicButton();
+    });
 }
 
 function stopMusic() {
-    musicPlaying = false;
-    if (musicLoopTimer) { clearTimeout(musicLoopTimer); musicLoopTimer = null; }
-    if (musicSessionGain && audioCtx) {
-        const g = musicSessionGain;
-        const t = audioCtx.currentTime;
-        try {
-            g.gain.cancelScheduledValues(t);
-            g.gain.setValueAtTime(g.gain.value, t);
-            g.gain.linearRampToValueAtTime(0.0001, t + 0.2);
-        } catch(e) {}
-        setTimeout(() => { try { g.disconnect(); } catch(e) {} }, 350);
-        musicSessionGain = null;
+    if (!toneReady || !audioNodes) {
+        musicPlaying = false;
+        updateMusicButton();
+        return;
     }
+    if (!musicPlaying) {
+        updateMusicButton();
+        return;
+    }
+    musicPlaying = false;
+    const now = Tone.now();
+    const g = audioNodes.music.master.gain;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value, now);
+    g.linearRampToValueAtTime(0, now + 0.3);
+    setTimeout(() => {
+        if (!musicPlaying && toneReady) {
+            try { Tone.Transport.stop(); } catch(e) {}
+        }
+    }, 400);
     updateMusicButton();
 }
 
@@ -958,7 +1042,6 @@ function updateMusicButton() {
     btn.setAttribute('aria-pressed', musicEnabled ? 'true' : 'false');
 }
 
-// Initialize button state on load
 document.addEventListener('DOMContentLoaded', updateMusicButton);
 
 // ==================== Input Manager ====================
