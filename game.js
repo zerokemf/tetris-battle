@@ -68,27 +68,27 @@ const B2B_BONUS = 1;
 const AI_PROFILES = {
     easy: {
         name: 'EASY',
-        thinkDelay: 600,       // ms before deciding (longer = more time for player to set up)
-        actionInterval: 320,    // ms per action (slow, beatable pace)
+        thinkDelay: 800,       // long pause — player gets time to set up
+        actionInterval: 500,  // slow DAS, gives player breathing room
         dropInterval: 900,
-        errorChance: 0.45,    // 45% chance to pick bad move
-        weights: { height: -0.45, lines: 0.55, holes: -0.25, bumpiness: -0.05 }
+        errorChance: 0.12,   // only 12% chance to intentionally fumble (not 45%)
+        weights: { height: -0.55, lines: 0.70, holes: -0.40, bumpiness: -0.20 }
     },
     normal: {
         name: 'NORMAL',
-        thinkDelay: 250,
-        actionInterval: 140,   // ~DAS speed, fair for humans
+        thinkDelay: 280,      // a little extra time
+        actionInterval: 160,  // moderate DAS, fair pace for humans
         dropInterval: 600,
-        errorChance: 0.15,
-        weights: { height: -0.48, lines: 0.72, holes: -0.32, bumpiness: -0.16 }
+        errorChance: 0.10,
+        weights: { height: -0.50, lines: 0.75, holes: -0.35, bumpiness: -0.18 }
     },
     hard: {
         name: 'HARD',
-        thinkDelay: 100,        // reacts quickly but not instant
-        actionInterval: 80,    // fast but humanly possible to counter
+        thinkDelay: 130,      // quick but not instant
+        actionInterval: 100,  // fast DAS but achievable for experienced players
         dropInterval: 400,
-        errorChance: 0.03,    // occasionally blunders
-        weights: { height: -0.52, lines: 0.82, holes: -0.55, bumpiness: -0.20, wells: -0.10 }
+        errorChance: 0.05,   // tiny chance of a slip, not perfect
+        weights: { height: -0.52, lines: 0.88, holes: -0.50, bumpiness: -0.22, wells: -0.12 }
     }
 };
 
