@@ -219,10 +219,10 @@ body.mode-battle .solo-only { display: none !important; }
 .game-container {
     display: flex;
     flex-direction: row;
-    gap: clamp(12px, 2.5vw, 35px);
+    gap: clamp(12px, 2vw, 48px);
     align-items: flex-start;
-    max-width: 95vw;
-    max-height: 95vh;
+    max-width: 98vw;
+    max-height: 98vh;
     z-index: 1;
     padding: 1vh 0;
 }
@@ -231,8 +231,8 @@ body.mode-battle .solo-only { display: none !important; }
 .side-panel {
     display: flex;
     flex-direction: column;
-    gap: clamp(8px, 1.5vw, 18px);
-    width: clamp(130px, 16vw, 210px);
+    gap: clamp(8px, 1.2vw, 24px);
+    width: clamp(140px, 14vw, 340px);
 }
 
 .neon-window {
@@ -248,23 +248,23 @@ body.mode-battle .solo-only { display: none !important; }
 .panel-header {
     background: linear-gradient(90deg, rgba(0, 243, 255, 0.15), rgba(180, 77, 255, 0.1));
     text-align: center;
-    padding: clamp(5px, 1vw, 10px);
+    padding: clamp(5px, 0.8vw, 14px);
     color: var(--neon-cyan);
     font-family: 'Orbitron', sans-serif;
     font-weight: 700;
-    font-size: clamp(0.55rem, 1.1vw, 0.8rem);
+    font-size: clamp(0.6rem, 0.9vw, 1.1rem);
     letter-spacing: 0.15em;
     border-bottom: 1px solid rgba(0, 243, 255, 0.1);
 }
 
-.panel-content { padding: clamp(8px, 1.5vw, 16px); }
+.panel-content { padding: clamp(8px, 1.2vw, 22px); }
 
-.controls-text { font-size: clamp(0.6rem, 1.1vw, 0.85rem); color: var(--text-dim); }
-.control-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+.controls-text { font-size: clamp(0.65rem, 0.9vw, 1.1rem); color: var(--text-dim); }
+.control-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
 .control-row:last-child { border-bottom: none; }
 .key {
     font-family: 'Orbitron', sans-serif;
-    font-size: 0.75em;
+    font-size: 0.78em;
     color: var(--neon-cyan);
     background: rgba(0, 243, 255, 0.08);
     padding: 2px 6px;
@@ -272,10 +272,10 @@ body.mode-battle .solo-only { display: none !important; }
     border: 1px solid rgba(0, 243, 255, 0.15);
 }
 
-.stats-text { display: flex; flex-direction: column; gap: clamp(6px, 1vw, 12px); }
+.stats-text { display: flex; flex-direction: column; gap: clamp(6px, 0.8vw, 16px); }
 .stat-item { display: flex; justify-content: space-between; align-items: baseline; }
-.stat-label { font-family: 'Orbitron', sans-serif; font-size: clamp(0.5rem, 0.9vw, 0.7rem); color: var(--text-dim); letter-spacing: 0.1em; }
-.stat-value { font-family: 'Orbitron', sans-serif; font-size: clamp(0.9rem, 1.8vw, 1.4rem); font-weight: 700; color: var(--text-bright); text-shadow: 0 0 8px rgba(208, 224, 255, 0.3); transition: all 0.3s ease; }
+.stat-label { font-family: 'Orbitron', sans-serif; font-size: clamp(0.55rem, 0.75vw, 0.95rem); color: var(--text-dim); letter-spacing: 0.1em; }
+.stat-value { font-family: 'Orbitron', sans-serif; font-size: clamp(0.95rem, 1.3vw, 1.9rem); font-weight: 700; color: var(--text-bright); text-shadow: 0 0 8px rgba(208, 224, 255, 0.3); transition: all 0.3s ease; }
 .stat-value.combo-val { color: var(--neon-yellow); text-shadow: 0 0 10px rgba(255, 225, 77, 0.4); }
 .stat-value.pop { transform: scale(1.4); color: var(--neon-cyan); text-shadow: 0 0 15px rgba(0, 243, 255, 0.6); }
 
@@ -286,12 +286,12 @@ body.mode-battle .solo-only { display: none !important; }
 
 .game-title {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(1.2rem, 2.8vw, 2rem);
+    font-size: clamp(1.2rem, 2.2vw, 3rem);
     font-weight: 900;
     letter-spacing: 0.15em;
     color: var(--neon-cyan);
     text-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
-    margin-bottom: clamp(6px, 1.2vw, 14px);
+    margin-bottom: clamp(6px, 1vw, 20px);
 }
 
 .title-accent { font-size: 0.6em; color: var(--neon-pink); text-shadow: 0 0 15px rgba(255, 45, 149, 0.5); margin-left: 0.3em; }
@@ -302,8 +302,9 @@ body.mode-battle .solo-only { display: none !important; }
     background: rgba(0, 0, 0, 0.9);
     border-radius: 6px;
     box-shadow: 0 0 30px rgba(0, 243, 255, 0.15), inset 0 0 30px rgba(0, 0, 0, 0.5);
-    width: clamp(240px, 34vw, 360px);
-    height: clamp(480px, 68vw, 720px);
+    /* Tetris board is 10×20 — lock aspect ratio and let the shorter of height/width drive sizing */
+    aspect-ratio: 1 / 2;
+    height: clamp(520px, min(86vh, 44vw), 1700px);
     overflow: hidden;
     transition: box-shadow 0.3s ease;
 }
@@ -497,23 +498,23 @@ body.mode-battle .solo-only { display: none !important; }
 
 .battle-side {
     display: flex; flex-direction: column;
-    gap: 8px;
+    gap: clamp(6px, 0.8vw, 16px);
 }
 
 .battle-player-tag {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 10px;
+    gap: clamp(8px, 1vw, 20px);
     font-family: 'Orbitron', sans-serif;
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: 6px;
-    padding: 6px 14px;
+    padding: clamp(5px, 0.7vw, 14px) clamp(10px, 1.2vw, 24px);
     color: var(--neon-cyan);
 }
 .battle-player-tag.ai-tag { color: var(--neon-pink); border-color: rgba(255, 45, 149, 0.3); }
-.tag-name { font-weight: 900; letter-spacing: 0.25em; font-size: clamp(0.8rem, 1.8vw, 1.1rem); }
-.tag-stats { display: flex; gap: 12px; }
-.mini-stat { font-size: clamp(0.55rem, 1vw, 0.7rem); letter-spacing: 0.15em; color: var(--text-mid); }
+.tag-name { font-weight: 900; letter-spacing: 0.25em; font-size: clamp(0.85rem, 1.3vw, 1.8rem); }
+.tag-stats { display: flex; gap: clamp(8px, 1vw, 20px); }
+.mini-stat { font-size: clamp(0.6rem, 0.85vw, 1rem); letter-spacing: 0.15em; color: var(--text-mid); }
 .mini-stat b { color: var(--text-bright); font-weight: 700; margin-left: 4px; }
 
 .battle-row {
@@ -524,20 +525,20 @@ body.mode-battle .solo-only { display: none !important; }
 }
 
 .battle-info {
-    display: flex; flex-direction: column; gap: 6px;
-    width: clamp(75px, 9vw, 110px);
+    display: flex; flex-direction: column; gap: clamp(4px, 0.6vw, 12px);
+    width: clamp(80px, 9vw, 180px);
 }
 
 .mini-window {
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: 6px;
-    padding: 6px;
-    display: flex; flex-direction: column; gap: 4px;
+    padding: clamp(5px, 0.6vw, 12px);
+    display: flex; flex-direction: column; gap: clamp(3px, 0.4vw, 8px);
 }
 .mini-header {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(0.5rem, 1vw, 0.65rem);
+    font-size: clamp(0.55rem, 0.8vw, 1rem);
     color: var(--neon-cyan);
     letter-spacing: 0.2em;
     text-align: center;
@@ -546,11 +547,11 @@ body.mode-battle .solo-only { display: none !important; }
 }
 
 .battle-stats {
-    display: flex; flex-direction: column; gap: 4px;
+    display: flex; flex-direction: column; gap: clamp(3px, 0.4vw, 8px);
     background: var(--panel-bg);
     border: 1px solid var(--panel-border);
     border-radius: 6px;
-    padding: 8px;
+    padding: clamp(6px, 0.8vw, 14px);
 }
 .mini-stat-block {
     display: flex; flex-direction: column; align-items: flex-start;
@@ -558,13 +559,13 @@ body.mode-battle .solo-only { display: none !important; }
 }
 .mini-stat-block span {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(0.45rem, 0.8vw, 0.6rem);
+    font-size: clamp(0.5rem, 0.65vw, 0.85rem);
     color: var(--text-dim);
     letter-spacing: 0.15em;
 }
 .mini-stat-block b {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(0.8rem, 1.6vw, 1.2rem);
+    font-size: clamp(0.9rem, 1.2vw, 1.7rem);
     color: var(--text-bright);
     font-weight: 700;
     text-shadow: 0 0 8px rgba(208, 224, 255, 0.3);
@@ -577,8 +578,8 @@ body.mode-battle .solo-only { display: none !important; }
     background: rgba(0, 0, 0, 0.9);
     border-radius: 6px;
     box-shadow: 0 0 25px rgba(0, 243, 255, 0.18), inset 0 0 30px rgba(0, 0, 0, 0.5);
-    width: clamp(180px, 22vw, 280px);
-    height: clamp(360px, 44vw, 560px);
+    aspect-ratio: 1 / 2;
+    height: clamp(400px, min(88vh, 38vw), 1400px);
     overflow: hidden;
     transition: box-shadow 0.3s ease;
 }
@@ -595,8 +596,8 @@ body.mode-battle .solo-only { display: none !important; }
 
 /* Garbage meter */
 .garbage-meter {
-    width: clamp(10px, 1.2vw, 18px);
-    height: clamp(360px, 44vw, 560px);
+    width: clamp(12px, 1vw, 26px);
+    height: clamp(400px, min(88vh, 38vw), 1400px);
     background: rgba(8, 16, 40, 0.6);
     border: 1px solid rgba(100, 120, 160, 0.25);
     border-radius: 4px;
@@ -628,14 +629,14 @@ body.mode-battle .solo-only { display: none !important; }
 /* Battle VS center column */
 .battle-vs {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 10px;
-    padding: 0 8px;
-    min-width: clamp(60px, 8vw, 110px);
+    gap: clamp(8px, 1vw, 22px);
+    padding: 0 clamp(6px, 0.8vw, 18px);
+    min-width: clamp(70px, 7vw, 170px);
 }
 
 .vs-label {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(1.5rem, 4vw, 2.8rem);
+    font-size: clamp(1.6rem, 3vw, 4.2rem);
     font-weight: 900;
     letter-spacing: 0.1em;
     background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
@@ -653,27 +654,71 @@ body.mode-battle .solo-only { display: none !important; }
 
 .difficulty-display {
     font-family: 'Orbitron', sans-serif;
-    font-size: clamp(0.55rem, 1.1vw, 0.75rem);
+    font-size: clamp(0.6rem, 0.85vw, 1.1rem);
     letter-spacing: 0.25em;
     color: var(--neon-yellow);
     background: rgba(8, 16, 40, 0.75);
     border: 1px solid rgba(255, 225, 77, 0.35);
-    padding: 4px 10px;
+    padding: clamp(4px, 0.4vw, 8px) clamp(10px, 1vw, 20px);
     border-radius: 999px;
     text-shadow: 0 0 10px rgba(255, 225, 77, 0.4);
 }
 
 /* ==================== Responsive ==================== */
+/* 16:10 and mid-range monitors — slightly tighter vertical limits */
+@media (min-aspect-ratio: 8/5) and (max-aspect-ratio: 16/9) {
+    .canvas-wrapper { height: clamp(520px, min(84vh, 42vw), 1600px); }
+    .battle-board-wrapper { height: clamp(400px, min(86vh, 36vw), 1300px); }
+    .garbage-meter { height: clamp(400px, min(86vh, 36vw), 1300px); }
+}
+
+/* 1440p / QHD — bigger defaults */
+@media (min-width: 2000px) {
+    .game-container { gap: clamp(18px, 2vw, 48px); }
+    .side-panel { width: clamp(200px, 14vw, 320px); }
+    .canvas-wrapper { height: clamp(640px, min(88vh, 44vw), 1600px); }
+    .battle-board-wrapper { height: clamp(520px, min(88vh, 36vw), 1400px); }
+    .garbage-meter { height: clamp(520px, min(88vh, 36vw), 1400px); }
+    .battle-info { width: clamp(120px, 9vw, 180px); }
+}
+
+/* Ultrawide 3440x1440 — emphasize horizontal space */
+@media (min-width: 3000px) and (max-aspect-ratio: 22/9) {
+    .battle-arena { gap: clamp(16px, 1.8vw, 40px); }
+    .battle-board-wrapper { height: clamp(560px, min(90vh, 32vw), 1500px); }
+    .garbage-meter { height: clamp(560px, min(90vh, 32vw), 1500px); }
+    .canvas-wrapper { height: clamp(700px, min(90vh, 40vw), 1700px); }
+}
+
+/* 4K 3840x2160 — largest caps, comfortable reading sizes */
+@media (min-width: 3600px) {
+    .game-container { gap: clamp(24px, 2.2vw, 64px); }
+    .side-panel { width: clamp(260px, 14vw, 380px); }
+    .canvas-wrapper { height: clamp(1000px, min(88vh, 44vw), 1900px); }
+    .battle-board-wrapper { height: clamp(800px, min(88vh, 38vw), 1600px); }
+    .garbage-meter { height: clamp(800px, min(88vh, 38vw), 1600px); width: clamp(18px, 1vw, 32px); }
+    .battle-info { width: clamp(180px, 9vw, 220px); }
+    .game-title { font-size: clamp(2rem, 2.2vw, 3.6rem); }
+}
+
+/* Narrow / small laptops */
+@media (max-width: 1200px) {
+    .game-container { gap: clamp(8px, 1.2vw, 16px); }
+    .side-panel { width: clamp(120px, 13vw, 180px); }
+    .canvas-wrapper { height: clamp(480px, min(82vh, 44vw), 900px); }
+}
+
 @media (max-width: 900px) {
-    .battle-info { width: clamp(60px, 8vw, 90px); }
-    .battle-board-wrapper { width: clamp(140px, 28vw, 220px); height: clamp(280px, 56vw, 440px); }
-    .garbage-meter { height: clamp(280px, 56vw, 440px); }
+    .battle-info { width: clamp(70px, 9vw, 110px); }
+    .battle-board-wrapper { height: clamp(360px, min(72vh, 56vw), 700px); }
+    .garbage-meter { height: clamp(360px, min(72vh, 56vw), 700px); }
+    .vs-label { font-size: clamp(1.3rem, 3.5vw, 2.2rem); }
 }
 
 @media (max-width: 768px) {
     .game-container { gap: 8px; }
     .side-panel { width: clamp(90px, 20vw, 140px); }
-    .canvas-wrapper { width: clamp(180px, 45vw, 280px); height: clamp(360px, 90vw, 560px); }
+    .canvas-wrapper { height: clamp(360px, min(70vh, 90vw), 620px); }
     .controls-text { display: none; }
 
     .battle-info .battle-stats { padding: 4px; }
