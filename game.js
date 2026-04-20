@@ -1502,6 +1502,8 @@ class InputManager {
 
     initListeners() {
         this._kd = e => {
+            // Ignore key repeat events — only respond to initial press
+            if (e.repeat) return;
             if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
             if (!this.keys[e.code]) {
                 this.keys[e.code] = true;
@@ -1546,7 +1548,7 @@ class InputManager {
             case 'ArrowUp': this.game.rotate(1); break;
             case 'KeyZ': this.game.rotate(-1); break;
             case 'KeyC': this.game.holdPiece(); break;
-            case 'Space': this.game.hardDrop(); this.keys['Space'] = false; break;
+            case 'Space': this.game.hardDrop(); break;
         }
     }
 }
