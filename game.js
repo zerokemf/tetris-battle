@@ -1,4 +1,4 @@
-// ==================== TETRIS BATTLE - Enhanced Edition ====================
+// ==================== TETRIS BATTLE - Enhanced Edition with AI ====================
 
 // ==================== Constants ====================
 const PIECES = 'IJLOSTZ';
@@ -19,7 +19,9 @@ const COLORS = {
     S: { base: '#39ff14', light: '#8fff78', dark: '#22a00a', glow: 'rgba(57,255,20,0.6)' },
     Z: { base: '#ff2d55', light: '#ff7e97', dark: '#b81e3a', glow: 'rgba(255,45,85,0.6)' },
     J: { base: '#2d7fff', light: '#7eb3ff', dark: '#1a50b0', glow: 'rgba(45,127,255,0.6)' },
-    L: { base: '#ff8c2d', light: '#ffba7e', dark: '#b86010', glow: 'rgba(255,140,45,0.6)' }
+    L: { base: '#ff8c2d', light: '#ffba7e', dark: '#b86010', glow: 'rgba(255,140,45,0.6)' },
+    G: { base: '#555a66', light: '#7a8290', dark: '#2e323b', glow: 'rgba(120,120,120,0.3)' },
+    X: { base: '#ff2d95', light: '#ff7ab3', dark: '#a31660', glow: 'rgba(255,45,149,0.8)' }
 };
 
 const TIER_COLORS = {
@@ -54,6 +56,41 @@ const SRS_KICK_DATA = {
 
 const COLS = 10, ROWS = 20, EMPTY = 0;
 const MAX_PARTICLES = 120;
+
+// Tetris Battle attack table (garbage lines sent)
+const ATTACK_TABLE = [0, 0, 1, 2, 4];  // index = lines cleared
+// Combo bonus cumulative (Tetris Battle / Tetris Friends style)
+const COMBO_TABLE = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 4, 5];
+const PERFECT_CLEAR_BONUS = 10;
+const B2B_BONUS = 1;
+
+// AI difficulty profiles
+const AI_PROFILES = {
+    easy: {
+        name: 'EASY',
+        thinkDelay: 450,      // ms before deciding
+        actionInterval: 170,  // ms per action (move/rotate)
+        dropInterval: 900,    // AI gravity (ignored - AI hard drops)
+        errorChance: 0.35,    // % chance to pick non-optimal move
+        weights: { height: -0.3, lines: 0.6, holes: -0.5, bumpiness: -0.1 }
+    },
+    normal: {
+        name: 'NORMAL',
+        thinkDelay: 200,
+        actionInterval: 85,
+        dropInterval: 600,
+        errorChance: 0.08,
+        weights: { height: -0.51, lines: 0.76, holes: -0.36, bumpiness: -0.18 }
+    },
+    hard: {
+        name: 'HARD',
+        thinkDelay: 60,
+        actionInterval: 35,
+        dropInterval: 400,
+        errorChance: 0,
+        weights: { height: -0.51, lines: 0.9, holes: -0.65, bumpiness: -0.24, wells: -0.15 }
+    }
+};
 
 // ==================== 7-Bag System ====================
 class Bag7 {
@@ -104,17 +141,10 @@ class Piece {
 // ==================== Lightweight Particle ====================
 class Particle {
     constructor(x, y, color, vx, vy, size, life, decay, gravity) {
-        this.x = x;
-        this.y = y;
-        this.color = color;
-        this.vx = vx;
-        this.vy = vy;
-        this.size = size;
-        this.life = life;
-        this.decay = decay;
-        this.gravity = gravity;
+        this.x = x; this.y = y; this.color = color;
+        this.vx = vx; this.vy = vy; this.size = size;
+        this.life = life; this.decay = decay; this.gravity = gravity;
     }
-
     update() {
         this.vy += this.gravity;
         this.x += this.vx;
@@ -137,8 +167,7 @@ class GameRenderer {
         this.screenFlashColor = '#fff';
         this.displayWidth = 0;
         this.displayHeight = 0;
-        this._lastW = 0;
-        this._lastH = 0;
+        this._lastW = 0; this._lastH = 0;
         this.resize();
     }
 
@@ -146,8 +175,8 @@ class GameRenderer {
         const rect = this.boardCanvas.getBoundingClientRect();
         const w = Math.round(rect.width);
         const h = Math.round(rect.height);
-        // Only resize if dimensions actually changed
         if (w === this._lastW && h === this._lastH) return;
+        if (w === 0 || h === 0) return;
         this._lastW = w;
         this._lastH = h;
         const dpr = window.devicePixelRatio || 1;
@@ -194,7 +223,6 @@ class GameRenderer {
         const px = x * bs;
         const py = y * bs;
 
-        // Main fill with gradient
         const grad = ctx.createLinearGradient(px, py, px + bs, py + bs);
         grad.addColorStop(0, colorObj.light);
         grad.addColorStop(0.5, colorObj.base);
@@ -202,18 +230,46 @@ class GameRenderer {
         ctx.fillStyle = grad;
         ctx.fillRect(px + 1, py + 1, bs - 2, bs - 2);
 
-        // Top highlight
         ctx.fillStyle = 'rgba(255,255,255,0.18)';
         ctx.fillRect(px + 2, py + 2, bs - 4, 3);
 
-        // Left highlight
         ctx.fillStyle = 'rgba(255,255,255,0.08)';
         ctx.fillRect(px + 1, py + 2, 2, bs - 4);
 
-        // Border
         ctx.strokeStyle = 'rgba(0,0,0,0.3)';
         ctx.lineWidth = 1;
         ctx.strokeRect(px + 0.5, py + 0.5, bs - 1, bs - 1);
+    }
+
+    drawBombBlock(x, y) {
+        const ctx = this.boardCtx;
+        const bs = this.blockSize;
+        const px = x * bs;
+        const py = y * bs;
+        // Pulsing bomb appearance
+        const t = performance.now() * 0.005;
+        const pulse = 0.5 + 0.5 * Math.sin(t);
+
+        const grad = ctx.createRadialGradient(px + bs/2, py + bs/2, 1, px + bs/2, py + bs/2, bs);
+        grad.addColorStop(0, '#ffe14d');
+        grad.addColorStop(0.4, '#ff2d95');
+        grad.addColorStop(1, '#6b0030');
+        ctx.fillStyle = grad;
+        ctx.fillRect(px + 1, py + 1, bs - 2, bs - 2);
+
+        ctx.strokeStyle = `rgba(255,225,77,${0.4 + 0.6 * pulse})`;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(px + 1.5, py + 1.5, bs - 3, bs - 3);
+
+        // X mark
+        ctx.strokeStyle = `rgba(255,255,255,${0.6 + 0.4 * pulse})`;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(px + bs * 0.3, py + bs * 0.3);
+        ctx.lineTo(px + bs * 0.7, py + bs * 0.7);
+        ctx.moveTo(px + bs * 0.7, py + bs * 0.3);
+        ctx.lineTo(px + bs * 0.3, py + bs * 0.7);
+        ctx.stroke();
     }
 
     drawGhostBlock(x, y, colorObj) {
@@ -223,25 +279,22 @@ class GameRenderer {
         const ctx = this.boardCtx;
 
         ctx.save();
-        // Visible fill
         ctx.globalAlpha = 0.35;
         ctx.fillStyle = colorObj.base;
         ctx.fillRect(px + 1, py + 1, bs - 2, bs - 2);
 
-        // Bright solid border
         ctx.globalAlpha = 1;
         ctx.strokeStyle = colorObj.light;
         ctx.lineWidth = 2.5;
         ctx.strokeRect(px + 1.5, py + 1.5, bs - 3, bs - 3);
 
-        // Top highlight
         ctx.globalAlpha = 0.7;
         ctx.fillStyle = '#fff';
         ctx.fillRect(px + 3, py + 2, bs - 6, 2);
         ctx.restore();
     }
 
-    render(grid, piece) {
+    render(grid, piece, bombCells) {
         this.resize();
         this.clear();
         this.drawGrid();
@@ -249,22 +302,24 @@ class GameRenderer {
         // Draw locked blocks
         for (let r = 0; r < ROWS; r++) {
             for (let c = 0; c < COLS; c++) {
-                if (grid[r][c]) {
-                    const type = grid[r][c].toUpperCase();
-                    const colorObj = COLORS[type] || COLORS['I'];
-                    this.drawBlock(c, r, colorObj);
+                const cell = grid[r][c];
+                if (cell) {
+                    if (cell === 'x') {
+                        this.drawBombBlock(c, r);
+                    } else {
+                        const type = cell.toUpperCase();
+                        const colorObj = COLORS[type] || COLORS['I'];
+                        this.drawBlock(c, r, colorObj);
+                    }
                 }
             }
         }
 
-        // Flash lines (clearing animation)
+        // Flash lines
         for (let i = this.flashLines.length - 1; i >= 0; i--) {
             const fl = this.flashLines[i];
             fl.life -= 0.05;
-            if (fl.life <= 0) {
-                this.flashLines.splice(i, 1);
-                continue;
-            }
+            if (fl.life <= 0) { this.flashLines.splice(i, 1); continue; }
             const ctx = this.boardCtx;
             ctx.save();
             ctx.globalAlpha = fl.life * 0.7;
@@ -295,10 +350,8 @@ class GameRenderer {
             });
         }
 
-        // FX layer - particles
+        // FX: screen flash + particles
         const fctx = this.fxCtx;
-
-        // Screen flash
         if (this.screenFlash > 0) {
             fctx.save();
             fctx.globalAlpha = this.screenFlash;
@@ -308,13 +361,11 @@ class GameRenderer {
             this.screenFlash -= 0.05;
         }
 
-        // Batch-draw particles (no per-particle save/restore or shadowBlur)
         fctx.globalCompositeOperation = 'lighter';
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
             p.update();
             if (p.life <= 0) {
-                // Fast swap-remove
                 this.particles[i] = this.particles[this.particles.length - 1];
                 this.particles.pop();
                 continue;
@@ -327,18 +378,12 @@ class GameRenderer {
         fctx.globalCompositeOperation = 'source-over';
     }
 
-    // Spawn particles scaled by tier (with hard cap)
     spawnClearEffect(rows, tier) {
         const bs = this.blockSize;
         const tierColor = TIER_COLORS[tier];
-
         rows.forEach(r => {
             const cy = r * bs + bs / 2;
-
-            // Line flash
             this.flashLines.push({ row: r, life: 1, color: tierColor.color });
-
-            // Particles per row: tier1=8, tier2=14, tier3=18, tier4=24
             const count = [0, 8, 14, 18, 24][tier];
             for (let i = 0; i < count; i++) {
                 const cx = Math.random() * this.displayWidth;
@@ -351,8 +396,6 @@ class GameRenderer {
                 );
             }
         });
-
-        // Tetris: star burst
         if (tier === 4) {
             const avgRow = rows.reduce((a, b) => a + b, 0) / rows.length;
             const cy = avgRow * bs + bs / 2;
@@ -374,11 +417,25 @@ class GameRenderer {
         }
     }
 
-    addParticle(x, y, color, vx, vy, size, life, decay, gravity) {
-        if (this.particles.length >= MAX_PARTICLES) {
-            // Replace oldest
-            this.particles.shift();
+    spawnBombExplosion(cx, cy) {
+        const bs = this.blockSize;
+        const px = cx * bs + bs / 2;
+        const py = cy * bs + bs / 2;
+        for (let i = 0; i < 40; i++) {
+            const angle = (i / 40) * Math.PI * 2;
+            const spd = 4 + Math.random() * 5;
+            this.addParticle(px, py,
+                Math.random() > 0.5 ? '#ff2d95' : '#ffe14d',
+                Math.cos(angle) * spd, Math.sin(angle) * spd,
+                Math.random() * 4 + 3, 1, 0.02, 0.06
+            );
         }
+        this.screenFlash = 0.5;
+        this.screenFlashColor = 'rgba(255,140,45,0.35)';
+    }
+
+    addParticle(x, y, color, vx, vy, size, life, decay, gravity) {
+        if (this.particles.length >= MAX_PARTICLES) this.particles.shift();
         this.particles.push(new Particle(x, y, color, vx, vy, size, life, decay, gravity));
     }
 
@@ -414,14 +471,15 @@ class GameRenderer {
     }
 
     renderPreview(canvas, type, opacity) {
+        if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const rect = canvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
         const w = rect.width, h = rect.height;
+        if (w === 0 || h === 0) return;
         canvas.width = w * dpr;
         canvas.height = h * dpr;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
         ctx.clearRect(0, 0, w, h);
         ctx.fillStyle = 'rgba(8,12,26,0.6)';
         ctx.fillRect(0, 0, w, h);
@@ -455,16 +513,20 @@ class GameRenderer {
 }
 
 // ==================== Game Core ====================
-let bag = new Bag7();
+let sharedBag = new Bag7();
 
 class Tetris {
-    constructor() {
+    constructor(config) {
+        // config: { boardId, fxId, holdId, nextIds[3], statIds{score,level,lines,combo,b2b}, overlayIds, bag }
+        this.config = config;
         this.grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(EMPTY));
         this.score = 0;
         this.level = 1;
         this.lines = 0;
         this.combo = 0;
         this.maxCombo = 0;
+        this.b2b = 0;
+        this.maxB2b = 0;
         this.piece = null;
         this.nextQueue = [];
         this.hold = null;
@@ -472,35 +534,41 @@ class Tetris {
         this.over = false;
         this.interval = 1000;
         this.lastTime = 0;
+        this.attackSent = 0;
+        this.bag = config.bag || sharedBag;
 
-        // Lock Delay system
-        this.lockDelay = 500;       // 0.5s lock timer
-        this.lockStartTime = 0;     // timestamp when lock delay started
-        this.lockResets = 0;        // how many times lock has been reset
-        this.lockResetMax = 15;     // max resets per piece
-        this.isLocking = false;     // whether lock delay is active
+        // Lock Delay
+        this.lockDelay = 500;
+        this.lockStartTime = 0;
+        this.lockResets = 0;
+        this.lockResetMax = 15;
+        this.isLocking = false;
 
-        this.renderer = new GameRenderer('board1', 'fx1');
-        this.holdCanvas = document.getElementById('hold1');
-        this.nextCanvases = [
-            document.getElementById('next1'),
-            document.getElementById('next2'),
-            document.getElementById('next3')
-        ];
+        // Battle: incoming garbage queue
+        this.garbageQueue = [];
+        this.bombLineCountdown = 0;  // counts down until next bomb row sent
 
-        this.wrapper = document.getElementById('canvas-wrapper');
-        this.comboDisplay = document.getElementById('combo-display');
-        this.actionText = document.getElementById('action-text');
+        this.renderer = new GameRenderer(config.boardId, config.fxId);
+        this.holdCanvas = document.getElementById(config.holdId);
+        this.nextCanvases = config.nextIds.map(id => document.getElementById(id));
+
+        this.wrapper = this.renderer.boardCanvas.parentElement;
+        this.comboDisplay = document.getElementById(config.overlayIds.combo);
+        this.actionText = document.getElementById(config.overlayIds.action);
 
         this.comboTimer = null;
         this.actionTimer = null;
+
+        // Callbacks for battle events
+        this.onAttack = null;        // (lines, reason) - called when outgoing attack produced
+        this.onTopOut = null;        // () - called when game over
     }
 
     spawn() {
-        const nextType = this.nextQueue.length > 0 ? this.nextQueue.shift() : bag.next();
+        const nextType = this.nextQueue.length > 0 ? this.nextQueue.shift() : this.bag.next();
         this.piece = new Piece(nextType, this);
         while (this.nextQueue.length < 3) {
-            this.nextQueue.push(bag.next());
+            this.nextQueue.push(this.bag.next());
         }
         this.canHold = true;
         this.isLocking = false;
@@ -508,6 +576,7 @@ class Tetris {
         this.lockResets = 0;
         if (!this.valid(this.piece, this.piece.x, this.piece.y)) {
             this.over = true;
+            if (this.onTopOut) this.onTopOut();
         }
     }
 
@@ -548,22 +617,18 @@ class Tetris {
                 this.piece.rotIndex = nextRotIndex;
                 playSound('rotate');
                 this.resetLockDelay();
-                if (!this.isOnGround()) {
-                    this.isLocking = false;
-                }
+                if (!this.isOnGround()) this.isLocking = false;
                 return;
             }
         }
         this.piece.shape = oldShape;
     }
 
-    // Check if piece is resting on something (ground or other blocks)
     isOnGround() {
         return !this.valid(this.piece, this.piece.x, this.piece.y + 1);
     }
 
-    // Reset lock delay timer (called on successful move/rotate while on ground)
-    resetLockDelay(time) {
+    resetLockDelay() {
         if (this.isLocking && this.lockResets < this.lockResetMax) {
             this.lockStartTime = performance.now();
             this.lockResets++;
@@ -574,9 +639,7 @@ class Tetris {
         if (this.piece.move(dir, 0)) {
             playSound('move');
             this.resetLockDelay();
-            if (!this.isOnGround()) {
-                this.isLocking = false;
-            }
+            if (!this.isOnGround()) this.isLocking = false;
         }
     }
 
@@ -608,60 +671,188 @@ class Tetris {
             }
         }
         this.clearLines();
+        const clearedThisLock = this._clearedThisLock;
+        this._clearedThisLock = false;
         this.spawn();
+        // Apply pending garbage only if no lines were cleared this lock (and still alive)
+        if (!clearedThisLock && !this.over) {
+            this.applyIncomingGarbage();
+        }
     }
 
     clearLines() {
-        // FIXED: Scan from top to bottom, collect full rows
         let linesCleared = 0;
-        // Use a write pointer to compact the grid in-place
-        // This avoids index-shifting bugs with splice
         const newGrid = [];
         const clearedRowIndices = [];
+        let bombTriggered = false;
 
         for (let r = 0; r < ROWS; r++) {
             if (this.grid[r].every(c => c)) {
                 clearedRowIndices.push(r);
                 linesCleared++;
+                // Bomb: if any cell in cleared row is a bomb, trigger explosion
+                if (this.grid[r].some(c => c === 'x')) {
+                    bombTriggered = true;
+                    this.renderer.spawnBombExplosion(COLS / 2, r);
+                }
             } else {
                 newGrid.push(this.grid[r]);
             }
         }
 
-        if (linesCleared > 0) {
-            // Pad top with empty rows
-            while (newGrid.length < ROWS) {
-                newGrid.unshift(Array(COLS).fill(EMPTY));
-            }
-            this.grid = newGrid;
-
-            const tier = Math.min(linesCleared, 4);
-
-            // Visual effects
-            this.renderer.spawnClearEffect(clearedRowIndices, tier);
-            this.triggerShake(tier);
-            playSound('clear', tier);
-
-            // Scoring
-            const baseScore = [0, 100, 300, 500, 800][tier];
-            this.combo++;
-            this.maxCombo = Math.max(this.maxCombo, this.combo);
-            const comboBonus = this.combo > 1 ? 50 * (this.combo - 1) * this.level : 0;
-            this.score += baseScore * this.level + comboBonus;
-            this.lines += linesCleared;
-            this.level = Math.floor(this.lines / 10) + 1;
-            this.interval = Math.max(80, 1000 - (this.level - 1) * 90);
-
-            this.showActionText(TIER_COLORS[tier].name, tier);
-            if (this.combo >= 2) this.showCombo(this.combo);
-            this.popStat('score1');
-            if (this.combo >= 2) this.popStat('combo1');
-        } else {
+        if (linesCleared === 0) {
             this.combo = 0;
+            return;
+        }
+
+        this._clearedThisLock = true;
+
+        while (newGrid.length < ROWS) newGrid.unshift(Array(COLS).fill(EMPTY));
+        this.grid = newGrid;
+
+        const tier = Math.min(linesCleared, 4);
+        this.renderer.spawnClearEffect(clearedRowIndices, tier);
+        this.triggerShake(tier);
+        playSound('clear', tier);
+
+        // Scoring
+        const baseScore = [0, 100, 300, 500, 800][tier];
+        this.combo++;
+        this.maxCombo = Math.max(this.maxCombo, this.combo);
+        const comboBonus = this.combo > 1 ? 50 * (this.combo - 1) * this.level : 0;
+        this.score += baseScore * this.level + comboBonus;
+        this.lines += linesCleared;
+        this.level = Math.floor(this.lines / 10) + 1;
+        this.interval = Math.max(80, 1000 - (this.level - 1) * 90);
+
+        // B2B: only Tetris (4 lines) extends B2B chain (keep simple - no T-Spin detect)
+        const isDifficult = (linesCleared === 4);
+        if (isDifficult) {
+            this.b2b++;
+            this.maxB2b = Math.max(this.maxB2b, this.b2b);
+        } else {
+            this.b2b = 0;
+        }
+
+        // Perfect Clear detection
+        const isPC = this.grid.every(row => row.every(c => !c));
+
+        // Calculate attack (garbage to send)
+        let attack = ATTACK_TABLE[tier];
+        if (this.b2b >= 2) attack += B2B_BONUS;
+        const comboIdx = Math.min(this.combo - 1, COMBO_TABLE.length - 1);
+        if (comboIdx > 0) attack += COMBO_TABLE[comboIdx];
+        if (isPC) attack += PERFECT_CLEAR_BONUS;
+        if (bombTriggered) attack += 4;  // bomb bonus
+
+        // Bomb milestone: every 10 lines cleared, next outgoing attack becomes a bomb
+        this.bombLineCountdown -= linesCleared;
+        let milestoneBomb = false;
+        if (this.bombLineCountdown <= 0) {
+            milestoneBomb = true;
+            this.bombLineCountdown = 10;
+        }
+
+        // Cancel incoming garbage first, then send remainder
+        if (attack > 0) {
+            attack = this.cancelGarbage(attack);
+            if (attack > 0 && this.onAttack) {
+                this.attackSent += attack;
+                this.onAttack(attack, { tier, combo: this.combo, b2b: this.b2b, pc: isPC, bomb: bombTriggered || milestoneBomb });
+            }
+        }
+
+        // Action text
+        let label = TIER_COLORS[tier].name;
+        if (isPC) label = 'PERFECT!';
+        else if (this.b2b >= 2 && tier === 4) label = 'B2B TETRIS!';
+        else if (bombTriggered) label = 'BOMB!';
+        this.showActionText(label, tier);
+        if (this.combo >= 2) this.showCombo(this.combo);
+
+        this.syncStats();
+    }
+
+    // Cancel some incoming garbage. Returns remaining attack to send.
+    cancelGarbage(attack) {
+        while (attack > 0 && this.garbageQueue.length > 0) {
+            const g = this.garbageQueue[0];
+            const cancel = Math.min(attack, g.lines);
+            g.lines -= cancel;
+            attack -= cancel;
+            if (g.lines === 0) this.garbageQueue.shift();
+        }
+        this.updateGarbageMeter();
+        return attack;
+    }
+
+    // Receive pending garbage from opponent
+    receiveGarbage(lines, isBomb) {
+        if (lines <= 0) return;
+        this.garbageQueue.push({ lines, isBomb: !!isBomb, time: performance.now() });
+        this.updateGarbageMeter();
+    }
+
+    // Apply accumulated garbage by pushing rows up
+    applyIncomingGarbage() {
+        if (this.garbageQueue.length === 0) return;
+        // Apply each garbage chunk. Within a chunk, the hole column stays the same.
+        while (this.garbageQueue.length > 0) {
+            const g = this.garbageQueue.shift();
+            this.insertGarbageRows(g.lines, g.isBomb);
+        }
+        this.updateGarbageMeter();
+    }
+
+    insertGarbageRows(count, isBomb) {
+        const holeCol = Math.floor(Math.random() * COLS);
+        // Shift existing rows up by `count`
+        for (let r = 0; r < ROWS - count; r++) {
+            this.grid[r] = this.grid[r + count];
+        }
+        for (let i = 0; i < count; i++) {
+            const row = Array(COLS).fill('g');
+            row[holeCol] = 0;
+            // Bomb: place one bomb block somewhere other than the hole
+            if (isBomb) {
+                let bombCol;
+                do { bombCol = Math.floor(Math.random() * COLS); } while (bombCol === holeCol);
+                row[bombCol] = 'x';
+            }
+            this.grid[ROWS - count + i] = row;
+        }
+        // If the falling piece now overlaps blocks, push it up; if can't, game over.
+        if (this.piece) {
+            let pushed = 0;
+            while (!this.valid(this.piece, this.piece.x, this.piece.y)) {
+                if (this.piece.y <= -2 || pushed > ROWS) {
+                    this.over = true;
+                    if (this.onTopOut) this.onTopOut();
+                    return;
+                }
+                this.piece.y--;
+                pushed++;
+            }
+        }
+    }
+
+    updateGarbageMeter() {
+        if (!this.config.garbageMeterId) return;
+        const meter = document.getElementById(this.config.garbageMeterId);
+        if (!meter) return;
+        const total = this.garbageQueue.reduce((s, g) => s + g.lines, 0);
+        const bombCount = this.garbageQueue.filter(g => g.isBomb).reduce((s, g) => s + g.lines, 0);
+        meter.innerHTML = '';
+        for (let i = 0; i < Math.min(total, ROWS); i++) {
+            const bar = document.createElement('div');
+            bar.className = 'garbage-bar';
+            if (i < bombCount) bar.classList.add('bomb');
+            meter.appendChild(bar);
         }
     }
 
     triggerShake(tier) {
+        if (!this.wrapper) return;
         this.wrapper.classList.remove('shake', 'shake-heavy');
         void this.wrapper.offsetWidth;
         if (tier >= 4) this.wrapper.classList.add('shake-heavy');
@@ -670,6 +861,7 @@ class Tetris {
 
     showActionText(text, tier) {
         const el = this.actionText;
+        if (!el) return;
         el.textContent = text;
         el.className = 'action-text show tier-' + tier;
         clearTimeout(this.actionTimer);
@@ -678,6 +870,7 @@ class Tetris {
 
     showCombo(count) {
         const el = this.comboDisplay;
+        if (!el) return;
         el.textContent = count + 'x COMBO';
         el.className = 'combo-display show';
         clearTimeout(this.comboTimer);
@@ -686,6 +879,7 @@ class Tetris {
 
     popStat(id) {
         const el = document.getElementById(id);
+        if (!el) return;
         el.classList.remove('pop');
         void el.offsetWidth;
         el.classList.add('pop');
@@ -711,7 +905,6 @@ class Tetris {
     update(time) {
         if (this.over || isPaused) return;
 
-        // Lock delay check (independent of gravity timing)
         if (this.isLocking) {
             const elapsed = performance.now() - this.lockStartTime;
             if (elapsed >= this.lockDelay || this.lockResets >= this.lockResetMax) {
@@ -719,16 +912,11 @@ class Tetris {
                 this.lastTime = time;
                 return;
             }
-            // If piece is no longer on ground (e.g. moved off by rotation), cancel lock
-            if (!this.isOnGround()) {
-                this.isLocking = false;
-            }
+            if (!this.isOnGround()) this.isLocking = false;
         }
 
-        // Normal gravity
         if (time - this.lastTime >= this.interval) {
             if (!this.drop()) {
-                // Piece can't move down — start lock delay if not already
                 if (!this.isLocking) {
                     this.isLocking = true;
                     this.lockStartTime = performance.now();
@@ -745,15 +933,324 @@ class Tetris {
             const type = this.nextQueue[i] || null;
             this.renderer.renderPreview(this.nextCanvases[i], type, i === 0 ? 1 : 0.6);
         }
-        document.getElementById('score1').textContent = this.score.toLocaleString();
-        document.getElementById('level1').textContent = this.level;
-        document.getElementById('sent1').textContent = this.lines;
-        document.getElementById('combo1').textContent = this.combo;
+        this.syncStats();
+    }
+
+    syncStats() {
+        const s = this.config.statIds;
+        if (!s) return;
+        if (s.score) document.getElementById(s.score).textContent = this.score.toLocaleString();
+        if (s.level) document.getElementById(s.level).textContent = this.level;
+        if (s.lines) document.getElementById(s.lines).textContent = this.lines;
+        if (s.combo) document.getElementById(s.combo).textContent = this.combo;
+        if (s.b2b)   document.getElementById(s.b2b).textContent = this.b2b;
+        if (s.attack) document.getElementById(s.attack).textContent = this.attackSent;
+    }
+}
+
+// ==================== Tetris AI ====================
+class TetrisAI {
+    constructor(game, difficulty) {
+        this.game = game;
+        this.difficulty = difficulty;
+        this.profile = AI_PROFILES[difficulty] || AI_PROFILES.normal;
+        this.plan = null;           // { x, rotIndex, useHold }
+        this.thinkStart = 0;
+        this.lastActionTime = 0;
+        this.thinking = false;
+    }
+
+    update(time) {
+        if (this.game.over || isPaused) return;
+        if (!this.game.piece) return;
+
+        // Start thinking for new plan
+        if (!this.plan && !this.thinking) {
+            this.thinking = true;
+            this.thinkStart = time;
+        }
+
+        if (this.thinking && !this.plan) {
+            if (time - this.thinkStart >= this.profile.thinkDelay) {
+                this.plan = this.computeBestMove();
+                this.thinking = false;
+                this.lastActionTime = time;
+            }
+            return;
+        }
+
+        // Execute plan action-by-action
+        if (this.plan && time - this.lastActionTime >= this.profile.actionInterval) {
+            this.lastActionTime = time;
+            this.step();
+        }
+    }
+
+    step() {
+        const g = this.game;
+        const p = this.plan;
+        if (!p || !g.piece) { this.plan = null; return; }
+
+        // Hold if planned
+        if (p.useHold && g.canHold) {
+            g.holdPiece();
+            this.plan = null;
+            this.thinking = false;
+            return;
+        }
+
+        // Match rotation
+        if (g.piece.rotIndex !== p.rotIndex) {
+            const before = g.piece.rotIndex;
+            const diff = (p.rotIndex - g.piece.rotIndex + 4) % 4;
+            if (diff === 3) g.rotate(-1);
+            else g.rotate(1);
+            // If rotation failed (e.g., piece pinned), abandon the plan and just drop
+            if (g.piece.rotIndex === before) {
+                g.hardDrop();
+                this.plan = null;
+                this.thinking = false;
+            }
+            return;
+        }
+
+        // Match x position
+        if (g.piece.x !== p.x) {
+            const before = g.piece.x;
+            g.move(g.piece.x < p.x ? 1 : -1);
+            if (g.piece.x === before) {
+                // Blocked by terrain — drop where we are
+                g.hardDrop();
+                this.plan = null;
+                this.thinking = false;
+            }
+            return;
+        }
+
+        // In position — hard drop
+        g.hardDrop();
+        this.plan = null;
+        this.thinking = false;
+    }
+
+    computeBestMove() {
+        const g = this.game;
+        if (!g.piece) return null;
+
+        // Evaluate the current piece's moves and (if hold available) the hold swap piece's moves
+        let best = { score: -Infinity };
+
+        best = this.evaluatePiece(g.piece.type, false, best);
+
+        if (g.canHold) {
+            const holdType = g.hold || (g.nextQueue[0] || null);
+            if (holdType && holdType !== g.piece.type) {
+                best = this.evaluatePiece(holdType, true, best);
+            }
+        }
+
+        // Introduce error chance on easy
+        if (this.profile.errorChance > 0 && Math.random() < this.profile.errorChance) {
+            // Pick a random legal placement instead
+            const randomType = g.piece.type;
+            const shape0 = SHAPES[randomType];
+            const rot = Math.floor(Math.random() * 4);
+            const rotated = rotateShape(shape0, rot);
+            const minX = -getLeftOffset(rotated);
+            const maxX = COLS - rotated[0].length + getRightOffset(rotated);
+            const randX = minX + Math.floor(Math.random() * (maxX - minX + 1));
+            return { x: randX, rotIndex: rot, useHold: false };
+        }
+
+        if (best.score === -Infinity) {
+            // Fallback: just hard drop at current position
+            return { x: g.piece.x, rotIndex: g.piece.rotIndex, useHold: false };
+        }
+        return best;
+    }
+
+    evaluatePiece(type, useHold, best) {
+        const g = this.game;
+        const rotations = (type === 'O') ? 1 : 4;
+        const shape0 = SHAPES[type];
+
+        for (let rot = 0; rot < rotations; rot++) {
+            const shape = rotateShape(shape0, rot);
+            for (let x = -2; x <= COLS; x++) {
+                const result = simulateDrop(g.grid, shape, x);
+                if (!result) continue;
+                const score = this.scoreBoard(result.grid, result.linesCleared);
+                if (score > best.score) {
+                    best = { score, x, rotIndex: rot, useHold };
+                }
+            }
+        }
+        return best;
+    }
+
+    scoreBoard(grid, linesCleared) {
+        const w = this.profile.weights;
+        const { heights, holes, bumpiness, wells } = analyzeGrid(grid);
+        const agg = heights.reduce((a, b) => a + b, 0);
+        let score = 0;
+        score += (w.height || 0) * agg;
+        score += (w.lines || 0) * linesCleared;
+        score += (w.holes || 0) * holes;
+        score += (w.bumpiness || 0) * bumpiness;
+        if (w.wells) score += w.wells * wells;
+        return score;
+    }
+}
+
+// ---- AI helpers ----
+function rotateShape(shape, times) {
+    let s = shape.map(r => [...r]);
+    for (let i = 0; i < times; i++) {
+        const N = s.length;
+        const out = Array.from({ length: N }, () => Array(N).fill(0));
+        for (let r = 0; r < N; r++)
+            for (let c = 0; c < N; c++)
+                out[r][c] = s[N-1-c][r];
+        s = out;
+    }
+    return s;
+}
+
+function getLeftOffset(shape) {
+    // leftmost filled column
+    for (let c = 0; c < shape[0].length; c++) {
+        for (let r = 0; r < shape.length; r++) {
+            if (shape[r][c]) return c;
+        }
+    }
+    return 0;
+}
+
+function getRightOffset(shape) {
+    // filled columns from right
+    for (let c = shape[0].length - 1; c >= 0; c--) {
+        for (let r = 0; r < shape.length; r++) {
+            if (shape[r][c]) return shape[0].length - 1 - c;
+        }
+    }
+    return 0;
+}
+
+function simulateDrop(grid, shape, x) {
+    // Check left/right bounds for filled cells
+    for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+            if (shape[r][c]) {
+                if (x + c < 0 || x + c >= COLS) return null;
+            }
+        }
+    }
+
+    // Find landing row
+    let y = -shape.length;
+    while (true) {
+        // Check if dropping further would collide
+        let collides = false;
+        for (let r = 0; r < shape.length && !collides; r++) {
+            for (let c = 0; c < shape[r].length; c++) {
+                if (shape[r][c]) {
+                    const ny = y + 1 + r;
+                    const nx = x + c;
+                    if (ny >= ROWS) { collides = true; break; }
+                    if (ny >= 0 && grid[ny][nx]) { collides = true; break; }
+                }
+            }
+        }
+        if (collides) break;
+        y++;
+        if (y > ROWS) return null;
+    }
+
+    // Build resulting grid
+    const newGrid = grid.map(r => [...r]);
+    for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+            if (shape[r][c]) {
+                const ny = y + r, nx = x + c;
+                if (ny < 0) return null;  // locked above top — invalid
+                newGrid[ny][nx] = 'p';
+            }
+        }
+    }
+
+    // Clear full rows
+    let linesCleared = 0;
+    const finalGrid = [];
+    for (let r = 0; r < ROWS; r++) {
+        if (newGrid[r].every(c => c)) linesCleared++;
+        else finalGrid.push(newGrid[r]);
+    }
+    while (finalGrid.length < ROWS) finalGrid.unshift(Array(COLS).fill(EMPTY));
+
+    return { grid: finalGrid, linesCleared };
+}
+
+function analyzeGrid(grid) {
+    const heights = Array(COLS).fill(0);
+    for (let c = 0; c < COLS; c++) {
+        for (let r = 0; r < ROWS; r++) {
+            if (grid[r][c]) { heights[c] = ROWS - r; break; }
+        }
+    }
+    // Holes: empty cells below the column top
+    let holes = 0;
+    for (let c = 0; c < COLS; c++) {
+        const top = ROWS - heights[c];
+        for (let r = top + 1; r < ROWS; r++) {
+            if (!grid[r][c]) holes++;
+        }
+    }
+    // Bumpiness
+    let bumpiness = 0;
+    for (let c = 0; c < COLS - 1; c++) {
+        bumpiness += Math.abs(heights[c] - heights[c+1]);
+    }
+    // Wells (deep gaps between pillars)
+    let wells = 0;
+    for (let c = 0; c < COLS; c++) {
+        const left = c === 0 ? ROWS : heights[c-1];
+        const right = c === COLS-1 ? ROWS : heights[c+1];
+        const depth = Math.min(left, right) - heights[c];
+        if (depth > 2) wells += depth;
+    }
+    return { heights, holes, bumpiness, wells };
+}
+
+// ==================== Battle Manager ====================
+class BattleManager {
+    constructor(player, ai) {
+        this.player = player;       // Tetris instance
+        this.ai = ai;               // Tetris instance (AI-controlled)
+        this.winner = null;
+
+        this.player.onAttack = (lines, info) => this.handleAttack(this.player, this.ai, lines, info);
+        this.ai.onAttack     = (lines, info) => this.handleAttack(this.ai,     this.player, lines, info);
+        this.player.onTopOut = () => { this.endBattle(this.ai); };
+        this.ai.onTopOut     = () => { this.endBattle(this.player); };
+    }
+
+    handleAttack(from, to, lines, info) {
+        // Small telegraph delay before applying (feels fair)
+        // Mark as bomb when: (any B2B extension while hot) OR explicit bomb trigger
+        const bomb = info.bomb || info.b2b >= 3 || info.pc;
+        to.receiveGarbage(lines, bomb);
+    }
+
+    endBattle(winner) {
+        if (this.winner) return;
+        this.winner = winner;
+        // Propagate to global
+        battleEnded = true;
+        battleWinner = winner;
     }
 }
 
 // ==================== Tone.js Audio Engine ====================
-// Korobeiniki (Tetris Theme A) — melody, 64 eighth notes loop
 const MUSIC_MELODY = [
     ['E5', 2], ['B4', 1], ['C5', 1], ['D5', 2], ['C5', 1], ['B4', 1],
     ['A4', 2], ['A4', 1], ['C5', 1], ['E5', 2], ['D5', 1], ['C5', 1],
@@ -773,7 +1270,7 @@ const MUSIC_BASS = [
 ];
 
 const MUSIC_BPM = 150;
-const MUSIC_EIGHTH_SEC = 60 / MUSIC_BPM / 2;  // 0.2s at 150 BPM
+const MUSIC_EIGHTH_SEC = 60 / MUSIC_BPM / 2;
 
 let musicEnabled = (typeof localStorage !== 'undefined' && localStorage.getItem('tb-music') === 'off') ? false : true;
 let musicPlaying = false;
@@ -799,11 +1296,9 @@ async function initAudio() {
 }
 
 function buildAudioGraph() {
-    // ---------- Music bus ----------
     const musicReverb = new Tone.Reverb({ decay: 3.5, wet: 0.22 }).toDestination();
     const musicMaster = new Tone.Gain(0.55).connect(musicReverb);
 
-    // Lead: triangle → chorus → feedback delay → master
     const leadDelay = new Tone.FeedbackDelay({ delayTime: '8n.', feedback: 0.15, wet: 0.18 }).connect(musicMaster);
     const leadChorus = new Tone.Chorus({ frequency: 2.5, delayTime: 2.5, depth: 0.5, wet: 0.4 }).start().connect(leadDelay);
     const lead = new Tone.PolySynth(Tone.Synth, {
@@ -812,7 +1307,6 @@ function buildAudioGraph() {
     }).connect(leadChorus);
     lead.volume.value = -8;
 
-    // Bass: filtered saw
     const bassFilter = new Tone.Filter({ frequency: 600, type: 'lowpass', Q: 1 }).connect(musicMaster);
     const bass = new Tone.MonoSynth({
         oscillator: { type: 'sawtooth' },
@@ -821,7 +1315,6 @@ function buildAudioGraph() {
     }).connect(bassFilter);
     bass.volume.value = -11;
 
-    // Pad: soft AM chords, heavy reverb
     const pad = new Tone.PolySynth(Tone.AMSynth, {
         harmonicity: 2,
         oscillator: { type: 'sine' },
@@ -829,47 +1322,26 @@ function buildAudioGraph() {
     }).connect(musicMaster);
     pad.volume.value = -24;
 
-    // ---------- SFX bus ----------
     const sfxReverb = new Tone.Reverb({ decay: 0.9, wet: 0.12 }).toDestination();
     const sfxMaster = new Tone.Gain(0.8).connect(sfxReverb);
 
-    const sfxMove = new Tone.Synth({
-        oscillator: { type: 'sine' },
-        envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.05 }
-    }).connect(sfxMaster);
+    const sfxMove = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.05 }}).connect(sfxMaster);
     sfxMove.volume.value = -18;
 
-    const sfxRotate = new Tone.Synth({
-        oscillator: { type: 'triangle' },
-        envelope: { attack: 0.003, decay: 0.08, sustain: 0, release: 0.08 }
-    }).connect(sfxMaster);
+    const sfxRotate = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.003, decay: 0.08, sustain: 0, release: 0.08 }}).connect(sfxMaster);
     sfxRotate.volume.value = -14;
 
-    const sfxDrop = new Tone.MembraneSynth({
-        pitchDecay: 0.05,
-        octaves: 5,
-        envelope: { attack: 0.001, decay: 0.18, sustain: 0, release: 0.1 }
-    }).connect(sfxMaster);
+    const sfxDrop = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 5, envelope: { attack: 0.001, decay: 0.18, sustain: 0, release: 0.1 }}).connect(sfxMaster);
     sfxDrop.volume.value = -8;
 
-    const sfxHold = new Tone.Synth({
-        oscillator: { type: 'sine' },
-        envelope: { attack: 0.005, decay: 0.15, sustain: 0.1, release: 0.3 }
-    }).connect(sfxMaster);
+    const sfxHold = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.005, decay: 0.15, sustain: 0.1, release: 0.3 }}).connect(sfxMaster);
     sfxHold.volume.value = -14;
 
-    const sfxClear = new Tone.PolySynth(Tone.Synth, {
-        oscillator: { type: 'triangle' },
-        envelope: { attack: 0.01, decay: 0.3, sustain: 0.2, release: 0.7 }
-    }).connect(sfxMaster);
+    const sfxClear = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.2, release: 0.7 }}).connect(sfxMaster);
     sfxClear.volume.value = -12;
 
     const sfxOverFilter = new Tone.Filter({ frequency: 1200, type: 'lowpass' }).connect(sfxMaster);
-    const sfxOver = new Tone.MonoSynth({
-        oscillator: { type: 'sawtooth' },
-        envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 1.5 },
-        filterEnvelope: { attack: 0.01, decay: 0.6, sustain: 0.2, release: 1.2, baseFrequency: 1000, octaves: -3 }
-    }).connect(sfxOverFilter);
+    const sfxOver = new Tone.MonoSynth({ oscillator: { type: 'sawtooth' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 1.5 }, filterEnvelope: { attack: 0.01, decay: 0.6, sustain: 0.2, release: 1.2, baseFrequency: 1000, octaves: -3 }}).connect(sfxOverFilter);
     sfxOver.volume.value = -8;
 
     audioNodes = {
@@ -885,9 +1357,7 @@ function setupMusicParts() {
     const melodyEvents = [];
     let t = 0;
     for (const [note, len] of MUSIC_MELODY) {
-        if (note !== 'REST') {
-            melodyEvents.push({ time: t, note, dur: len * MUSIC_EIGHTH_SEC * 0.92 });
-        }
+        if (note !== 'REST') melodyEvents.push({ time: t, note, dur: len * MUSIC_EIGHTH_SEC * 0.92 });
         t += len * MUSIC_EIGHTH_SEC;
     }
     const loopLen = t;
@@ -895,13 +1365,10 @@ function setupMusicParts() {
     const bassEvents = [];
     t = 0;
     for (const [note, len] of MUSIC_BASS) {
-        if (note !== 'REST') {
-            bassEvents.push({ time: t, note, dur: len * MUSIC_EIGHTH_SEC * 0.95 });
-        }
+        if (note !== 'REST') bassEvents.push({ time: t, note, dur: len * MUSIC_EIGHTH_SEC * 0.95 });
         t += len * MUSIC_EIGHTH_SEC;
     }
 
-    // Chord pad: 8 bars @ 1.6s each
     const padEvents = [
         { time: 0.0,  chord: ['A3', 'C4', 'E4'] },
         { time: 1.6,  chord: ['A3', 'C4', 'E4'] },
@@ -916,24 +1383,19 @@ function setupMusicParts() {
     const melodyPart = new Tone.Part((time, ev) => {
         audioNodes.music.lead.triggerAttackRelease(ev.note, ev.dur, time, 0.65);
     }, melodyEvents);
-    melodyPart.loop = true;
-    melodyPart.loopEnd = loopLen;
+    melodyPart.loop = true; melodyPart.loopEnd = loopLen;
 
     const bassPart = new Tone.Part((time, ev) => {
         audioNodes.music.bass.triggerAttackRelease(ev.note, ev.dur, time, 0.6);
     }, bassEvents);
-    bassPart.loop = true;
-    bassPart.loopEnd = loopLen;
+    bassPart.loop = true; bassPart.loopEnd = loopLen;
 
     const padPart = new Tone.Part((time, ev) => {
         audioNodes.music.pad.triggerAttackRelease(ev.chord, 1.4, time, 0.4);
     }, padEvents);
-    padPart.loop = true;
-    padPart.loopEnd = loopLen;
+    padPart.loop = true; padPart.loopEnd = loopLen;
 
-    melodyPart.start(0);
-    bassPart.start(0);
-    padPart.start(0);
+    melodyPart.start(0); bassPart.start(0); padPart.start(0);
 
     audioNodes.music.melodyPart = melodyPart;
     audioNodes.music.bassPart = bassPart;
@@ -944,15 +1406,13 @@ function playSound(type, tier) {
     if (!toneReady || !audioNodes) return;
     try {
         const sfx = audioNodes.sfx;
-        if (type === 'move') {
-            sfx.move.triggerAttackRelease('A5', '64n');
-        } else if (type === 'rotate') {
+        if (type === 'move') sfx.move.triggerAttackRelease('A5', '64n');
+        else if (type === 'rotate') {
             const now = Tone.now();
             sfx.rotate.triggerAttackRelease('E5', '32n', now);
             sfx.rotate.triggerAttackRelease('A5', '32n', now + 0.04);
-        } else if (type === 'hardDrop') {
-            sfx.drop.triggerAttackRelease('C2', '8n');
-        } else if (type === 'hold') {
+        } else if (type === 'hardDrop') sfx.drop.triggerAttackRelease('C2', '8n');
+        else if (type === 'hold') {
             const now = Tone.now();
             sfx.hold.triggerAttackRelease('E6', '16n', now);
             sfx.hold.triggerAttackRelease('A6', '16n', now + 0.06);
@@ -966,9 +1426,7 @@ function playSound(type, tier) {
             };
             const seq = chordsByTier[tier] || chordsByTier[1];
             const base = Tone.now();
-            seq.forEach((c, i) => {
-                sfx.clear.triggerAttackRelease(c, '4n', base + i * 0.09);
-            });
+            seq.forEach((c, i) => { sfx.clear.triggerAttackRelease(c, '4n', base + i * 0.09); });
         } else if (type === 'over') {
             const now = Tone.now();
             sfx.over.triggerAttackRelease('A3', '1n', now);
@@ -998,37 +1456,23 @@ function startMusic() {
 }
 
 function stopMusic() {
-    if (!toneReady || !audioNodes) {
-        musicPlaying = false;
-        updateMusicButton();
-        return;
-    }
-    if (!musicPlaying) {
-        updateMusicButton();
-        return;
-    }
+    if (!toneReady || !audioNodes) { musicPlaying = false; updateMusicButton(); return; }
+    if (!musicPlaying) { updateMusicButton(); return; }
     musicPlaying = false;
     const now = Tone.now();
     const g = audioNodes.music.master.gain;
     g.cancelScheduledValues(now);
     g.setValueAtTime(g.value, now);
     g.linearRampToValueAtTime(0, now + 0.3);
-    setTimeout(() => {
-        if (!musicPlaying && toneReady) {
-            try { Tone.Transport.stop(); } catch(e) {}
-        }
-    }, 400);
+    setTimeout(() => { if (!musicPlaying && toneReady) { try { Tone.Transport.stop(); } catch(e) {} }}, 400);
     updateMusicButton();
 }
 
 function toggleMusic() {
     musicEnabled = !musicEnabled;
     try { localStorage.setItem('tb-music', musicEnabled ? 'on' : 'off'); } catch(e) {}
-    if (musicEnabled) {
-        if (running && !isPaused) startMusic();
-    } else {
-        stopMusic();
-    }
+    if (musicEnabled) { if (running && !isPaused) startMusic(); }
+    else stopMusic();
     updateMusicButton();
 }
 
@@ -1057,18 +1501,22 @@ class InputManager {
     }
 
     initListeners() {
-        window.addEventListener('keydown', e => {
+        this._kd = e => {
             if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
             if (!this.keys[e.code]) {
                 this.keys[e.code] = true;
                 this.keyTimers[e.code] = 0;
                 this.triggerAction(e.code);
             }
-        });
-        window.addEventListener('keyup', e => {
-            this.keys[e.code] = false;
-            this.keyTimers[e.code] = 0;
-        });
+        };
+        this._ku = e => { this.keys[e.code] = false; this.keyTimers[e.code] = 0; };
+        window.addEventListener('keydown', this._kd);
+        window.addEventListener('keyup', this._ku);
+    }
+
+    destroy() {
+        window.removeEventListener('keydown', this._kd);
+        window.removeEventListener('keyup', this._ku);
     }
 
     update() {
@@ -1090,7 +1538,7 @@ class InputManager {
     }
 
     triggerAction(keyCode) {
-        if (!this.game) return;
+        if (!this.game || this.game.over || isPaused) return;
         switch(keyCode) {
             case 'ArrowLeft': this.game.move(-1); break;
             case 'ArrowRight': this.game.move(1); break;
@@ -1105,46 +1553,151 @@ class InputManager {
 
 // ==================== Game Control ====================
 let game = null;
+let aiGame = null;
+let ai = null;
+let battleManager = null;
 let inputManager = null;
 let running = false;
 let isPaused = false;
+let currentMode = 'solo';       // 'solo' | 'battle'
+let currentDifficulty = 'normal';
+let battleEnded = false;
+let battleWinner = null;
+
+// Solo config
+const SOLO_CONFIG = {
+    boardId: 'board1', fxId: 'fx1', holdId: 'hold1',
+    nextIds: ['next1', 'next2', 'next3'],
+    statIds: { score: 'score1', level: 'level1', lines: 'sent1', combo: 'combo1' },
+    overlayIds: { combo: 'combo-display', action: 'action-text' }
+};
+
+// Battle player config
+const BATTLE_PLAYER_CONFIG = {
+    boardId: 'p-board', fxId: 'p-fx', holdId: 'p-hold',
+    nextIds: ['p-next1', 'p-next2', 'p-next3'],
+    statIds: { score: 'p-score', lines: 'p-lines', combo: 'p-combo', b2b: 'p-b2b', attack: 'atk-p' },
+    overlayIds: { combo: 'p-combo-display', action: 'p-action-text' },
+    garbageMeterId: 'p-garbage-meter'
+};
+
+// Battle AI config
+const BATTLE_AI_CONFIG = {
+    boardId: 'a-board', fxId: 'a-fx', holdId: 'a-hold',
+    nextIds: ['a-next1', 'a-next2', 'a-next3'],
+    statIds: { score: 'a-score', lines: 'a-lines', combo: 'a-combo', b2b: 'a-b2b', attack: 'atk-a' },
+    overlayIds: { combo: 'a-combo-display', action: 'a-action-text' },
+    garbageMeterId: 'a-garbage-meter'
+};
+
+function chooseMode(mode) {
+    currentMode = mode;
+    if (mode === 'solo') {
+        startGame();
+    } else {
+        document.getElementById('mode-section').classList.add('hidden');
+        document.getElementById('difficulty-section').classList.remove('hidden');
+    }
+}
+
+function showModeSelect() {
+    document.getElementById('mode-section').classList.remove('hidden');
+    document.getElementById('difficulty-section').classList.add('hidden');
+}
+
+function chooseDifficulty(diff) {
+    currentDifficulty = diff;
+    startGame();
+}
 
 function startGame() {
     initAudio();
-    bag = new Bag7();
+    sharedBag = new Bag7();
     document.getElementById('menu').classList.add('hidden');
     document.getElementById('gameover').classList.remove('show');
-    document.getElementById('status-overlay').classList.add('hidden');
 
-    game = new Tetris();
-    game.spawn();
-    inputManager = new InputManager(game);
+    // Swap layouts via body class
+    document.body.classList.remove('mode-solo', 'mode-battle');
+    document.body.classList.add(currentMode === 'battle' ? 'mode-battle' : 'mode-solo');
+
+    battleEnded = false;
+    battleWinner = null;
+
+    if (currentMode === 'battle') {
+        // Each player gets an independent 7-bag (fair randomness per player)
+        game = new Tetris({ ...BATTLE_PLAYER_CONFIG, bag: new Bag7() });
+        aiGame = new Tetris({ ...BATTLE_AI_CONFIG, bag: new Bag7() });
+        game.spawn();
+        aiGame.spawn();
+        battleManager = new BattleManager(game, aiGame);
+        ai = new TetrisAI(aiGame, currentDifficulty);
+
+        const diffLabel = AI_PROFILES[currentDifficulty].name;
+        const dd = document.getElementById('difficulty-display');
+        if (dd) dd.textContent = diffLabel;
+
+        if (inputManager) inputManager.destroy();
+        inputManager = new InputManager(game);
+
+        const so = document.getElementById('p-status-overlay');
+        if (so) so.classList.add('hidden');
+        const so2 = document.getElementById('a-status-overlay');
+        if (so2) so2.classList.add('hidden');
+    } else {
+        game = new Tetris(SOLO_CONFIG);
+        aiGame = null;
+        ai = null;
+        battleManager = null;
+        game.spawn();
+
+        if (inputManager) inputManager.destroy();
+        inputManager = new InputManager(game);
+
+        const so = document.getElementById('status-overlay');
+        if (so) so.classList.add('hidden');
+    }
 
     running = true;
     isPaused = false;
     startMusic();
-    loop();
+    // Ensure renderers resize after layout switch
+    requestAnimationFrame(() => {
+        if (game) game.renderer.resize();
+        if (aiGame) aiGame.renderer.resize();
+        loop();
+    });
 }
 
 function backMenu() {
     document.getElementById('gameover').classList.remove('show');
     document.getElementById('menu').classList.remove('hidden');
+    showModeSelect();
     running = false;
+    if (inputManager) { inputManager.destroy(); inputManager = null; }
     stopMusic();
+    document.body.classList.remove('mode-battle');
+    document.body.classList.add('mode-solo');
 }
 
 function togglePause() {
     if (!running) return;
     isPaused = !isPaused;
-    const overlay = document.getElementById('status-overlay');
-    overlay.textContent = isPaused ? 'PAUSED' : '';
-    overlay.classList.toggle('hidden', !isPaused);
-    document.getElementById('pause-btn').textContent = isPaused ? 'RESUME' : 'PAUSE';
-    if (isPaused) {
-        stopMusic();
-    } else {
-        game.lastTime = performance.now();
-        inputManager.lastTime = performance.now();
+    const overlayIds = currentMode === 'battle'
+        ? ['p-status-overlay', 'a-status-overlay']
+        : ['status-overlay'];
+    overlayIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = isPaused ? 'PAUSED' : '';
+        el.classList.toggle('hidden', !isPaused);
+    });
+    const btns = ['pause-btn', 'battle-pause-btn'];
+    btns.forEach(id => { const b = document.getElementById(id); if (b) b.textContent = isPaused ? 'RESUME' : 'PAUSE'; });
+    if (isPaused) { stopMusic(); }
+    else {
+        if (game) game.lastTime = performance.now();
+        if (aiGame) aiGame.lastTime = performance.now();
+        if (inputManager) inputManager.lastTime = performance.now();
         startMusic();
         loop();
     }
@@ -1153,20 +1706,52 @@ function togglePause() {
 function loop(time = 0) {
     if (!running || isPaused) return;
     inputManager.update();
-    game.update(time);
-    game.render();
-    if (game.over) {
-        running = false;
-        stopMusic();
-        playSound('over');
-        document.getElementById('final-score').textContent = game.score.toLocaleString();
-        document.getElementById('final-lines').textContent = game.lines;
-        document.getElementById('final-level').textContent = game.level;
-        document.getElementById('final-combo').textContent = game.maxCombo;
-        document.getElementById('gameover').classList.add('show');
-        return;
+    if (game) { game.update(time); game.render(); }
+    if (aiGame) {
+        if (ai) ai.update(time);
+        aiGame.update(time);
+        aiGame.render();
+    }
+
+    if (currentMode === 'solo') {
+        if (game.over) { endSolo(); return; }
+    } else {
+        if (battleEnded) { endBattle(); return; }
     }
     requestAnimationFrame(loop);
+}
+
+function endSolo() {
+    running = false;
+    stopMusic();
+    playSound('over');
+    document.getElementById('gameover-title').textContent = 'GAME OVER';
+    document.getElementById('gameover-sub').textContent = '';
+    document.getElementById('final-stats-solo').classList.remove('hidden');
+    document.getElementById('final-stats-battle').classList.add('hidden');
+    document.getElementById('final-score').textContent = game.score.toLocaleString();
+    document.getElementById('final-lines').textContent = game.lines;
+    document.getElementById('final-level').textContent = game.level;
+    document.getElementById('final-combo').textContent = game.maxCombo;
+    document.getElementById('gameover').classList.add('show');
+}
+
+function endBattle() {
+    running = false;
+    stopMusic();
+    playSound('over');
+    const youWin = battleWinner === game;
+    document.getElementById('gameover-title').textContent = youWin ? 'VICTORY' : 'DEFEAT';
+    document.getElementById('gameover-sub').textContent = youWin
+        ? `You defeated the ${AI_PROFILES[currentDifficulty].name} CPU!`
+        : `The ${AI_PROFILES[currentDifficulty].name} CPU defeated you.`;
+    document.getElementById('final-stats-solo').classList.add('hidden');
+    document.getElementById('final-stats-battle').classList.remove('hidden');
+    document.getElementById('final-atk').textContent = game.attackSent;
+    document.getElementById('final-bl').textContent = game.lines;
+    document.getElementById('final-bcombo').textContent = game.maxCombo;
+    document.getElementById('final-bb2b').textContent = game.maxB2b;
+    document.getElementById('gameover').classList.add('show');
 }
 
 document.addEventListener('keydown', e => {
@@ -1175,7 +1760,6 @@ document.addEventListener('keydown', e => {
     if (e.key === 'p' || e.key === 'P') togglePause();
 });
 
-// Ensure focus
 document.addEventListener('click', () => { document.body.focus(); });
 document.body.setAttribute('tabindex', '-1');
 
@@ -1186,10 +1770,8 @@ document.body.setAttribute('tabindex', '-1');
     document.addEventListener('touchstart', e => {
         if (!running || isPaused || !game) return;
         const t = e.touches[0];
-        touchStartX = t.clientX;
-        touchStartY = t.clientY;
-        touchStartTime = Date.now();
-        touchMoved = false;
+        touchStartX = t.clientX; touchStartY = t.clientY;
+        touchStartTime = Date.now(); touchMoved = false;
     }, { passive: true });
 
     document.addEventListener('touchmove', e => {
@@ -1201,27 +1783,16 @@ document.body.setAttribute('tabindex', '-1');
 
         if (Math.abs(dx) > threshold) {
             game.move(dx > 0 ? 1 : -1);
-            touchStartX = t.clientX;
-            touchMoved = true;
+            touchStartX = t.clientX; touchMoved = true;
         }
-        if (dy > threshold) {
-            game.drop();
-            touchStartY = t.clientY;
-            touchMoved = true;
-        }
-        if (dy < -threshold) {
-            game.rotate(1);
-            touchStartY = t.clientY;
-            touchMoved = true;
-        }
+        if (dy > threshold) { game.drop(); touchStartY = t.clientY; touchMoved = true; }
+        if (dy < -threshold) { game.rotate(1); touchStartY = t.clientY; touchMoved = true; }
         e.preventDefault();
     }, { passive: false });
 
     document.addEventListener('touchend', e => {
         if (!running || isPaused || !game) return;
-        if (!touchMoved && Date.now() - touchStartTime < 200) {
-            game.hardDrop();
-        }
+        if (!touchMoved && Date.now() - touchStartTime < 200) game.hardDrop();
     }, { passive: true });
 })();
 
@@ -1248,5 +1819,9 @@ window.addEventListener('resize', () => {
     if (game && game.renderer) {
         game.renderer.resize();
         if (running && !isPaused) game.render();
+    }
+    if (aiGame && aiGame.renderer) {
+        aiGame.renderer.resize();
+        if (running && !isPaused) aiGame.render();
     }
 });

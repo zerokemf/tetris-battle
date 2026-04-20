@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tetris Battle - SRS Edition</title>
-    <link rel="stylesheet" href="style.css?v=2.2">
+    <link rel="stylesheet" href="style.css?v=3.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="mode-solo">
     <!-- Animated background -->
     <div class="bg-particles" id="bg-particles"></div>
 
@@ -25,7 +25,8 @@
         <span class="music-label" id="music-label">MUSIC</span>
     </button>
 
-    <div class="game-container" id="game-container">
+    <!-- ==================== SOLO MODE LAYOUT ==================== -->
+    <div class="game-container solo-only" id="game-container">
         <!-- Left Panel -->
         <div class="side-panel left-panel">
             <div class="neon-window">
@@ -51,7 +52,7 @@
 
         <!-- Center Arena -->
         <div class="center-arena">
-            <h1 class="game-title">TETRIS<span class="title-accent">BATTLE</span></h1>
+            <h1 class="game-title">TETRIS<span class="title-accent">SOLO</span></h1>
             <div class="canvas-wrapper" id="canvas-wrapper">
                 <canvas id="board1"></canvas>
                 <canvas id="fx1" class="fx-layer"></canvas>
@@ -61,6 +62,7 @@
             </div>
             <div class="bottom-bar">
                 <button class="pause-btn" id="pause-btn" onclick="togglePause()">PAUSE</button>
+                <button class="pause-btn menu-back" onclick="backMenu()">MENU</button>
             </div>
         </div>
 
@@ -98,29 +100,161 @@
         </div>
     </div>
 
-    <!-- Menu Screen -->
+    <!-- ==================== BATTLE MODE LAYOUT ==================== -->
+    <div class="battle-arena battle-only" id="battle-arena">
+        <!-- Player Side -->
+        <div class="battle-side player-side">
+            <div class="battle-player-tag">
+                <span class="tag-name">YOU</span>
+                <span class="tag-stats">
+                    <span class="mini-stat">ATK <b id="atk-p">0</b></span>
+                    <span class="mini-stat">KO <b id="ko-p">0</b></span>
+                </span>
+            </div>
+            <div class="battle-row">
+                <div class="battle-info left-info">
+                    <div class="mini-window">
+                        <div class="mini-header">HOLD</div>
+                        <canvas id="p-hold" width="90" height="70"></canvas>
+                    </div>
+                    <div class="battle-stats">
+                        <div class="mini-stat-block"><span>SCORE</span><b id="p-score">0</b></div>
+                        <div class="mini-stat-block"><span>LINES</span><b id="p-lines">0</b></div>
+                        <div class="mini-stat-block"><span>COMBO</span><b id="p-combo">0</b></div>
+                        <div class="mini-stat-block b2b"><span>B2B</span><b id="p-b2b">0</b></div>
+                    </div>
+                </div>
+                <div class="battle-board-wrapper">
+                    <canvas id="p-board"></canvas>
+                    <canvas id="p-fx" class="fx-layer"></canvas>
+                    <div id="p-combo-display" class="combo-display hidden"></div>
+                    <div id="p-action-text" class="action-text hidden"></div>
+                    <div id="p-status-overlay" class="hidden"></div>
+                </div>
+                <div class="garbage-meter" id="p-garbage-meter" title="Incoming garbage"></div>
+                <div class="battle-info right-info">
+                    <div class="mini-window">
+                        <div class="mini-header">NEXT</div>
+                        <canvas id="p-next1" width="90" height="70"></canvas>
+                        <canvas id="p-next2" width="70" height="50"></canvas>
+                        <canvas id="p-next3" width="70" height="50"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center VS indicator -->
+        <div class="battle-vs">
+            <div class="vs-label">VS</div>
+            <div class="difficulty-display" id="difficulty-display">NORMAL</div>
+            <button class="pause-btn" id="battle-pause-btn" onclick="togglePause()">PAUSE</button>
+            <button class="pause-btn menu-back" onclick="backMenu()">MENU</button>
+        </div>
+
+        <!-- AI Side -->
+        <div class="battle-side ai-side">
+            <div class="battle-player-tag ai-tag">
+                <span class="tag-name">CPU</span>
+                <span class="tag-stats">
+                    <span class="mini-stat">ATK <b id="atk-a">0</b></span>
+                    <span class="mini-stat">KO <b id="ko-a">0</b></span>
+                </span>
+            </div>
+            <div class="battle-row">
+                <div class="battle-info left-info">
+                    <div class="mini-window">
+                        <div class="mini-header">HOLD</div>
+                        <canvas id="a-hold" width="90" height="70"></canvas>
+                    </div>
+                </div>
+                <div class="garbage-meter" id="a-garbage-meter" title="Incoming garbage"></div>
+                <div class="battle-board-wrapper ai-board">
+                    <canvas id="a-board"></canvas>
+                    <canvas id="a-fx" class="fx-layer"></canvas>
+                    <div id="a-combo-display" class="combo-display hidden"></div>
+                    <div id="a-action-text" class="action-text hidden"></div>
+                    <div id="a-status-overlay" class="hidden"></div>
+                </div>
+                <div class="battle-info right-info">
+                    <div class="mini-window">
+                        <div class="mini-header">NEXT</div>
+                        <canvas id="a-next1" width="90" height="70"></canvas>
+                        <canvas id="a-next2" width="70" height="50"></canvas>
+                        <canvas id="a-next3" width="70" height="50"></canvas>
+                    </div>
+                    <div class="battle-stats">
+                        <div class="mini-stat-block"><span>SCORE</span><b id="a-score">0</b></div>
+                        <div class="mini-stat-block"><span>LINES</span><b id="a-lines">0</b></div>
+                        <div class="mini-stat-block"><span>COMBO</span><b id="a-combo">0</b></div>
+                        <div class="mini-stat-block b2b"><span>B2B</span><b id="a-b2b">0</b></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MENU SCREEN ==================== -->
     <div class="menu-screen" id="menu">
         <div class="menu-bg-glow"></div>
         <h1 class="title">TETRIS<span class="title-sub">BATTLE</span></h1>
         <div class="menu-subtitle">SRS EDITION</div>
-        <button class="neon-btn pulse" onclick="startGame()">
-            START GAME
-        </button>
+
+        <!-- Mode Selection -->
+        <div class="menu-section" id="mode-section">
+            <div class="menu-heading">SELECT MODE</div>
+            <div class="menu-row">
+                <button class="neon-btn mode-btn" onclick="chooseMode('solo')">
+                    <span class="btn-title">SOLO</span>
+                    <span class="btn-sub">單人模式</span>
+                </button>
+                <button class="neon-btn mode-btn magenta" onclick="chooseMode('battle')">
+                    <span class="btn-title">BATTLE</span>
+                    <span class="btn-sub">對戰模式</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Difficulty Selection (shown after choosing battle) -->
+        <div class="menu-section hidden" id="difficulty-section">
+            <div class="menu-heading">SELECT DIFFICULTY</div>
+            <div class="menu-row">
+                <button class="neon-btn diff-btn easy" onclick="chooseDifficulty('easy')">
+                    <span class="btn-title">EASY</span>
+                    <span class="btn-sub">簡單</span>
+                </button>
+                <button class="neon-btn diff-btn normal" onclick="chooseDifficulty('normal')">
+                    <span class="btn-title">NORMAL</span>
+                    <span class="btn-sub">普通</span>
+                </button>
+                <button class="neon-btn diff-btn hard" onclick="chooseDifficulty('hard')">
+                    <span class="btn-title">HARD</span>
+                    <span class="btn-sub">困難</span>
+                </button>
+            </div>
+            <button class="text-btn" onclick="showModeSelect()">← BACK</button>
+        </div>
     </div>
 
-    <!-- Game Over Screen -->
+    <!-- ==================== GAME OVER / WIN SCREEN ==================== -->
     <div class="gameover-screen" id="gameover">
-        <h1 class="gameover-title">GAME OVER</h1>
-        <div class="final-stats">
+        <h1 class="gameover-title" id="gameover-title">GAME OVER</h1>
+        <div class="gameover-sub" id="gameover-sub"></div>
+        <div class="final-stats" id="final-stats-solo">
             <div class="final-stat"><span class="final-label">SCORE</span><span class="final-value" id="final-score">0</span></div>
             <div class="final-stat"><span class="final-label">LINES</span><span class="final-value" id="final-lines">0</span></div>
             <div class="final-stat"><span class="final-label">LEVEL</span><span class="final-value" id="final-level">0</span></div>
             <div class="final-stat"><span class="final-label">MAX COMBO</span><span class="final-value" id="final-combo">0</span></div>
         </div>
+        <div class="final-stats hidden" id="final-stats-battle">
+            <div class="final-stat"><span class="final-label">LINES SENT</span><span class="final-value" id="final-atk">0</span></div>
+            <div class="final-stat"><span class="final-label">LINES CLEARED</span><span class="final-value" id="final-bl">0</span></div>
+            <div class="final-stat"><span class="final-label">MAX COMBO</span><span class="final-value" id="final-bcombo">0</span></div>
+            <div class="final-stat"><span class="final-label">MAX B2B</span><span class="final-value" id="final-bb2b">0</span></div>
+        </div>
         <button class="neon-btn" onclick="backMenu()">BACK TO MENU</button>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-    <script src="game.js?v=2.6"></script>
+    <script src="game.js?v=3.0"></script>
 </body>
 </html>
