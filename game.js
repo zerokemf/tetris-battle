@@ -68,27 +68,27 @@ const B2B_BONUS = 1;
 const AI_PROFILES = {
     easy: {
         name: 'EASY',
-        thinkDelay: 450,      // ms before deciding
-        actionInterval: 170,  // ms per action (move/rotate)
-        dropInterval: 900,    // AI gravity (ignored - AI hard drops)
-        errorChance: 0.35,    // % chance to pick non-optimal move
-        weights: { height: -0.3, lines: 0.6, holes: -0.5, bumpiness: -0.1 }
+        thinkDelay: 600,       // ms before deciding (longer = more time for player to set up)
+        actionInterval: 320,    // ms per action (slow, beatable pace)
+        dropInterval: 900,
+        errorChance: 0.45,    // 45% chance to pick bad move
+        weights: { height: -0.45, lines: 0.55, holes: -0.25, bumpiness: -0.05 }
     },
     normal: {
         name: 'NORMAL',
-        thinkDelay: 200,
-        actionInterval: 85,
+        thinkDelay: 250,
+        actionInterval: 140,   // ~DAS speed, fair for humans
         dropInterval: 600,
-        errorChance: 0.08,
-        weights: { height: -0.51, lines: 0.76, holes: -0.36, bumpiness: -0.18 }
+        errorChance: 0.15,
+        weights: { height: -0.48, lines: 0.72, holes: -0.32, bumpiness: -0.16 }
     },
     hard: {
         name: 'HARD',
-        thinkDelay: 60,
-        actionInterval: 35,
+        thinkDelay: 100,        // reacts quickly but not instant
+        actionInterval: 80,    // fast but humanly possible to counter
         dropInterval: 400,
-        errorChance: 0,
-        weights: { height: -0.51, lines: 0.9, holes: -0.65, bumpiness: -0.24, wells: -0.15 }
+        errorChance: 0.03,    // occasionally blunders
+        weights: { height: -0.52, lines: 0.82, holes: -0.55, bumpiness: -0.20, wells: -0.10 }
     }
 };
 
