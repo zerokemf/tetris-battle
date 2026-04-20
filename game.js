@@ -68,27 +68,27 @@ const B2B_BONUS = 1;
 const AI_PROFILES = {
     easy: {
         name: 'EASY',
-        thinkDelay: 800,       // long pause — player gets time to set up
-        actionInterval: 500,  // slow DAS, gives player breathing room
+        thinkDelay: 800,
+        actionInterval: 500,  // slow — beatable, gives player room to breathe
         dropInterval: 900,
-        errorChance: 0.12,   // only 12% chance to intentionally fumble (not 45%)
+        errorChance: 0.12,
         weights: { height: -0.55, lines: 0.70, holes: -0.40, bumpiness: -0.20 }
     },
     normal: {
         name: 'NORMAL',
-        thinkDelay: 280,      // a little extra time
-        actionInterval: 160,  // moderate DAS, fair pace for humans
+        thinkDelay: 350,      // moderate thinking time
+        actionInterval: 250,  // faster than easy, still comfortable for humans
         dropInterval: 600,
-        errorChance: 0.10,
-        weights: { height: -0.50, lines: 0.75, holes: -0.35, bumpiness: -0.18 }
+        errorChance: 0.06,   // smarter than easy — knows what it's doing
+        weights: { height: -0.52, lines: 0.78, holes: -0.45, bumpiness: -0.20 }
     },
     hard: {
         name: 'HARD',
-        thinkDelay: 130,      // quick but not instant
-        actionInterval: 100,  // fast DAS but achievable for experienced players
+        thinkDelay: 110,
+        actionInterval: 110,  // fast but not unbeatable — experienced players can counter
         dropInterval: 400,
-        errorChance: 0.05,   // tiny chance of a slip, not perfect
-        weights: { height: -0.52, lines: 0.88, holes: -0.50, bumpiness: -0.22, wells: -0.12 }
+        errorChance: 0.02,   // nearly optimal play
+        weights: { height: -0.52, lines: 0.88, holes: -0.55, bumpiness: -0.22, wells: -0.12 }
     }
 };
 
