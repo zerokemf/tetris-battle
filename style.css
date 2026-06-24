@@ -11,8 +11,8 @@
     --border-color: rgba(0, 243, 255, 0.15);
     --panel-bg: rgba(8, 16, 40, 0.85);
     --panel-border: rgba(0, 243, 255, 0.2);
-    --text-dim: #5a6e8a;
-    --text-mid: #8fa4c4;
+    --text-dim: #7e90ad;
+    --text-mid: #b0c2df;
     --text-bright: #d0e0ff;
 }
 
@@ -259,7 +259,7 @@ body.mode-battle .solo-only { display: none !important; }
 
 .panel-content { padding: clamp(8px, 1.2vw, 22px); }
 
-.controls-text { font-size: clamp(0.65rem, 0.9vw, 1.1rem); color: var(--text-dim); }
+.controls-text { font-size: clamp(0.65rem, 0.9vw, 1.1rem); color: var(--text-mid); }
 .control-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
 .control-row:last-child { border-bottom: none; }
 .key {
@@ -274,7 +274,7 @@ body.mode-battle .solo-only { display: none !important; }
 
 .stats-text { display: flex; flex-direction: column; gap: clamp(6px, 0.8vw, 16px); }
 .stat-item { display: flex; justify-content: space-between; align-items: baseline; }
-.stat-label { font-family: 'Orbitron', sans-serif; font-size: clamp(0.55rem, 0.75vw, 0.95rem); color: var(--text-dim); letter-spacing: 0.1em; }
+.stat-label { font-family: 'Orbitron', sans-serif; font-size: clamp(0.55rem, 0.75vw, 0.95rem); color: var(--text-mid); letter-spacing: 0.1em; }
 .stat-value { font-family: 'Orbitron', sans-serif; font-size: clamp(0.95rem, 1.3vw, 1.9rem); font-weight: 700; color: var(--text-bright); text-shadow: 0 0 8px rgba(208, 224, 255, 0.3); transition: all 0.3s ease; }
 .stat-value.combo-val { color: var(--neon-yellow); text-shadow: 0 0 10px rgba(255, 225, 77, 0.4); }
 .stat-value.pop { transform: scale(1.4); color: var(--neon-cyan); text-shadow: 0 0 15px rgba(0, 243, 255, 0.6); }
@@ -301,7 +301,7 @@ body.mode-battle .solo-only { display: none !important; }
     border: 2px solid rgba(0, 243, 255, 0.25);
     background: rgba(0, 0, 0, 0.9);
     border-radius: 6px;
-    box-shadow: 0 0 30px rgba(0, 243, 255, 0.15), inset 0 0 30px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 22px rgba(0, 243, 255, 0.12), inset 0 0 26px rgba(0, 0, 0, 0.5);
     /* Tetris board is 10×20 — lock aspect ratio and let the shorter of height/width drive sizing */
     aspect-ratio: 1 / 2;
     height: clamp(520px, min(86vh, 44vw), 1700px);
@@ -577,7 +577,7 @@ body.mode-battle .solo-only { display: none !important; }
     border: 2px solid rgba(0, 243, 255, 0.35);
     background: rgba(0, 0, 0, 0.9);
     border-radius: 6px;
-    box-shadow: 0 0 25px rgba(0, 243, 255, 0.18), inset 0 0 30px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 18px rgba(0, 243, 255, 0.14), inset 0 0 26px rgba(0, 0, 0, 0.5);
     aspect-ratio: 1 / 2;
     height: clamp(400px, min(88vh, 38vw), 1400px);
     overflow: hidden;
@@ -586,7 +586,7 @@ body.mode-battle .solo-only { display: none !important; }
 
 .battle-board-wrapper.ai-board {
     border-color: rgba(255, 45, 149, 0.35);
-    box-shadow: 0 0 25px rgba(255, 45, 149, 0.18), inset 0 0 30px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 18px rgba(255, 45, 149, 0.14), inset 0 0 26px rgba(0, 0, 0, 0.5);
 }
 
 .battle-board-wrapper.shake { animation: shake 0.3s ease-out; }
@@ -717,11 +717,166 @@ body.mode-battle .solo-only { display: none !important; }
 
 @media (max-width: 768px) {
     .game-container { gap: 8px; }
-    .side-panel { width: clamp(90px, 20vw, 140px); }
+    .side-panel { width: clamp(72px, 20vw, 120px); }
     .canvas-wrapper { height: clamp(360px, min(70vh, 90vw), 620px); }
-    .controls-text { display: none; }
+    .left-panel .neon-window:nth-child(2) { display: none; }
+    .panel-header { font-size: 0.58rem; letter-spacing: 0.12em; }
+    .panel-content { padding: 6px; }
 
     .battle-info .battle-stats { padding: 4px; }
     .battle-info .mini-stat-block span { font-size: 0.4rem; }
     .battle-info .mini-stat-block b { font-size: 0.75rem; }
+}
+
+/* Phone battle uses a stacked, player-first layout instead of squeezing two full boards side by side. */
+@media (max-width: 768px) {
+    body.mode-battle {
+        align-items: flex-start;
+        overflow: hidden;
+    }
+
+    .battle-arena {
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 6px;
+        width: 100vw;
+        max-width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        padding: 50px 8px 8px;
+        overflow: hidden;
+    }
+
+    .battle-side {
+        width: min(100%, 390px);
+        gap: 4px;
+    }
+
+    .ai-side { order: 1; flex: 0 0 auto; }
+    .battle-vs {
+        order: 2;
+        flex-direction: row;
+        gap: 8px;
+        justify-content: center;
+        min-width: 0;
+        padding: 0;
+    }
+    .player-side { order: 3; flex: 1 1 auto; }
+
+    .battle-player-tag {
+        padding: 5px 8px;
+        min-height: 32px;
+    }
+    .tag-name {
+        font-size: 0.72rem;
+        letter-spacing: 0.18em;
+    }
+    .tag-stats {
+        gap: 8px;
+    }
+    .mini-stat {
+        font-size: 0.52rem;
+        letter-spacing: 0.1em;
+    }
+
+    .battle-row {
+        display: grid;
+        align-items: start;
+        justify-content: center;
+    }
+
+    .player-side .battle-row {
+        grid-template-columns: 8px minmax(172px, 200px) 64px;
+        gap: 5px;
+    }
+    .player-side .left-info {
+        display: none;
+    }
+    .player-side .garbage-meter {
+        grid-column: 1;
+        grid-row: 1;
+    }
+    .player-side .battle-board-wrapper {
+        grid-column: 2;
+        grid-row: 1;
+        height: min(48vh, 390px);
+    }
+    .player-side .right-info {
+        grid-column: 3;
+        grid-row: 1;
+        width: 64px;
+    }
+    .player-side .right-info .battle-stats {
+        display: none;
+    }
+
+    .ai-side .battle-row {
+        grid-template-columns: 60px 7px 70px;
+        gap: 5px;
+    }
+    .ai-side .left-info {
+        grid-column: 1;
+        width: 60px;
+    }
+    .ai-side .garbage-meter {
+        grid-column: 2;
+    }
+    .ai-side .battle-board-wrapper {
+        grid-column: 3;
+        height: 140px;
+    }
+    .ai-side .right-info {
+        display: none;
+    }
+
+    .battle-board-wrapper,
+    .garbage-meter {
+        height: min(48vh, 390px);
+    }
+    .ai-side .garbage-meter {
+        height: 140px;
+    }
+    .garbage-meter {
+        width: 8px;
+        padding: 1px;
+    }
+
+    .mini-window {
+        padding: 4px;
+        gap: 3px;
+    }
+    .mini-header {
+        font-size: 0.48rem;
+        letter-spacing: 0.12em;
+    }
+
+    .vs-label {
+        font-size: 1.15rem;
+        animation: none;
+    }
+    .difficulty-display {
+        font-size: 0.5rem;
+        letter-spacing: 0.12em;
+        padding: 3px 8px;
+    }
+    .battle-vs .pause-btn {
+        padding: 4px 10px;
+        font-size: 0.48rem;
+        letter-spacing: 0.1em;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bg-particle,
+    .neon-btn.pulse,
+    .music-toggle.playing .music-icon,
+    .vs-label,
+    .garbage-bar,
+    .canvas-wrapper.shake,
+    .canvas-wrapper.shake-heavy,
+    .battle-board-wrapper.shake,
+    .battle-board-wrapper.shake-heavy {
+        animation: none !important;
+    }
 }
