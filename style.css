@@ -162,7 +162,7 @@ body.at-menu .battle-arena { visibility: hidden; }
     z-index: 0;
     overflow: hidden;
     pointer-events: none;
-    opacity: 0.34;
+    opacity: 0.62;
     transition: opacity 0.6s ease;
     contain: strict;
 }
@@ -184,25 +184,25 @@ body.at-menu .battle-arena { visibility: hidden; }
 }
 
 .attract-board {
-    opacity: 0.76;
+    opacity: 0.88;
     transition: opacity 0.45s ease;
 }
-.attract-board-right { opacity: 0.62; }
+.attract-board-right { opacity: 0.82; }
 .attract-board-mobile { display: none; }
 .attract-board-shell {
-    fill: rgba(3, 8, 20, 0.72);
-    stroke: rgba(0, 243, 255, 0.38);
-    stroke-width: 1.5;
+    fill: rgba(3, 8, 20, 0.62);
+    stroke: rgba(0, 243, 255, 0.68);
+    stroke-width: 1.8;
 }
-.attract-board-right .attract-board-shell { stroke: rgba(255, 45, 149, 0.34); }
+.attract-board-right .attract-board-shell { stroke: rgba(255, 45, 149, 0.62); }
 .attract-grid-lines line {
-    stroke: rgba(145, 185, 225, 0.11);
+    stroke: rgba(145, 185, 225, 0.2);
     stroke-width: 1;
 }
 .attract-settled rect {
-    opacity: 0.48;
-    stroke: rgba(255, 255, 255, 0.18);
-    stroke-width: 0.65;
+    opacity: 0.74;
+    stroke: rgba(255, 255, 255, 0.3);
+    stroke-width: 0.8;
 }
 .attract-active {
     transition: none;
@@ -211,10 +211,10 @@ body.at-menu .battle-arena { visibility: hidden; }
     transition: transform 300ms linear;
 }
 .attract-active rect {
-    opacity: 0.86;
-    stroke: rgba(255, 255, 255, 0.62);
-    stroke-width: 0.9;
-    filter: drop-shadow(0 0 5px rgba(210, 245, 255, 0.72));
+    opacity: 1;
+    stroke: rgba(255, 255, 255, 0.88);
+    stroke-width: 1.15;
+    filter: drop-shadow(0 0 8px rgba(210, 245, 255, 0.88));
 }
 .attract-line-flash {
     fill: #eafcff;
@@ -224,12 +224,12 @@ body.at-menu .battle-arena { visibility: hidden; }
 .attract-board.attract-reset { animation: attractBoardReset 0.65s ease; }
 
 .attract-demo-label {
-    fill: rgba(0, 243, 255, 0.56);
+    fill: rgba(0, 243, 255, 0.78);
     font: 700 13px 'Orbitron', sans-serif;
     letter-spacing: 3px;
 }
 .attract-demo-label-right {
-    fill: rgba(255, 45, 149, 0.5);
+    fill: rgba(255, 45, 149, 0.72);
     text-anchor: end;
 }
 .attract-scan-line {
@@ -975,15 +975,16 @@ body.at-menu .battle-arena { visibility: hidden; }
 }
 
 @media (max-width: 768px) {
-    .attract-mode { opacity: 0.29; }
+    .attract-mode { opacity: 0.44; }
     .attract-board-left,
     .attract-board-right,
     .attract-demo-label,
     .attract-scan-line { display: none; }
     .attract-board-mobile {
         display: block;
-        opacity: 0.76;
-        transform: translate(620px, 35px);
+        opacity: 0.85;
+        transform: translate(630px, -95px) scale(0.9);
+        transform-origin: 0 0;
     }
     .attract-focus-shield {
         background: linear-gradient(180deg,

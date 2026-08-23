@@ -165,9 +165,16 @@ const section = n => console.log(`\n== ${n} ==`);
     const settledBlocks = await evaljs(`document.querySelectorAll('#attract-svg .settled-block').length`);
     assert(settledBlocks > 20, `demo boards contain a believable settled stack (${settledBlocks} blocks)`);
     const ticksBefore = await evaljs(`window.__attractMode.ticks`);
+    const transformsBefore = await evaljs(`[...document.querySelectorAll('.attract-board-left .attract-active, .attract-board-right .attract-active')].map(el => el.getAttribute('transform'))`);
     await sleep(900);
     const ticksAfter = await evaljs(`window.__attractMode.ticks`);
+    const transformsAfter = await evaljs(`[...document.querySelectorAll('.attract-board-left .attract-active, .attract-board-right .attract-active')].map(el => el.getAttribute('transform'))`);
     assert(ticksAfter > ticksBefore, `pieces animate while menu is visible (${ticksBefore} -> ${ticksAfter} ticks)`);
+    assert(transformsAfter.some((value, i) => value !== transformsBefore[i]),
+        `falling piece coordinates visibly change (${transformsBefore.join(' | ')} -> ${transformsAfter.join(' | ')})`);
+    const visibility = await evaljs(`({root:+getComputedStyle(document.getElementById('attract-mode')).opacity,settled:+getComputedStyle(document.querySelector('.attract-settled rect')).opacity,active:+getComputedStyle(document.querySelector('.attract-active rect')).opacity})`);
+    assert(visibility.root >= 0.55 && visibility.settled >= 0.7 && visibility.active >= 0.95,
+        `desktop attract layers meet visible contrast thresholds (${JSON.stringify(visibility)})`);
     assert(await evaljs(`[...document.querySelectorAll('.attract-active.is-stepping')].some(el => parseFloat(getComputedStyle(el).transitionDuration) > 0)`),
         'falling pieces use smooth SVG transform transitions');
     const desktopVisibility = await evaljs(`({left:getComputedStyle(document.querySelector('.attract-board-left')).display,right:getComputedStyle(document.querySelector('.attract-board-right')).display,mobile:getComputedStyle(document.querySelector('.attract-board-mobile')).display})`);
@@ -332,6 +339,8 @@ const section = n => console.log(`\n== ${n} ==`);
     const mobileDemoVisibility = await evaljs(`({left:getComputedStyle(document.querySelector('.attract-board-left')).display,right:getComputedStyle(document.querySelector('.attract-board-right')).display,mobile:getComputedStyle(document.querySelector('.attract-board-mobile')).display})`);
     assert(mobileDemoVisibility.left === 'none' && mobileDemoVisibility.right === 'none' && mobileDemoVisibility.mobile !== 'none',
         'mobile: uses one low-opacity portrait demo board');
+    const mobileAttractOpacity = await evaljs(`+getComputedStyle(document.getElementById('attract-mode')).opacity`);
+    assert(mobileAttractOpacity >= 0.4, `mobile: attract background remains visibly present (opacity=${mobileAttractOpacity})`);
     assert(await evaljs(`window.__attractMode.activeBoards === 1`), 'mobile: simulates only its visible portrait board');
     await shot('04b-menu-mobile-attract');
     await evaljs(`chooseMode('solo')`);
