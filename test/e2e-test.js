@@ -175,6 +175,36 @@ const section = n => console.log(`\n== ${n} ==`);
         'desktop shows two side demos and hides portrait-only board');
     await shot('00-menu-attract');
 
+    section('Menu layout geometry');
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1279, height: 813, deviceScaleFactor: 1, mobile: false });
+    await sleep(300);
+    const layout813 = await evaljs(`(() => {
+        const content = document.querySelector('.menu-content').getBoundingClientRect();
+        const buttons = [...document.querySelectorAll('#mode-section .mode-btn')].map(el => el.getBoundingClientRect());
+        const glow = getComputedStyle(document.querySelector('.menu-bg-glow'));
+        return {
+            contentTop: content.top, contentBottom: content.bottom,
+            buttonBottoms: buttons.map(r => r.bottom),
+            buttonTops: buttons.map(r => r.top),
+            glowPosition: glow.position,
+            menuHeight: document.getElementById('menu').getBoundingClientRect().height
+        };
+    })()`);
+    assert(layout813.glowPosition === 'absolute', 'decorative glow is removed from flex layout flow');
+    assert(layout813.contentTop >= 20 && layout813.contentBottom <= 781,
+        `1279×813: menu module stays inside safe area (${Math.round(layout813.contentTop)}–${Math.round(layout813.contentBottom)}px)`);
+    assert(layout813.buttonBottoms.every(v => v <= 781) && layout813.buttonTops.every(v => v >= 20),
+        '1279×813: both primary mode buttons are fully visible');
+    await shot('00b-menu-1279x813');
+
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1024, height: 650, deviceScaleFactor: 1, mobile: false });
+    await sleep(250);
+    const shortButtons = await evaljs(`[...document.querySelectorAll('#mode-section .mode-btn')].map(el => el.getBoundingClientRect().bottom)`);
+    assert(shortButtons.every(v => v <= 626), '1024×650: primary buttons retain a 24px bottom safe area');
+
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await sleep(200);
+
     // ==================== Start solo game ====================
     section('Start solo game');
     await evaljs(`chooseMode('solo')`);

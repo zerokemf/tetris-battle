@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tetris Battle - SRS Edition</title>
-    <link rel="stylesheet" href="style.css?v=4.1">
+    <link rel="stylesheet" href="style.css?v=4.2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -210,51 +210,53 @@
         <!-- Arcade-style demo play: real SVG boards animate behind the menu. -->
         <div class="attract-mode" id="attract-mode" aria-hidden="true" data-ticks="0">
             <svg id="attract-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" focusable="false">
-                <text class="attract-demo-label" x="58" y="178">DEMO PLAY // 01</text>
-                <text class="attract-demo-label attract-demo-label-right" x="1382" y="128">02 // CPU DEMO</text>
-                <path class="attract-scan-line" d="M40 174 H290 M1150 124 H1400" />
+                <text class="attract-demo-label" x="58" y="158">DEMO PLAY // 01</text>
+                <text class="attract-demo-label attract-demo-label-right" x="1382" y="158">02 // CPU DEMO</text>
+                <path class="attract-scan-line" d="M40 154 H290 M1150 154 H1400" />
             </svg>
             <div class="attract-focus-shield"></div>
         </div>
         <div class="menu-bg-glow"></div>
-        <h1 class="title">TETRIS<span class="title-sub">BATTLE</span></h1>
-        <div class="menu-subtitle">SRS EDITION</div>
-        <div class="menu-high-score" id="menu-high-score-wrap">🏆 BEST <span id="menu-high-score">0</span></div>
+        <main class="menu-content">
+            <h1 class="title">TETRIS<span class="title-sub">BATTLE</span></h1>
+            <div class="menu-subtitle">SRS EDITION</div>
+            <div class="menu-high-score" id="menu-high-score-wrap">🏆 BEST <span id="menu-high-score">0</span></div>
 
-        <!-- Mode Selection -->
-        <div class="menu-section" id="mode-section">
-            <div class="menu-heading">SELECT MODE</div>
-            <div class="menu-row">
-                <button class="neon-btn mode-btn" onclick="chooseMode('solo')">
-                    <span class="btn-title">SOLO</span>
-                    <span class="btn-sub">單人模式</span>
-                </button>
-                <button class="neon-btn mode-btn magenta" onclick="chooseMode('battle')">
-                    <span class="btn-title">BATTLE</span>
-                    <span class="btn-sub">對戰模式</span>
-                </button>
+            <!-- Mode Selection -->
+            <div class="menu-section" id="mode-section">
+                <div class="menu-heading">SELECT MODE</div>
+                <div class="menu-row">
+                    <button class="neon-btn mode-btn" onclick="chooseMode('solo')">
+                        <span class="btn-title">SOLO</span>
+                        <span class="btn-sub">單人模式</span>
+                    </button>
+                    <button class="neon-btn mode-btn magenta" onclick="chooseMode('battle')">
+                        <span class="btn-title">BATTLE</span>
+                        <span class="btn-sub">對戰模式</span>
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <!-- Difficulty Selection (shown after choosing battle) -->
-        <div class="menu-section hidden" id="difficulty-section">
-            <div class="menu-heading">SELECT DIFFICULTY</div>
-            <div class="menu-row">
-                <button class="neon-btn diff-btn easy" onclick="chooseDifficulty('easy')">
-                    <span class="btn-title">EASY</span>
-                    <span class="btn-sub">簡單</span>
-                </button>
-                <button class="neon-btn diff-btn normal" onclick="chooseDifficulty('normal')">
-                    <span class="btn-title">NORMAL</span>
-                    <span class="btn-sub">普通</span>
-                </button>
-                <button class="neon-btn diff-btn hard" onclick="chooseDifficulty('hard')">
-                    <span class="btn-title">HARD</span>
-                    <span class="btn-sub">困難</span>
-                </button>
+            <!-- Difficulty Selection (shown after choosing battle) -->
+            <div class="menu-section hidden" id="difficulty-section">
+                <div class="menu-heading">SELECT DIFFICULTY</div>
+                <div class="menu-row">
+                    <button class="neon-btn diff-btn easy" onclick="chooseDifficulty('easy')">
+                        <span class="btn-title">EASY</span>
+                        <span class="btn-sub">簡單</span>
+                    </button>
+                    <button class="neon-btn diff-btn normal" onclick="chooseDifficulty('normal')">
+                        <span class="btn-title">NORMAL</span>
+                        <span class="btn-sub">普通</span>
+                    </button>
+                    <button class="neon-btn diff-btn hard" onclick="chooseDifficulty('hard')">
+                        <span class="btn-title">HARD</span>
+                        <span class="btn-sub">困難</span>
+                    </button>
+                </div>
+                <button class="text-btn" onclick="showModeSelect()">← BACK</button>
             </div>
-            <button class="text-btn" onclick="showModeSelect()">← BACK</button>
-        </div>
+        </main>
     </div>
 
     <!-- ==================== GAME OVER / WIN SCREEN ==================== -->
@@ -277,7 +279,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-    <script src="game.js?v=4.1"></script>
-    <script src="attract-mode.js?v=1.0"></script>
+    <script src="game.js?v=4.2"></script>
+    <script src="attract-mode.js?v=1.1"></script>
 </body>
 </html>

@@ -295,8 +295,8 @@
 
     // Left and right demo boards frame the menu without sitting behind controls.
     const boards = [
-        new DemoBoard({ id: 'left', x: 58, y: 205, block: 20, seed: 0x51A7, speedOffset: 0 }),
-        new DemoBoard({ id: 'right', x: 1182, y: 155, block: 20, seed: 0xB477, speedOffset: 2 }),
+        new DemoBoard({ id: 'left', x: 58, y: 185, block: 20, seed: 0x51A7, speedOffset: 0 }),
+        new DemoBoard({ id: 'right', x: 1182, y: 185, block: 20, seed: 0xB477, speedOffset: 2 }),
         // Center board is hidden on desktop and revealed only in the portrait crop.
         new DemoBoard({ id: 'mobile', x: 620, y: 185, block: 20, seed: 0xA11E, speedOffset: 1 })
     ];
