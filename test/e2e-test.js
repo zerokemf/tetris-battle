@@ -155,12 +155,33 @@ const section = n => console.log(`\n== ${n} ==`);
     const menuHS = await evaljs(`document.getElementById('menu-high-score').textContent`);
     assert(menuHS !== undefined, `menu high score element renders (${menuHS})`);
 
+    section('Arcade attract mode');
+    const attractExists = await evaljs(`!!(document.getElementById('attract-svg') && window.__attractMode)`);
+    assert(attractExists, 'SVG attract mode initialized');
+    assert(await evaljs(`window.__attractMode.boards === 3`), 'desktop side boards plus mobile board created');
+    assert(await evaljs(`window.__attractMode.activeBoards === 2`), 'desktop simulates only its two visible boards');
+    assert(await evaljs(`Object.isFrozen(window.__attractMode) && !('start' in window.__attractMode) && !('stop' in window.__attractMode)`),
+        'attract diagnostics are immutable and expose no lifecycle mutators');
+    const settledBlocks = await evaljs(`document.querySelectorAll('#attract-svg .settled-block').length`);
+    assert(settledBlocks > 20, `demo boards contain a believable settled stack (${settledBlocks} blocks)`);
+    const ticksBefore = await evaljs(`window.__attractMode.ticks`);
+    await sleep(900);
+    const ticksAfter = await evaljs(`window.__attractMode.ticks`);
+    assert(ticksAfter > ticksBefore, `pieces animate while menu is visible (${ticksBefore} -> ${ticksAfter} ticks)`);
+    assert(await evaljs(`[...document.querySelectorAll('.attract-active.is-stepping')].some(el => parseFloat(getComputedStyle(el).transitionDuration) > 0)`),
+        'falling pieces use smooth SVG transform transitions');
+    const desktopVisibility = await evaljs(`({left:getComputedStyle(document.querySelector('.attract-board-left')).display,right:getComputedStyle(document.querySelector('.attract-board-right')).display,mobile:getComputedStyle(document.querySelector('.attract-board-mobile')).display})`);
+    assert(desktopVisibility.left !== 'none' && desktopVisibility.right !== 'none' && desktopVisibility.mobile === 'none',
+        'desktop shows two side demos and hides portrait-only board');
+    await shot('00-menu-attract');
+
     // ==================== Start solo game ====================
     section('Start solo game');
     await evaljs(`chooseMode('solo')`);
     await sleep(600);
     const modeClass = await evaljs(`document.body.className`);
     assert(modeClass.includes('mode-solo'), 'solo layout active');
+    assert(await evaljs(`window.__attractMode.running === false`), 'attract animation timer stops during gameplay');
     const running = await evaljs(`typeof running !== 'undefined' && running`);
     assert(running, 'game loop started');
     const hasPiece = await evaljs(`!!(game && game.piece && game.piece.type)`);
@@ -260,6 +281,7 @@ const section = n => console.log(`\n== ${n} ==`);
     assert(await evaljs(`!document.getElementById('menu').classList.contains('hidden')`), 'back to menu works');
     assert(await evaljs(`document.body.classList.contains('at-menu') && getComputedStyle(document.getElementById('game-container')).visibility === 'hidden'`),
         'stale game board is hidden behind transparent menu');
+    assert(await evaljs(`window.__attractMode.running === true`), 'attract animation restarts after returning to menu');
     const hsAfter = await evaljs(`document.getElementById('menu-high-score').textContent`);
     console.log(`  menu high score after play: ${hsAfter}`);
 
@@ -274,9 +296,14 @@ const section = n => console.log(`\n== ${n} ==`);
     // Menu screenshot
     await shot('04-menu-final');
 
-    // Mobile viewport check
+    // Mobile menu and gameplay checks
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
     await sleep(600);
+    const mobileDemoVisibility = await evaljs(`({left:getComputedStyle(document.querySelector('.attract-board-left')).display,right:getComputedStyle(document.querySelector('.attract-board-right')).display,mobile:getComputedStyle(document.querySelector('.attract-board-mobile')).display})`);
+    assert(mobileDemoVisibility.left === 'none' && mobileDemoVisibility.right === 'none' && mobileDemoVisibility.mobile !== 'none',
+        'mobile: uses one low-opacity portrait demo board');
+    assert(await evaljs(`window.__attractMode.activeBoards === 1`), 'mobile: simulates only its visible portrait board');
+    await shot('04b-menu-mobile-attract');
     await evaljs(`chooseMode('solo')`);
     await sleep(700);
     await shot('05-mobile');
@@ -310,6 +337,21 @@ const section = n => console.log(`\n== ${n} ==`);
     await evaljs(`game.grid=Array.from({length:20},()=>Array(10).fill(0)); game.piece=new Piece('T',game); game.piece.y=5; game.over=false`);
     await touch('touchStart', 195, 380); await touch('touchMove', 195, 430); await touch('touchEnd', 195, 430);
     assert(await evaljs(`game.piece.y === 6`), `swipe down soft-drops one row (y=${await evaljs('game.piece.y')})`);
+
+    section('Reduced motion');
+    await evaljs(`backMenu()`);
+    await cdp.send('Emulation.setEmulatedMedia', {
+        media: '',
+        features: [{ name: 'prefers-reduced-motion', value: 'reduce' }]
+    });
+    await sleep(150);
+    assert(await evaljs(`window.__attractMode.running === false && document.getElementById('attract-mode').classList.contains('is-static')`),
+        'prefers-reduced-motion stops attract animation and keeps a static scene');
+    assert(await evaljs(`['#attract-mode','.attract-board-mobile','.attract-active'].every(selector => parseFloat(getComputedStyle(document.querySelector(selector)).transitionDuration) === 0)`),
+        'reduced-motion disables all attract-mode CSS transitions');
+    const reducedTicks = await evaljs(`window.__attractMode.ticks`);
+    await sleep(750);
+    assert(await evaljs(`window.__attractMode.ticks === ${reducedTicks}`), 'reduced-motion scene performs no background ticks');
 
     console.log(`\n========== E2E RESULT: ${passes} passed, ${failures} failed ==========`);
     cdp.close();

@@ -35,6 +35,7 @@
 
 - **Neon Cyberpunk 主題** — 霓虹色彩與深色背景的強烈對比
 - **動態場景背景** — 低干擾極光、星空、透視網格與暗角，保持盤面可讀性
+- **Arcade Attract Mode** — 首頁兩側以 SVG 運行真實 7-Bag 落下、堆疊與消行示範，模擬大型電玩機台待機畫面
 - **粒子消除特效** — 消除行數越多，粒子數量遞增（Tetris 與 T-Spin 專屬爆發）
 - **Hard Drop 光軌** — 沿真實落下路徑顯示短暫能量光柱
 - **畫面震動** — Double 以上觸發場景震撼效果
@@ -119,6 +120,7 @@ tetris-battle/
 ├── index.html         # 遊戲主頁與雙模式介面
 ├── style.css          # Neon 主題、場景動畫與響應式版面
 ├── game.js            # 遊戲核心、AI、音效與 Canvas 渲染
+├── attract-mode.js    # 首頁 SVG 機台待機示範動畫
 └── test/
     ├── logic-test.js           # 遊戲核心單元測試
     ├── e2e-test.js             # Chrome CDP 瀏覽器整合測試

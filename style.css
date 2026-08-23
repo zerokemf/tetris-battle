@@ -155,6 +155,107 @@ body.at-menu .battle-arena { visibility: hidden; }
 }
 .menu-screen.hidden { display: none; }
 
+/* ==================== Arcade Attract Mode ==================== */
+.attract-mode {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0.34;
+    transition: opacity 0.6s ease;
+    contain: strict;
+}
+
+.attract-mode svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: hidden;
+}
+
+/* A central dark lens guarantees the demo never competes with title/buttons. */
+.attract-focus-shield {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 42% 76% at 50% 49%, rgba(6, 11, 24, 0.93) 0%, rgba(6, 11, 24, 0.75) 54%, transparent 100%),
+        linear-gradient(180deg, rgba(6, 11, 24, 0.12), transparent 28%, transparent 72%, rgba(6, 11, 24, 0.2));
+}
+
+.attract-board {
+    opacity: 0.76;
+    transition: opacity 0.45s ease;
+}
+.attract-board-right { opacity: 0.62; }
+.attract-board-mobile { display: none; }
+.attract-board-shell {
+    fill: rgba(3, 8, 20, 0.72);
+    stroke: rgba(0, 243, 255, 0.38);
+    stroke-width: 1.5;
+}
+.attract-board-right .attract-board-shell { stroke: rgba(255, 45, 149, 0.34); }
+.attract-grid-lines line {
+    stroke: rgba(145, 185, 225, 0.11);
+    stroke-width: 1;
+}
+.attract-settled rect {
+    opacity: 0.48;
+    stroke: rgba(255, 255, 255, 0.18);
+    stroke-width: 0.65;
+}
+.attract-active {
+    transition: none;
+}
+.attract-active.is-stepping {
+    transition: transform 300ms linear;
+}
+.attract-active rect {
+    opacity: 0.86;
+    stroke: rgba(255, 255, 255, 0.62);
+    stroke-width: 0.9;
+    filter: drop-shadow(0 0 5px rgba(210, 245, 255, 0.72));
+}
+.attract-line-flash {
+    fill: #eafcff;
+    opacity: 0;
+}
+.attract-line-flash.is-flashing { animation: attractLineClear 0.58s ease-out; }
+.attract-board.attract-reset { animation: attractBoardReset 0.65s ease; }
+
+.attract-demo-label {
+    fill: rgba(0, 243, 255, 0.56);
+    font: 700 13px 'Orbitron', sans-serif;
+    letter-spacing: 3px;
+}
+.attract-demo-label-right {
+    fill: rgba(255, 45, 149, 0.5);
+    text-anchor: end;
+}
+.attract-scan-line {
+    fill: none;
+    stroke: rgba(133, 180, 220, 0.24);
+    stroke-width: 1;
+    stroke-dasharray: 8 8;
+}
+
+@keyframes attractLineClear {
+    0% { opacity: 0; transform: scaleX(0.15); transform-origin: center; }
+    34% { opacity: 0.9; transform: scaleX(1); }
+    100% { opacity: 0; transform: scaleX(1); }
+}
+@keyframes attractBoardReset {
+    0%, 100% { opacity: 0.72; }
+    50% { opacity: 0.08; }
+}
+
+/* Menu content always sits above both the demo and its focus shield. */
+.menu-screen > .title,
+.menu-screen > .menu-subtitle,
+.menu-screen > .menu-high-score,
+.menu-screen > .menu-section,
+.menu-screen > .menu-bg-glow { position: relative; z-index: 2; }
+
 .menu-bg-glow {
     position: absolute;
     width: 600px; height: 600px;
@@ -849,6 +950,24 @@ body.at-menu .battle-arena { visibility: hidden; }
 }
 
 @media (max-width: 768px) {
+    .attract-mode { opacity: 0.29; }
+    .attract-board-left,
+    .attract-board-right,
+    .attract-demo-label,
+    .attract-scan-line { display: none; }
+    .attract-board-mobile {
+        display: block;
+        opacity: 0.76;
+        transform: translate(620px, 35px);
+    }
+    .attract-focus-shield {
+        background: linear-gradient(180deg,
+            rgba(6, 11, 24, 0.08) 0%,
+            rgba(6, 11, 24, 0.14) 44%,
+            rgba(6, 11, 24, 0.82) 66%,
+            rgba(6, 11, 24, 0.58) 100%);
+    }
+
     .game-container { gap: 8px; }
     .side-panel { width: clamp(72px, 20vw, 120px); }
     .canvas-wrapper { height: clamp(360px, min(70vh, 90vw), 620px); }
@@ -1023,7 +1142,16 @@ body.at-menu .battle-arena { visibility: hidden; }
     .canvas-wrapper.shake,
     .canvas-wrapper.shake-heavy,
     .battle-board-wrapper.shake,
-    .battle-board-wrapper.shake-heavy {
+    .battle-board-wrapper.shake-heavy,
+    .attract-line-flash,
+    .attract-board.attract-reset {
         animation: none !important;
     }
+    .attract-mode,
+    .attract-board,
+    .attract-active {
+        transition: none !important;
+    }
+    .attract-mode { opacity: 0.2; }
+    .attract-active rect { filter: none; }
 }

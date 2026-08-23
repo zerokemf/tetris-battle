@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tetris Battle - SRS Edition</title>
-    <link rel="stylesheet" href="style.css?v=4.0">
+    <link rel="stylesheet" href="style.css?v=4.1">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
@@ -207,6 +207,15 @@
 
     <!-- ==================== MENU SCREEN ==================== -->
     <div class="menu-screen" id="menu">
+        <!-- Arcade-style demo play: real SVG boards animate behind the menu. -->
+        <div class="attract-mode" id="attract-mode" aria-hidden="true" data-ticks="0">
+            <svg id="attract-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" focusable="false">
+                <text class="attract-demo-label" x="58" y="178">DEMO PLAY // 01</text>
+                <text class="attract-demo-label attract-demo-label-right" x="1382" y="128">02 // CPU DEMO</text>
+                <path class="attract-scan-line" d="M40 174 H290 M1150 124 H1400" />
+            </svg>
+            <div class="attract-focus-shield"></div>
+        </div>
         <div class="menu-bg-glow"></div>
         <h1 class="title">TETRIS<span class="title-sub">BATTLE</span></h1>
         <div class="menu-subtitle">SRS EDITION</div>
@@ -268,6 +277,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-    <script src="game.js?v=4.0"></script>
+    <script src="game.js?v=4.1"></script>
+    <script src="attract-mode.js?v=1.0"></script>
 </body>
 </html>
