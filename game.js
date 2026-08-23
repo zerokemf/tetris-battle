@@ -56,9 +56,16 @@ const SRS_KICK_DATA = {
 
 const COLS = 10, ROWS = 20, EMPTY = 0;
 const MAX_PARTICLES = 120;
+const BOMB_MILESTONE_LINES = 10;  // every N lines cleared, next outgoing attack becomes a bomb
 
 // Tetris Battle attack table (garbage lines sent)
 const ATTACK_TABLE = [0, 0, 1, 2, 4];  // index = lines cleared
+// T-Spin attack table: [normal, mini] by lines cleared (Tetris guideline / Battle style)
+const TSPIN_ATTACK = [[0, 0], [2, 0], [4, 1], [6, 2]];
+const TSPIN_SCORE = {
+    miniNoLines: 100, miniSingle: 200, miniDouble: 400,
+    noLines: 400, single: 800, double: 1200, triple: 1600
+};
 // Combo bonus cumulative (Tetris Battle / Tetris Friends style)
 const COMBO_TABLE = [0, 0, 1, 1, 1, 2, 2, 3, 3, 4, 4, 4, 5];
 const PERFECT_CLEAR_BONUS = 10;
@@ -109,6 +116,9 @@ class Piece {
         this.x = 3;
         this.y = type === 'I' ? -1 : 0;
         this.rotIndex = 0;
+        // Last-maneuver tracking (for T-Spin detection)
+        this.lastAction = null;     // 'rotate' | 'move' | 'drop' | 'hardDrop'
+        this.lastKickIndex = -1;    // SRS kick test index of last successful rotation
     }
 
     getGhostY() {
@@ -121,6 +131,10 @@ class Piece {
         if (this.board.valid(this, this.x + dx, this.y + dy)) {
             this.x += dx;
             this.y += dy;
+            if (dx !== 0) {
+                this.lastAction = 'move';
+                this.lastKickIndex = -1;
+            }
             return true;
         }
         return false;
@@ -133,6 +147,12 @@ class Piece {
             distance++;
         }
         this.board.score += distance * 2;
+        // A zero-distance hard drop is merely a lock command. Preserve a
+        // preceding successful rotation so grounded T-Spins are recognized.
+        if (distance > 0) {
+            this.lastAction = 'hardDrop';
+            this.lastKickIndex = -1;
+        }
         this.board.lockPiece();
         return distance;
     }
@@ -162,6 +182,7 @@ class GameRenderer {
         this.fxCtx = this.fxCanvas.getContext('2d');
         this.blockSize = 36;
         this.particles = [];
+        this.trails = [];
         this.flashLines = [];
         this.screenFlash = 0;
         this.screenFlashColor = '#fff';
@@ -350,8 +371,21 @@ class GameRenderer {
             });
         }
 
-        // FX: screen flash + particles
+        // FX: drop beam trails + screen flash + particles
         const fctx = this.fxCtx;
+        for (let i = this.trails.length - 1; i >= 0; i--) {
+            const tr = this.trails[i];
+            tr.life -= 0.12;
+            if (tr.life <= 0) { this.trails.splice(i, 1); continue; }
+            fctx.save();
+            fctx.globalAlpha = Math.min(tr.life, 1) * 0.35;
+            const grad = fctx.createLinearGradient(0, tr.topY, 0, tr.botY);
+            grad.addColorStop(0, 'rgba(255,255,255,0)');
+            grad.addColorStop(1, tr.color);
+            fctx.fillStyle = grad;
+            fctx.fillRect(tr.col * this.blockSize + 2, tr.topY, this.blockSize - 4, tr.botY - tr.topY);
+            fctx.restore();
+        }
         if (this.screenFlash > 0) {
             fctx.save();
             fctx.globalAlpha = this.screenFlash;
@@ -378,7 +412,7 @@ class GameRenderer {
         fctx.globalCompositeOperation = 'source-over';
     }
 
-    spawnClearEffect(rows, tier) {
+    spawnClearEffect(rows, tier, isTSpin) {
         const bs = this.blockSize;
         const tierColor = TIER_COLORS[tier];
         rows.forEach(r => {
@@ -396,7 +430,23 @@ class GameRenderer {
                 );
             }
         });
-        if (tier === 4) {
+        if (isTSpin) {
+            // Purple energy burst from the center of the cleared area
+            const avgRow = rows.reduce((a, b) => a + b, 0) / rows.length;
+            const cx = this.displayWidth / 2;
+            const cy = avgRow * bs + bs / 2;
+            for (let i = 0; i < 26; i++) {
+                const angle = (i / 26) * Math.PI * 2;
+                const spd = 2.5 + Math.random() * 4;
+                this.addParticle(cx, cy,
+                    Math.random() > 0.35 ? '#b44dff' : '#ffffff',
+                    Math.cos(angle) * spd, Math.sin(angle) * spd,
+                    Math.random() * 3.5 + 2, 1, 0.015, 0.05
+                );
+            }
+            this.screenFlash = 0.35;
+            this.screenFlashColor = 'rgba(180,77,255,0.22)';
+        } else if (tier === 4) {
             const avgRow = rows.reduce((a, b) => a + b, 0) / rows.length;
             const cy = avgRow * bs + bs / 2;
             const cx = this.displayWidth / 2;
@@ -441,15 +491,18 @@ class GameRenderer {
 
     spawnDropTrail(piece) {
         const bs = this.blockSize;
+        // Beam trail along each column the piece travels through
+        const ghostY = piece.getGhostY();
         piece.shape.forEach((row, r) => {
             row.forEach((val, c) => {
-                if (val) {
-                    const px = (piece.x + c) * bs + bs / 2;
-                    const py = (piece.y + r) * bs + bs / 2;
-                    this.addParticle(px, py, piece.color.base,
-                        (Math.random() - 0.5) * 3, -Math.random() * 2 - 1,
-                        Math.random() * 2 + 1, 0.6, 0.04, 0.15
-                    );
+                if (val && (r === 0 || !piece.shape[r-1][c])) {
+                    const col = piece.x + c;
+                    const topY = (piece.y + r) * bs;
+                    const botY = (ghostY + r) * bs;
+                    if (botY > topY) {
+                        this.trails.push({ col, topY, botY, life: 1, color: piece.color.base });
+                        if (this.trails.length > 8) this.trails.shift();
+                    }
                 }
             });
         });
@@ -537,6 +590,10 @@ class Tetris {
         this.attackSent = 0;
         this.bag = config.bag || sharedBag;
 
+        // T-Spin detection state (set in rotate(), consumed in lockPiece())
+        this._tSpin = false;
+        this._tSpinMini = false;
+
         // Lock Delay
         this.lockDelay = 500;
         this.lockStartTime = 0;
@@ -546,7 +603,8 @@ class Tetris {
 
         // Battle: incoming garbage queue
         this.garbageQueue = [];
-        this.bombLineCountdown = 0;  // counts down until next bomb row sent
+        this.bombLineCountdown = BOMB_MILESTONE_LINES;  // lines remaining to earn a bomb charge
+        this.bombCharges = 0;                           // one charge consumed per actual outgoing attack
 
         this.renderer = new GameRenderer(config.boardId, config.fxId);
         this.holdCanvas = document.getElementById(config.holdId);
@@ -562,6 +620,8 @@ class Tetris {
         // Callbacks for battle events
         this.onAttack = null;        // (lines, reason) - called when outgoing attack produced
         this.onTopOut = null;        // () - called when game over
+
+        this._lastStatSync = 0;
     }
 
     spawn() {
@@ -615,6 +675,8 @@ class Tetris {
                 this.piece.x += dx;
                 this.piece.y += dy;
                 this.piece.rotIndex = nextRotIndex;
+                this.piece.lastAction = 'rotate';
+                this.piece.lastKickIndex = i;
                 playSound('rotate');
                 this.resetLockDelay();
                 if (!this.isOnGround()) this.isLocking = false;
@@ -622,6 +684,39 @@ class Tetris {
             }
         }
         this.piece.shape = oldShape;
+    }
+
+    // T-Spin detection: 3-corner rule (Tetris guideline).
+    // The T piece occupies the 3x3 box around its center; if the 4 diagonal
+    // corners of that box contain >=3 filled cells/walls AND the last successful
+    // maneuver was a rotation, it's a T-Spin. When both "front" corners are
+    // occupied it's a full T-Spin; otherwise Mini (unless kicked with the final
+    // SRS kick test 4, which upgrades to full per guideline).
+    detectTSpin() {
+        const p = this.piece;
+        if (!p || p.type !== 'T') return { spin: false, mini: false };
+        if (p.lastAction !== 'rotate') return { spin: false, mini: false };
+
+        const cx = p.x + 1, cy = p.y + 1;  // center of the T's 3x3 bounding box
+        const filled = (x, y) => {
+            if (x < 0 || x >= COLS || y >= ROWS) return true;  // walls & floor count
+            if (y < 0) return false;                            // above field is open
+            return !!this.grid[y][x];
+        };
+        // Diagonal corners in the piece's own frame:
+        // rot 0 points up -> front corners are top-left & top-right
+        const cornersByRot = [
+            [[-1,-1],[1,-1],[-1,1],[1,1]],  // rot 0 (up)
+            [[1,-1],[1,1],[-1,-1],[-1,1]],  // rot 1 (right)
+            [[-1,1],[1,1],[-1,-1],[1,-1]],  // rot 2 (down)
+            [[-1,-1],[-1,1],[1,-1],[1,1]]   // rot 3 (left)
+        ];
+        const [fl_, fr_, bl_, br_] = cornersByRot[p.rotIndex].map(([ox, oy]) => filled(cx+ox, cy+oy));
+        const frontCount = (fl_?1:0) + (fr_?1:0);
+        const total = frontCount + (bl_?1:0) + (br_?1:0);
+        if (total < 3) return { spin: false, mini: false };
+        const isMini = (frontCount < 2) && p.lastKickIndex !== 4;
+        return { spin: true, mini: isMini };
     }
 
     isOnGround() {
@@ -655,12 +750,17 @@ class Tetris {
     }
 
     hardDrop() {
-        this.piece.hardDrop();
+        // Spawn the drop trail BEFORE dropping, so particles trace the actual path
         this.renderer.spawnDropTrail(this.piece);
+        this.piece.hardDrop();
         playSound('hardDrop');
     }
 
     lockPiece() {
+        // T-Spin detection must run BEFORE the piece is merged into the grid
+        const spinResult = this.detectTSpin();
+        this._tSpin = spinResult.spin;
+        this._tSpinMini = spinResult.mini;
         this.renderer.spawnLockFlash(this.piece);
         for (let r = 0; r < this.piece.shape.length; r++) {
             for (let c = 0; c < this.piece.shape[r].length; c++) {
@@ -677,6 +777,14 @@ class Tetris {
         // Apply pending garbage only if no lines were cleared this lock (and still alive)
         if (!clearedThisLock && !this.over) {
             this.applyIncomingGarbage();
+        }
+    }
+
+    updateBombMilestone(linesCleared) {
+        this.bombLineCountdown -= linesCleared;
+        while (this.bombLineCountdown <= 0) {
+            this.bombCharges++;
+            this.bombLineCountdown += BOMB_MILESTONE_LINES;
         }
     }
 
@@ -700,8 +808,20 @@ class Tetris {
             }
         }
 
+        const isTSpin = this._tSpin && this.piece && this.piece.type === 'T';
+        const isMini = isTSpin && this._tSpinMini;
+
         if (linesCleared === 0) {
             this.combo = 0;
+            if (isTSpin) {
+                // A no-clear T-Spin scores and preserves the current B2B chain,
+                // but does not advance it (only difficult line clears do).
+                this.score += (isMini ? TSPIN_SCORE.miniNoLines : TSPIN_SCORE.noLines) * this.level;
+                this.showActionText(isMini ? 'T-SPIN MINI' : 'T-SPIN', isMini ? 1 : 3);
+                this.syncStats();
+            }
+            this._tSpin = false;
+            this._tSpinMini = false;
             return;
         }
 
@@ -711,22 +831,27 @@ class Tetris {
         this.grid = newGrid;
 
         const tier = Math.min(linesCleared, 4);
-        this.renderer.spawnClearEffect(clearedRowIndices, tier);
+        this.renderer.spawnClearEffect(clearedRowIndices, tier, isTSpin);
         this.triggerShake(tier);
         playSound('clear', tier);
 
         // Scoring
-        const baseScore = [0, 100, 300, 500, 800][tier];
         this.combo++;
         this.maxCombo = Math.max(this.maxCombo, this.combo);
+        let baseScore = [0, 100, 300, 500, 800][tier];
+        if (isTSpin) {
+            baseScore = isMini
+                ? [0, TSPIN_SCORE.miniSingle, TSPIN_SCORE.miniDouble, 0, 0][tier]
+                : [0, TSPIN_SCORE.single, TSPIN_SCORE.double, TSPIN_SCORE.triple, 0][tier];
+        }
         const comboBonus = this.combo > 1 ? 50 * (this.combo - 1) * this.level : 0;
         this.score += baseScore * this.level + comboBonus;
         this.lines += linesCleared;
         this.level = Math.floor(this.lines / 10) + 1;
         this.interval = Math.max(80, 1000 - (this.level - 1) * 90);
 
-        // B2B: only Tetris (4 lines) extends B2B chain (keep simple - no T-Spin detect)
-        const isDifficult = (linesCleared === 4);
+        // B2B: Tetris and T-Spin clears are "difficult" clears and extend the chain
+        const isDifficult = (linesCleared === 4) || isTSpin;
         if (isDifficult) {
             this.b2b++;
             this.maxB2b = Math.max(this.maxB2b, this.b2b);
@@ -738,38 +863,42 @@ class Tetris {
         const isPC = this.grid.every(row => row.every(c => !c));
 
         // Calculate attack (garbage to send)
-        let attack = ATTACK_TABLE[tier];
+        let attack = isTSpin ? TSPIN_ATTACK[tier][isMini ? 1 : 0] : ATTACK_TABLE[tier];
         if (this.b2b >= 2) attack += B2B_BONUS;
         const comboIdx = Math.min(this.combo - 1, COMBO_TABLE.length - 1);
         if (comboIdx > 0) attack += COMBO_TABLE[comboIdx];
         if (isPC) attack += PERFECT_CLEAR_BONUS;
         if (bombTriggered) attack += 4;  // bomb bonus
 
-        // Bomb milestone: every 10 lines cleared, next outgoing attack becomes a bomb
-        this.bombLineCountdown -= linesCleared;
-        let milestoneBomb = false;
-        if (this.bombLineCountdown <= 0) {
-            milestoneBomb = true;
-            this.bombLineCountdown = 10;
-        }
+        // Bomb milestone: every N cleared lines earns one bomb charge.
+        // Carry overflow; canceled attacks do not consume charges, and multiple
+        // crossed milestones queue independently instead of collapsing to a boolean.
+        this.updateBombMilestone(linesCleared);
 
         // Cancel incoming garbage first, then send remainder
         if (attack > 0) {
             attack = this.cancelGarbage(attack);
             if (attack > 0 && this.onAttack) {
+                const chargedBomb = this.bombCharges > 0;
+                const sendAsBomb = bombTriggered || chargedBomb;
                 this.attackSent += attack;
-                this.onAttack(attack, { tier, combo: this.combo, b2b: this.b2b, pc: isPC, bomb: bombTriggered || milestoneBomb });
+                this.onAttack(attack, { tier, combo: this.combo, b2b: this.b2b, pc: isPC, bomb: sendAsBomb });
+                if (chargedBomb) this.bombCharges--;
             }
         }
 
         // Action text
         let label = TIER_COLORS[tier].name;
         if (isPC) label = 'PERFECT!';
+        else if (isTSpin && isMini) label = `T-SPIN MINI ${TIER_COLORS[tier].name}`;
+        else if (isTSpin) label = `T-SPIN ${TIER_COLORS[tier].name}`;
         else if (this.b2b >= 2 && tier === 4) label = 'B2B TETRIS!';
         else if (bombTriggered) label = 'BOMB!';
-        this.showActionText(label, tier);
+        this.showActionText(label, isTSpin ? 4 : tier);
         if (this.combo >= 2) this.showCombo(this.combo);
 
+        this._tSpin = false;
+        this._tSpinMini = false;
         this.syncStats();
     }
 
@@ -890,11 +1019,20 @@ class Tetris {
         if (!this.canHold) return;
         playSound('hold');
         const t = this.piece.type;
+        let newPiece;
         if (this.hold) {
-            this.piece = new Piece(this.hold, this);
+            newPiece = new Piece(this.hold, this);
         } else {
             this.spawn();
+            newPiece = this.piece;
         }
+        // If the swapped/spawned piece is blocked at its entry position, it's a top-out.
+        // spawn() already reports its own top-out, so don't fire the callback twice.
+        if (!this.over && !this.valid(newPiece, newPiece.x, newPiece.y)) {
+            this.over = true;
+            if (this.onTopOut) this.onTopOut();
+        }
+        this.piece = newPiece;
         this.hold = t;
         this.canHold = false;
         this.isLocking = false;
@@ -904,6 +1042,10 @@ class Tetris {
 
     update(time) {
         if (this.over || isPaused) return;
+
+        // First frame after spawn: anchor gravity timer so the piece doesn't
+        // insta-drop due to lastTime=0 vs large rAF timestamp
+        if (this.lastTime === 0) this.lastTime = time;
 
         if (this.isLocking) {
             const elapsed = performance.now() - this.lockStartTime;
@@ -933,7 +1075,12 @@ class Tetris {
             const type = this.nextQueue[i] || null;
             this.renderer.renderPreview(this.nextCanvases[i], type, i === 0 ? 1 : 0.6);
         }
-        this.syncStats();
+        // Throttle DOM stat writes — no need to touch the DOM 60x per second
+        const now = performance.now();
+        if (now - this._lastStatSync > 120) {
+            this._lastStatSync = now;
+            this.syncStats();
+        }
     }
 
     syncStats() {
@@ -1227,11 +1374,20 @@ class BattleManager {
         this.player = player;       // Tetris instance
         this.ai = ai;               // Tetris instance (AI-controlled)
         this.winner = null;
+        this.playerKOs = 0;
+        this.aiKOs = 0;
 
         this.player.onAttack = (lines, info) => this.handleAttack(this.player, this.ai, lines, info);
         this.ai.onAttack     = (lines, info) => this.handleAttack(this.ai,     this.player, lines, info);
-        this.player.onTopOut = () => { this.endBattle(this.ai); };
-        this.ai.onTopOut     = () => { this.endBattle(this.player); };
+        this.player.onTopOut = () => { this.aiKOs++; this.syncKO(); this.endBattle(this.ai); };
+        this.ai.onTopOut     = () => { this.playerKOs++; this.syncKO(); this.endBattle(this.player); };
+    }
+
+    syncKO() {
+        const kp = document.getElementById('ko-p');
+        const ka = document.getElementById('ko-a');
+        if (kp) kp.textContent = this.playerKOs;
+        if (ka) ka.textContent = this.aiKOs;
     }
 
     handleAttack(from, to, lines, info) {
@@ -1553,6 +1709,35 @@ class InputManager {
     }
 }
 
+// ==================== High Score (localStorage) ====================
+const HIGH_SCORE_KEY = 'tb-high-score';
+const BEST_COMBO_KEY = 'tb-best-combo';
+
+function loadHighScore() {
+    try {
+        return {
+            score: parseInt(localStorage.getItem(HIGH_SCORE_KEY), 10) || 0,
+            combo: parseInt(localStorage.getItem(BEST_COMBO_KEY), 10) || 0
+        };
+    } catch (e) { return { score: 0, combo: 0 }; }
+}
+
+function saveHighScore(score, combo) {
+    try {
+        const cur = loadHighScore();
+        if (score > cur.score) localStorage.setItem(HIGH_SCORE_KEY, String(score));
+        if (combo > cur.combo) localStorage.setItem(BEST_COMBO_KEY, String(combo));
+    } catch (e) {}
+}
+
+function updateHighScoreDisplay() {
+    const hs = loadHighScore();
+    const el = document.getElementById('high-score-value');
+    if (el) el.textContent = hs.score.toLocaleString();
+    const el2 = document.getElementById('menu-high-score');
+    if (el2) el2.textContent = hs.score.toLocaleString();
+}
+
 // ==================== Game Control ====================
 let game = null;
 let aiGame = null;
@@ -1561,6 +1746,7 @@ let battleManager = null;
 let inputManager = null;
 let running = false;
 let isPaused = false;
+let loopGeneration = 0;           // invalidates stale requestAnimationFrame chains
 let currentMode = 'solo';       // 'solo' | 'battle'
 let currentDifficulty = 'normal';
 let battleEnded = false;
@@ -1605,6 +1791,7 @@ function chooseMode(mode) {
 function showModeSelect() {
     document.getElementById('mode-section').classList.remove('hidden');
     document.getElementById('difficulty-section').classList.add('hidden');
+    updateHighScoreDisplay();
 }
 
 function chooseDifficulty(diff) {
@@ -1615,6 +1802,7 @@ function chooseDifficulty(diff) {
 function startGame() {
     initAudio();
     sharedBag = new Bag7();
+    document.body.classList.remove('at-menu');
     document.getElementById('menu').classList.add('hidden');
     document.getElementById('gameover').classList.remove('show');
 
@@ -1661,29 +1849,38 @@ function startGame() {
 
     running = true;
     isPaused = false;
+    const generation = ++loopGeneration;
     startMusic();
-    // Ensure renderers resize after layout switch
+    // Ensure renderers resize after layout switch. The generation token keeps
+    // a queued frame from an older game session from reviving its loop.
     requestAnimationFrame(() => {
+        if (generation !== loopGeneration || !running) return;
         if (game) game.renderer.resize();
         if (aiGame) aiGame.renderer.resize();
-        loop();
+        loop(0, generation);
     });
 }
 
 function backMenu() {
     document.getElementById('gameover').classList.remove('show');
     document.getElementById('menu').classList.remove('hidden');
+    document.body.classList.add('at-menu');
     showModeSelect();
     running = false;
+    loopGeneration++;  // invalidate any frame already queued by the previous game
     if (inputManager) { inputManager.destroy(); inputManager = null; }
     stopMusic();
     document.body.classList.remove('mode-battle');
     document.body.classList.add('mode-solo');
+    updateHighScoreDisplay();
 }
 
 function togglePause() {
     if (!running) return;
     isPaused = !isPaused;
+    // Invalidate the frame that may already be queued. On resume, only the
+    // new generation below is allowed to continue the animation chain.
+    const generation = ++loopGeneration;
     const overlayIds = currentMode === 'battle'
         ? ['p-status-overlay', 'a-status-overlay']
         : ['status-overlay'];
@@ -1701,12 +1898,12 @@ function togglePause() {
         if (aiGame) aiGame.lastTime = performance.now();
         if (inputManager) inputManager.lastTime = performance.now();
         startMusic();
-        loop();
+        loop(0, generation);
     }
 }
 
-function loop(time = 0) {
-    if (!running || isPaused) return;
+function loop(time = 0, generation = loopGeneration) {
+    if (generation !== loopGeneration || !running || isPaused) return;
     inputManager.update();
     if (game) { game.update(time); game.render(); }
     if (aiGame) {
@@ -1720,7 +1917,7 @@ function loop(time = 0) {
     } else {
         if (battleEnded) { endBattle(); return; }
     }
-    requestAnimationFrame(loop);
+    requestAnimationFrame(nextTime => loop(nextTime, generation));
 }
 
 function endSolo() {
@@ -1728,7 +1925,11 @@ function endSolo() {
     stopMusic();
     playSound('over');
     document.getElementById('gameover-title').textContent = 'GAME OVER';
-    document.getElementById('gameover-sub').textContent = '';
+    const hs = loadHighScore();
+    const isNewRecord = game.score > hs.score;
+    saveHighScore(game.score, game.maxCombo);
+    document.getElementById('gameover-sub').textContent = isNewRecord ? '🏆 NEW HIGH SCORE!' : '';
+    document.getElementById('gameover-sub').classList.toggle('new-record', isNewRecord);
     document.getElementById('final-stats-solo').classList.remove('hidden');
     document.getElementById('final-stats-battle').classList.add('hidden');
     document.getElementById('final-score').textContent = game.score.toLocaleString();
@@ -1762,8 +1963,24 @@ document.addEventListener('keydown', e => {
     if (e.key === 'p' || e.key === 'P') togglePause();
 });
 
+// Auto-pause when the tab/window loses focus — no more cheap deaths while alt-tabbed
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden && running && !isPaused) togglePause();
+});
+window.addEventListener('blur', () => {
+    if (running && !isPaused) togglePause();
+});
+
 document.addEventListener('click', () => { document.body.focus(); });
 document.body.setAttribute('tabindex', '-1');
+
+// Init menu high-score display
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { updateMusicButton(); updateHighScoreDisplay(); });
+} else {
+    updateMusicButton();
+    updateHighScoreDisplay();
+}
 
 // ==================== Touch Controls ====================
 (function initTouchControls() {

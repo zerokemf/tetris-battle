@@ -22,17 +22,21 @@
 
 | 功能 | 說明 |
 |------|------|
-| **7-Bag 隨機生成** | 公平分配杜林洗牌演算法，杜绝不均衡問題 |
+| **7-Bag 隨機生成** | 公平的 7-Bag 洗牌演算法，杜絕方塊分配不均 |
 | **SRS 超旋轉系統** | 完整 JLSTZ 與 I 型方塊的 8 種旋轉偏移資料 |
+| **T-Spin / Mini T-Spin** | 3-corner rule 偵測、SRS kick 升級判定、專屬計分、攻擊、B2B 與特效 |
 | **Ghost Piece** | 軟著陸預覽，清楚顯示方塊落地位置 |
 | **Lock Delay** | 方塊觸地後 0.5 秒鎖定延遲，支援 Move Reset（每塊最多 15 次） |
 | **Hold 系統** | 隨時交換當前方塊與暫存方塊（每塊限用一次） |
 | **3 格 Next 預覽** | 領先看到即將到來的三個方塊 |
+| **本機最佳紀錄** | 自動保存最高分與最高 Combo，破紀錄時顯示專屬提示 |
 
 ### 🎨 視覺效果
 
 - **Neon Cyberpunk 主題** — 霓虹色彩與深色背景的強烈對比
-- **粒子消除特效** — 消除行數越多，粒子數量遞增（Tetris 附加星空爆炸）
+- **動態場景背景** — 低干擾極光、星空、透視網格與暗角，保持盤面可讀性
+- **粒子消除特效** — 消除行數越多，粒子數量遞增（Tetris 與 T-Spin 專屬爆發）
+- **Hard Drop 光軌** — 沿真實落下路徑顯示短暫能量光柱
 - **畫面震動** — Double 以上觸發場景震撼效果
 - **方塊漸層與高光** — 每格方塊自帶 3D 感的線性漸層
 - **Combo 計數器** — 連續消除即時顯示倍數
@@ -83,6 +87,12 @@
 | 2 行 | DOUBLE | 300 × 等級 |
 | 3 行 | TRIPLE | 500 × 等級 |
 | 4 行 | TETRIS | 800 × 等級 |
+| T-Spin Mini | MINI | 100–400 × 等級 |
+| T-Spin 1 行 | T-SPIN SINGLE | 800 × 等級 |
+| T-Spin 2 行 | T-SPIN DOUBLE | 1200 × 等級 |
+| T-Spin 3 行 | T-SPIN TRIPLE | 1600 × 等級 |
+
+Tetris 與 T-Spin 消行會延續 Back-to-Back；對戰模式另有 T-Spin 攻擊加成與 Perfect Clear 獎勵。
 
 ### Combo 獎勵
 
@@ -106,16 +116,21 @@ Combo Bonus = 50 × (combo 倍數 - 1) × 等級
 
 ```
 tetris-battle/
-├── index.html   # 遊戲主頁（HTML + 少量 CSS 注入點）
-├── style.css    # 樣式表（Neon 主題、動畫、版面）
-└── game.js      # 遊戲核心（36KB，含所有遊戲邏輯與渲染）
+├── index.html         # 遊戲主頁與雙模式介面
+├── style.css          # Neon 主題、場景動畫與響應式版面
+├── game.js            # 遊戲核心、AI、音效與 Canvas 渲染
+└── test/
+    ├── logic-test.js           # 遊戲核心單元測試
+    ├── e2e-test.js             # Chrome CDP 瀏覽器整合測試
+    ├── server.js               # 零依賴本機靜態測試伺服器
+    └── server-security-test.js # Traversal／NUL 等 hostile-path 回歸測試
 ```
 
 ### 技術棧
 
 - **語言：** 原生 JavaScript（ES6+）
 - **渲染：** HTML5 Canvas 2D（雙層：遊戲層 + FX 粒子層）
-- **音效：** Web Audio API（即時合成，無外部依賴）
+- **音效：** Tone.js / Web Audio API（即時合成，無音效素材檔）
 - **字體：** Google Fonts — Orbitron（標題）、Rajdhani（UI）
 - **響應式：** DPI 自適應（devicePixelRatio），視窗任意大小皆可
 
@@ -124,7 +139,7 @@ tetris-battle/
 - 粒子系統 swap-remove 替換，O(1) 刪除
 - 避免 per-particle `save()`/`restore()` 與 `shadowBlur`
 - 畫布尺寸變更偵測，只在實際改變時重新分配緩衝
-- 清除行以 write-pointer 原地压縮，零垃圾產生
+- 清除行以 write-pointer 原地壓縮，零垃圾產生
 
 ---
 

@@ -4,12 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tetris Battle - SRS Edition</title>
-    <link rel="stylesheet" href="style.css?v=3.0">
+    <link rel="stylesheet" href="style.css?v=4.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="mode-solo">
+<body class="mode-solo at-menu">
     <!-- Animated background -->
+    <div class="bg-scene" aria-hidden="true">
+        <div class="aurora aurora-1"></div>
+        <div class="aurora aurora-2"></div>
+        <div class="starfield"></div>
+        <div class="grid-floor"></div>
+        <div class="vignette"></div>
+    </div>
     <div class="bg-particles" id="bg-particles"></div>
 
     <!-- Music Toggle Button -->
@@ -64,6 +71,7 @@
                 <button class="pause-btn" id="pause-btn" onclick="togglePause()">PAUSE</button>
                 <button class="pause-btn menu-back" onclick="backMenu()">MENU</button>
             </div>
+            <div class="touch-hint" aria-hidden="true">TAP DROP · ↑ ROTATE<br>←→ MOVE · ↓ SOFT DROP</div>
         </div>
 
         <!-- Right Panel -->
@@ -94,6 +102,10 @@
                     <div class="stat-item">
                         <div class="stat-label">COMBO</div>
                         <div class="stat-value combo-val" id="combo1">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">BEST</div>
+                        <div class="stat-value high-score" id="high-score-value">0</div>
                     </div>
                 </div>
             </div>
@@ -198,6 +210,7 @@
         <div class="menu-bg-glow"></div>
         <h1 class="title">TETRIS<span class="title-sub">BATTLE</span></h1>
         <div class="menu-subtitle">SRS EDITION</div>
+        <div class="menu-high-score" id="menu-high-score-wrap">🏆 BEST <span id="menu-high-score">0</span></div>
 
         <!-- Mode Selection -->
         <div class="menu-section" id="mode-section">
@@ -255,6 +268,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-    <script src="game.js?v=3.0"></script>
+    <script src="game.js?v=4.0"></script>
 </body>
 </html>
