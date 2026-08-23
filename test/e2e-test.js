@@ -155,32 +155,65 @@ const section = n => console.log(`\n== ${n} ==`);
     const menuHS = await evaljs(`document.getElementById('menu-high-score').textContent`);
     assert(menuHS !== undefined, `menu high score element renders (${menuHS})`);
 
-    section('Arcade attract mode');
-    const attractExists = await evaljs(`!!(document.getElementById('attract-svg') && window.__attractMode)`);
-    assert(attractExists, 'SVG attract mode initialized');
-    assert(await evaljs(`window.__attractMode.boards === 3`), 'desktop side boards plus mobile board created');
-    assert(await evaljs(`window.__attractMode.activeBoards === 2`), 'desktop simulates only its two visible boards');
-    assert(await evaljs(`Object.isFrozen(window.__attractMode) && !('start' in window.__attractMode) && !('stop' in window.__attractMode)`),
-        'attract diagnostics are immutable and expose no lifecycle mutators');
-    const settledBlocks = await evaljs(`document.querySelectorAll('#attract-svg .settled-block').length`);
-    assert(settledBlocks > 20, `demo boards contain a believable settled stack (${settledBlocks} blocks)`);
-    const ticksBefore = await evaljs(`window.__attractMode.ticks`);
-    const transformsBefore = await evaljs(`[...document.querySelectorAll('.attract-board-left .attract-active, .attract-board-right .attract-active')].map(el => el.getAttribute('transform'))`);
-    await sleep(900);
-    const ticksAfter = await evaljs(`window.__attractMode.ticks`);
-    const transformsAfter = await evaljs(`[...document.querySelectorAll('.attract-board-left .attract-active, .attract-board-right .attract-active')].map(el => el.getAttribute('transform'))`);
-    assert(ticksAfter > ticksBefore, `pieces animate while menu is visible (${ticksBefore} -> ${ticksAfter} ticks)`);
-    assert(transformsAfter.some((value, i) => value !== transformsBefore[i]),
-        `falling piece coordinates visibly change (${transformsBefore.join(' | ')} -> ${transformsAfter.join(' | ')})`);
-    const visibility = await evaljs(`({root:+getComputedStyle(document.getElementById('attract-mode')).opacity,settled:+getComputedStyle(document.querySelector('.attract-settled rect')).opacity,active:+getComputedStyle(document.querySelector('.attract-active rect')).opacity})`);
-    assert(visibility.root >= 0.55 && visibility.settled >= 0.7 && visibility.active >= 0.95,
-        `desktop attract layers meet visible contrast thresholds (${JSON.stringify(visibility)})`);
-    assert(await evaljs(`[...document.querySelectorAll('.attract-active.is-stepping')].some(el => parseFloat(getComputedStyle(el).transitionDuration) > 0)`),
-        'falling pieces use smooth SVG transform transitions');
-    const desktopVisibility = await evaljs(`({left:getComputedStyle(document.querySelector('.attract-board-left')).display,right:getComputedStyle(document.querySelector('.attract-board-right')).display,mobile:getComputedStyle(document.querySelector('.attract-board-mobile')).display})`);
-    assert(desktopVisibility.left !== 'none' && desktopVisibility.right !== 'none' && desktopVisibility.mobile === 'none',
-        'desktop shows two side demos and hides portrait-only board');
-    await shot('00-menu-attract');
+    section('Ink design system');
+    const inkTokens = await evaljs(`(() => {
+        const root = getComputedStyle(document.documentElement);
+        return {
+            deep: root.getPropertyValue('--ink-deep').trim(),
+            mint: root.getPropertyValue('--ink-mint').trim(),
+            yellow: root.getPropertyValue('--ink-yellow').trim(),
+            coral: root.getPropertyValue('--ink-coral').trim(),
+            titleFont: getComputedStyle(document.querySelector('.title')).fontFamily,
+            soloButton: getComputedStyle(document.querySelector('.mode-btn')).backgroundColor,
+            battleButton: getComputedStyle(document.querySelector('.mode-btn.magenta')).backgroundColor,
+            pieces: [COLORS.I.base, COLORS.O.base, COLORS.T.base, COLORS.J.base]
+        };
+    })()`);
+    assert(inkTokens.deep === '#071a16' && inkTokens.mint === '#3ed9b5' && inkTokens.yellow === '#f2df4b' && inkTokens.coral === '#f2633f',
+        `core ink palette loaded (${inkTokens.deep}, ${inkTokens.mint}, ${inkTokens.yellow}, ${inkTokens.coral})`);
+    assert(/Bungee/i.test(inkTokens.titleFont), `display typography uses Bungee (${inkTokens.titleFont})`);
+    assert(inkTokens.soloButton === 'rgb(242, 223, 75)' && inkTokens.battleButton === 'rgb(242, 99, 63)',
+        'mode CTAs use yellow and coral ink roles');
+    assert(inkTokens.pieces.join(',') === '#3ed9b5,#f2df4b,#f2633f,#527bbf',
+        `canvas tetromino palette uses the new system (${inkTokens.pieces.join(', ')})`);
+
+    section('Full-screen gameplay video');
+    const videoExists = await evaljs(`!!(document.getElementById('menu-gameplay-video') && window.__videoBackground)`);
+    assert(videoExists, 'gameplay video background initialized');
+    const videoInfo = await evaljs(`({
+        readyState: window.__videoBackground.readyState,
+        paused: window.__videoBackground.paused,
+        duration: window.__videoBackground.duration,
+        dimensions: window.__videoBackground.dimensions,
+        error: window.__videoBackground.lastError,
+        opacity: +getComputedStyle(document.getElementById('menu-gameplay-video')).opacity,
+        fit: getComputedStyle(document.getElementById('menu-gameplay-video')).objectFit,
+        mp4: document.getElementById('menu-gameplay-video').canPlayType('video/mp4'),
+        webm: document.getElementById('menu-gameplay-video').canPlayType('video/webm')
+    })`);
+    assert(videoInfo.readyState >= 2 && videoInfo.error === '', `video decoded without media errors (readyState=${videoInfo.readyState})`);
+    assert(videoInfo.dimensions[0] === 1280 && videoInfo.dimensions[1] === 720, `recorded gameplay is 1280×720 (${videoInfo.dimensions.join('×')})`);
+    assert(videoInfo.duration >= 13.9 && videoInfo.duration <= 14.1, `loop duration is 14 seconds (${videoInfo.duration.toFixed(2)}s)`);
+    assert(videoInfo.paused === false, 'muted gameplay video autoplays on menu');
+    assert(videoInfo.opacity >= 0.55 && videoInfo.fit === 'cover', `video is visibly full-screen (opacity=${videoInfo.opacity}, fit=${videoInfo.fit})`);
+    assert(videoInfo.mp4 !== '' && videoInfo.webm !== '', 'browser recognizes MP4 and WebM fallbacks');
+    const videoTimeBefore = await evaljs(`window.__videoBackground.currentTime`);
+    await sleep(1200);
+    const videoTimeAfter = await evaljs(`window.__videoBackground.currentTime`);
+    assert(videoTimeAfter > videoTimeBefore + 0.7, `video timeline visibly advances (${videoTimeBefore.toFixed(2)} -> ${videoTimeAfter.toFixed(2)}s)`);
+
+    await evaljs(`Object.defineProperty(document, 'hidden', { configurable: true, value: true }); document.dispatchEvent(new Event('visibilitychange'))`);
+    await sleep(180);
+    assert(await evaljs(`window.__videoBackground.paused === true`), 'video pauses when the document becomes hidden');
+    const hiddenTime = await evaljs(`window.__videoBackground.currentTime`);
+    await sleep(350);
+    assert(await evaljs(`Math.abs(window.__videoBackground.currentTime - ${hiddenTime}) < 0.05`), 'hidden document does not consume video timeline');
+    await evaljs(`Object.defineProperty(document, 'hidden', { configurable: true, value: false }); document.dispatchEvent(new Event('visibilitychange'))`);
+    await sleep(220);
+    assert(await evaljs(`window.__videoBackground.paused === false`), 'video resumes when the document becomes visible');
+    await evaljs(`delete document.hidden`);
+
+    await shot('00-menu-video');
 
     section('Menu layout geometry');
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1279, height: 813, deviceScaleFactor: 1, mobile: false });
@@ -218,7 +251,7 @@ const section = n => console.log(`\n== ${n} ==`);
     await sleep(600);
     const modeClass = await evaljs(`document.body.className`);
     assert(modeClass.includes('mode-solo'), 'solo layout active');
-    assert(await evaljs(`window.__attractMode.running === false`), 'attract animation timer stops during gameplay');
+    assert(await evaljs(`window.__videoBackground.paused === true`), 'gameplay background video pauses during gameplay');
     const running = await evaljs(`typeof running !== 'undefined' && running`);
     assert(running, 'game loop started');
     const hasPiece = await evaljs(`!!(game && game.piece && game.piece.type)`);
@@ -317,8 +350,9 @@ const section = n => console.log(`\n== ${n} ==`);
     await sleep(300);
     assert(await evaljs(`!document.getElementById('menu').classList.contains('hidden')`), 'back to menu works');
     assert(await evaljs(`document.body.classList.contains('at-menu') && getComputedStyle(document.getElementById('game-container')).visibility === 'hidden'`),
-        'stale game board is hidden behind transparent menu');
-    assert(await evaljs(`window.__attractMode.running === true`), 'attract animation restarts after returning to menu');
+        'stale game board is hidden behind menu');
+    await sleep(250);
+    assert(await evaljs(`window.__videoBackground.paused === false`), 'gameplay background video resumes after returning to menu');
     const hsAfter = await evaljs(`document.getElementById('menu-high-score').textContent`);
     console.log(`  menu high score after play: ${hsAfter}`);
 
@@ -336,13 +370,10 @@ const section = n => console.log(`\n== ${n} ==`);
     // Mobile menu and gameplay checks
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
     await sleep(600);
-    const mobileDemoVisibility = await evaljs(`({left:getComputedStyle(document.querySelector('.attract-board-left')).display,right:getComputedStyle(document.querySelector('.attract-board-right')).display,mobile:getComputedStyle(document.querySelector('.attract-board-mobile')).display})`);
-    assert(mobileDemoVisibility.left === 'none' && mobileDemoVisibility.right === 'none' && mobileDemoVisibility.mobile !== 'none',
-        'mobile: uses one low-opacity portrait demo board');
-    const mobileAttractOpacity = await evaljs(`+getComputedStyle(document.getElementById('attract-mode')).opacity`);
-    assert(mobileAttractOpacity >= 0.4, `mobile: attract background remains visibly present (opacity=${mobileAttractOpacity})`);
-    assert(await evaljs(`window.__attractMode.activeBoards === 1`), 'mobile: simulates only its visible portrait board');
-    await shot('04b-menu-mobile-attract');
+    const mobileVideo = await evaljs(`({display:getComputedStyle(document.getElementById('menu-gameplay-video')).display,opacity:+getComputedStyle(document.getElementById('menu-gameplay-video')).opacity,fit:getComputedStyle(document.getElementById('menu-gameplay-video')).objectFit})`);
+    assert(mobileVideo.display !== 'none' && mobileVideo.opacity >= 0.45 && mobileVideo.fit === 'cover',
+        `mobile: full-screen gameplay footage remains visible (${JSON.stringify(mobileVideo)})`);
+    await shot('04b-menu-mobile-video');
     await evaljs(`chooseMode('solo')`);
     await sleep(700);
     await shot('05-mobile');
@@ -383,14 +414,15 @@ const section = n => console.log(`\n== ${n} ==`);
         media: '',
         features: [{ name: 'prefers-reduced-motion', value: 'reduce' }]
     });
-    await sleep(150);
-    assert(await evaljs(`window.__attractMode.running === false && document.getElementById('attract-mode').classList.contains('is-static')`),
-        'prefers-reduced-motion stops attract animation and keeps a static scene');
-    assert(await evaljs(`['#attract-mode','.attract-board-mobile','.attract-active'].every(selector => parseFloat(getComputedStyle(document.querySelector(selector)).transitionDuration) === 0)`),
-        'reduced-motion disables all attract-mode CSS transitions');
-    const reducedTicks = await evaljs(`window.__attractMode.ticks`);
+    await sleep(180);
+    assert(await evaljs(`window.__videoBackground.paused === true`),
+        'prefers-reduced-motion pauses gameplay footage');
+    assert(await evaljs(`getComputedStyle(document.getElementById('menu-gameplay-video')).display === 'none'`),
+        'reduced-motion hides moving video and leaves poster background');
+    const reducedTime = await evaljs(`window.__videoBackground.currentTime`);
     await sleep(750);
-    assert(await evaljs(`window.__attractMode.ticks === ${reducedTicks}`), 'reduced-motion scene performs no background ticks');
+    assert(await evaljs(`Math.abs(window.__videoBackground.currentTime - ${reducedTime}) < 0.05`),
+        'reduced-motion video timeline stays frozen');
 
     console.log(`\n========== E2E RESULT: ${passes} passed, ${failures} failed ==========`);
     cdp.close();

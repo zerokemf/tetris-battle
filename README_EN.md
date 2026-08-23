@@ -31,7 +31,9 @@
 
 ### 🎨 Visual Effects
 
-- **Neon Cyberpunk Theme** — Vivid neon colors against a deep dark background
+- **Original Ink Clash Theme** — Deep forest ink, mint, oil yellow and coral with bold black outlines
+- **Real Gameplay Background Video** — Recorded from this build's AI-vs-AI Battle, with MP4/WebM and a poster fallback
+- **Power-Aware Lifecycle** — Video plays only on the menu, pauses in-game/when hidden, and becomes a static poster for Reduced Motion
 - **Particle Clear Effects** — Particle count scales with clear tier; Tetris adds a star-burst
 - **Screen Shake** — Activates on Double and above
 - **Block Gradients & Highlights** — Each block has a 3D-style linear gradient
@@ -106,9 +108,13 @@ Example: At level 1, a streak of 3 combos = 50 × 2 × 1 = 100 bonus points
 
 ```
 tetris-battle/
-├── index.html   # Game page (HTML + minimal CSS injection points)
-├── style.css    # Styles (Neon theme, animations, layout)
-└── game.js      # Game core (36KB, all logic and rendering)
+├── index.html          # Game page and video markup
+├── style.css           # Core layout and responsive rules
+├── ink-theme.css       # Ink Clash design system and component theme
+├── game.js             # Game core, AI, audio and Canvas rendering
+├── video-background.js # Menu video lifecycle
+├── assets/             # MP4, WebM and poster media
+└── test/               # Logic, browser, security and video-asset tests
 ```
 
 ### Tech Stack

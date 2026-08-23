@@ -33,9 +33,9 @@
 
 ### 🎨 視覺效果
 
-- **Neon Cyberpunk 主題** — 霓虹色彩與深色背景的強烈對比
-- **動態場景背景** — 低干擾極光、星空、透視網格與暗角，保持盤面可讀性
-- **Arcade Attract Mode** — 首頁兩側以 SVG 運行真實 7-Bag 落下、堆疊與消行示範，模擬大型電玩機台待機畫面
+- **Ink Clash 原創主題** — 深墨綠、薄荷青、油墨黃與珊瑚橘，搭配粗黑輪廓與動態切角
+- **真實遊玩背景影片** — 由本遊戲新版 Battle 實際雙 AI 對戰錄製，提供 MP4／WebM 與 poster
+- **節能生命週期** — 影片只在首頁播放，進入遊戲或切換分頁後暫停，Reduced Motion 顯示靜態 poster
 - **粒子消除特效** — 消除行數越多，粒子數量遞增（Tetris 與 T-Spin 專屬爆發）
 - **Hard Drop 光軌** — 沿真實落下路徑顯示短暫能量光柱
 - **畫面震動** — Double 以上觸發場景震撼效果
@@ -118,12 +118,15 @@ Combo Bonus = 50 × (combo 倍數 - 1) × 等級
 ```
 tetris-battle/
 ├── index.html         # 遊戲主頁與雙模式介面
-├── style.css          # Neon 主題、場景動畫與響應式版面
+├── style.css          # 核心布局與響應式版面
+├── ink-theme.css      # 原創油墨色彩系統與全站組件主題
 ├── game.js            # 遊戲核心、AI、音效與 Canvas 渲染
-├── attract-mode.js    # 首頁 SVG 機台待機示範動畫
+├── video-background.js # 首頁遊玩影片生命週期
+├── assets/            # MP4／WebM／poster 背景素材
 └── test/
     ├── logic-test.js           # 遊戲核心單元測試
     ├── e2e-test.js             # Chrome CDP 瀏覽器整合測試
+    ├── record-attract-video.js # 真實雙 AI 遊玩錄影工具
     ├── server.js               # 零依賴本機靜態測試伺服器
     └── server-security-test.js # Traversal／NUL 等 hostile-path 回歸測試
 ```

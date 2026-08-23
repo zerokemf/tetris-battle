@@ -13,22 +13,22 @@ const SHAPES = {
 };
 
 const COLORS = {
-    I: { base: '#00f3ff', light: '#80f9ff', dark: '#009aa3', glow: 'rgba(0,243,255,0.6)' },
-    O: { base: '#ffe14d', light: '#fff0a0', dark: '#b89e20', glow: 'rgba(255,225,77,0.6)' },
-    T: { base: '#b44dff', light: '#d49fff', dark: '#7a20b8', glow: 'rgba(180,77,255,0.6)' },
-    S: { base: '#39ff14', light: '#8fff78', dark: '#22a00a', glow: 'rgba(57,255,20,0.6)' },
-    Z: { base: '#ff2d55', light: '#ff7e97', dark: '#b81e3a', glow: 'rgba(255,45,85,0.6)' },
-    J: { base: '#2d7fff', light: '#7eb3ff', dark: '#1a50b0', glow: 'rgba(45,127,255,0.6)' },
-    L: { base: '#ff8c2d', light: '#ffba7e', dark: '#b86010', glow: 'rgba(255,140,45,0.6)' },
-    G: { base: '#555a66', light: '#7a8290', dark: '#2e323b', glow: 'rgba(120,120,120,0.3)' },
-    X: { base: '#ff2d95', light: '#ff7ab3', dark: '#a31660', glow: 'rgba(255,45,149,0.8)' }
+    I: { base: '#3ed9b5', light: '#9af0d7', dark: '#168a73', glow: 'rgba(62,217,181,0.62)' },
+    O: { base: '#f2df4b', light: '#fff39b', dark: '#a79520', glow: 'rgba(242,223,75,0.62)' },
+    T: { base: '#f2633f', light: '#ff9b7f', dark: '#a93220', glow: 'rgba(242,99,63,0.62)' },
+    S: { base: '#7cce72', light: '#b7eba9', dark: '#3d8f43', glow: 'rgba(124,206,114,0.58)' },
+    Z: { base: '#e94835', light: '#ff8a75', dark: '#97251d', glow: 'rgba(233,72,53,0.62)' },
+    J: { base: '#527bbf', light: '#91ace0', dark: '#2a4785', glow: 'rgba(82,123,191,0.6)' },
+    L: { base: '#f5a13b', light: '#ffd082', dark: '#a95c1c', glow: 'rgba(245,161,59,0.62)' },
+    G: { base: '#8a8a68', light: '#bbb98f', dark: '#4e5542', glow: 'rgba(183,177,124,0.3)' },
+    X: { base: '#f2633f', light: '#fff39b', dark: '#762a1c', glow: 'rgba(242,99,63,0.8)' }
 };
 
 const TIER_COLORS = {
-    1: { color: '#d0e0ff', glow: 'rgba(208,224,255,0.5)', name: 'SINGLE' },
-    2: { color: '#00f3ff', glow: 'rgba(0,243,255,0.6)', name: 'DOUBLE' },
-    3: { color: '#b44dff', glow: 'rgba(180,77,255,0.7)', name: 'TRIPLE' },
-    4: { color: '#ff2d95', glow: 'rgba(255,45,149,0.8)', name: 'TETRIS!' }
+    1: { color: '#f4f0cf', glow: 'rgba(244,240,207,0.5)', name: 'SINGLE' },
+    2: { color: '#3ed9b5', glow: 'rgba(62,217,181,0.65)', name: 'DOUBLE' },
+    3: { color: '#f5a13b', glow: 'rgba(245,161,59,0.72)', name: 'TRIPLE' },
+    4: { color: '#f2633f', glow: 'rgba(242,99,63,0.82)', name: 'TETRIS!' }
 };
 
 const SRS_KICK_DATA = {
@@ -214,7 +214,7 @@ class GameRenderer {
 
     clear() {
         const ctx = this.boardCtx;
-        ctx.fillStyle = '#090d1c';
+        ctx.fillStyle = '#061713';
         ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
         this.fxCtx.clearRect(0, 0, this.displayWidth, this.displayHeight);
     }
@@ -222,7 +222,7 @@ class GameRenderer {
     drawGrid() {
         const ctx = this.boardCtx;
         const bs = this.blockSize;
-        ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+        ctx.strokeStyle = 'rgba(142,228,200,0.065)';
         ctx.lineWidth = 1;
         for (let x = 1; x < COLS; x++) {
             ctx.beginPath();
@@ -272,13 +272,13 @@ class GameRenderer {
         const pulse = 0.5 + 0.5 * Math.sin(t);
 
         const grad = ctx.createRadialGradient(px + bs/2, py + bs/2, 1, px + bs/2, py + bs/2, bs);
-        grad.addColorStop(0, '#ffe14d');
-        grad.addColorStop(0.4, '#ff2d95');
-        grad.addColorStop(1, '#6b0030');
+        grad.addColorStop(0, '#fff39b');
+        grad.addColorStop(0.4, '#f2633f');
+        grad.addColorStop(1, '#762a1c');
         ctx.fillStyle = grad;
         ctx.fillRect(px + 1, py + 1, bs - 2, bs - 2);
 
-        ctx.strokeStyle = `rgba(255,225,77,${0.4 + 0.6 * pulse})`;
+        ctx.strokeStyle = `rgba(242,223,75,${0.4 + 0.6 * pulse})`;
         ctx.lineWidth = 2;
         ctx.strokeRect(px + 1.5, py + 1.5, bs - 3, bs - 3);
 
@@ -439,13 +439,13 @@ class GameRenderer {
                 const angle = (i / 26) * Math.PI * 2;
                 const spd = 2.5 + Math.random() * 4;
                 this.addParticle(cx, cy,
-                    Math.random() > 0.35 ? '#b44dff' : '#ffffff',
+                    Math.random() > 0.35 ? '#527bbf' : '#f4f0cf',
                     Math.cos(angle) * spd, Math.sin(angle) * spd,
                     Math.random() * 3.5 + 2, 1, 0.015, 0.05
                 );
             }
             this.screenFlash = 0.35;
-            this.screenFlashColor = 'rgba(180,77,255,0.22)';
+            this.screenFlashColor = 'rgba(82,123,191,0.22)';
         } else if (tier === 4) {
             const avgRow = rows.reduce((a, b) => a + b, 0) / rows.length;
             const cy = avgRow * bs + bs / 2;
@@ -454,16 +454,16 @@ class GameRenderer {
                 const angle = (i / 20) * Math.PI * 2;
                 const spd = 3 + Math.random() * 3;
                 this.addParticle(cx, cy,
-                    Math.random() > 0.5 ? '#ff2d95' : '#ffe14d',
+                    Math.random() > 0.5 ? '#f2633f' : '#f2df4b',
                     Math.cos(angle) * spd, Math.sin(angle) * spd,
                     Math.random() * 4 + 3, 1, 0.012, 0.06
                 );
             }
             this.screenFlash = 0.4;
-            this.screenFlashColor = 'rgba(255,45,149,0.25)';
+            this.screenFlashColor = 'rgba(242,99,63,0.25)';
         } else if (tier === 3) {
             this.screenFlash = 0.2;
-            this.screenFlashColor = 'rgba(180,77,255,0.15)';
+            this.screenFlashColor = 'rgba(245,161,59,0.18)';
         }
     }
 
@@ -475,7 +475,7 @@ class GameRenderer {
             const angle = (i / 40) * Math.PI * 2;
             const spd = 4 + Math.random() * 5;
             this.addParticle(px, py,
-                Math.random() > 0.5 ? '#ff2d95' : '#ffe14d',
+                Math.random() > 0.5 ? '#f2633f' : '#f2df4b',
                 Math.cos(angle) * spd, Math.sin(angle) * spd,
                 Math.random() * 4 + 3, 1, 0.02, 0.06
             );
@@ -534,7 +534,7 @@ class GameRenderer {
         canvas.height = h * dpr;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = 'rgba(8,12,26,0.6)';
+        ctx.fillStyle = 'rgba(6,23,19,0.72)';
         ctx.fillRect(0, 0, w, h);
 
         if (!type || !SHAPES[type]) return;
@@ -2019,7 +2019,7 @@ if (document.readyState === 'loading') {
 (function initBgParticles() {
     const container = document.getElementById('bg-particles');
     if (!container) return;
-    const colors = ['rgba(0,243,255,0.12)', 'rgba(180,77,255,0.08)', 'rgba(255,45,149,0.06)'];
+    const colors = ['rgba(62,217,181,0.12)', 'rgba(82,123,191,0.08)', 'rgba(242,99,63,0.07)'];
     for (let i = 0; i < 15; i++) {
         const p = document.createElement('div');
         p.className = 'bg-particle';
