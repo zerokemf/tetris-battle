@@ -4,21 +4,26 @@
    No character, logo, or proprietary game artwork is reproduced.
    ============================================================ */
 :root {
-    --ink-deep: #071a16;
-    --ink-forest: #0b3029;
-    --ink-surface: #123e35;
-    --ink-surface-2: #1c5547;
-    --ink-mint: #3ed9b5;
-    --ink-mint-soft: #8ee4c8;
-    --ink-yellow: #f2df4b;
-    --ink-yellow-soft: #fff39b;
-    --ink-coral: #f2633f;
-    --ink-orange: #f5a13b;
-    --ink-blue: #527bbf;
-    --ink-cream: #f4f0cf;
-    --ink-khaki: #b7b17c;
-    --ink-black: #06100d;
-    --ink-muted: #9ab7a7;
+    --color-1: #f65200;
+    --color-2: #53a8ff;
+    --color-3: #edc524;
+    --color-4: #50f6e9;
+    --color-5: #ff7056;
+    --ink-deep: #040d0b;
+    --ink-forest: #071f1b;
+    --ink-surface: #0b302a;
+    --ink-surface-2: #114a41;
+    --ink-mint: var(--color-4);
+    --ink-mint-soft: #a8fff8;
+    --ink-yellow: var(--color-3);
+    --ink-yellow-soft: #fff18a;
+    --ink-coral: var(--color-5);
+    --ink-orange: var(--color-1);
+    --ink-blue: var(--color-2);
+    --ink-cream: #fffde8;
+    --ink-khaki: #a99b49;
+    --ink-black: #020806;
+    --ink-muted: #a9c9c3;
     --ink-outline: 3px solid var(--ink-black);
 
     /* Backward-compatible aliases used by game layout CSS. */
@@ -28,13 +33,13 @@
     --neon-pink: var(--ink-coral);
     --neon-purple: var(--ink-blue);
     --neon-yellow: var(--ink-yellow);
-    --neon-green: #7cce72;
+    --neon-green: var(--color-2);
     --neon-orange: var(--ink-orange);
-    --border-color: rgba(62, 217, 181, 0.28);
-    --panel-bg: rgba(10, 43, 36, 0.94);
-    --panel-border: rgba(6, 16, 13, 0.9);
+    --border-color: rgba(80, 246, 233, 0.5);
+    --panel-bg: rgba(7, 31, 27, 0.95);
+    --panel-border: rgba(2, 8, 6, 0.96);
     --text-dim: var(--ink-muted);
-    --text-mid: #c4d7c8;
+    --text-mid: #d7eee9;
     --text-bright: var(--ink-cream);
 }
 
@@ -47,24 +52,24 @@ body {
 /* Organic ink atmosphere — no old violet neon gradient. */
 .bg-scene {
     background:
-        radial-gradient(circle at 10% 14%, rgba(62,217,181,.18) 0 8%, transparent 8.5%),
-        radial-gradient(circle at 89% 82%, rgba(242,223,75,.14) 0 11%, transparent 11.5%),
-        linear-gradient(145deg, #061713 0%, #0a3229 54%, #102b25 100%);
+        radial-gradient(circle at 10% 14%, rgba(80,246,233,.28) 0 8%, transparent 8.5%),
+        radial-gradient(circle at 89% 82%, rgba(237,197,36,.24) 0 11%, transparent 11.5%),
+        linear-gradient(145deg, #020806 0%, #071f1b 54%, #0b302a 100%);
 }
 .aurora-1 {
-    background: radial-gradient(ellipse, rgba(62,217,181,.18), transparent 67%);
+    background: radial-gradient(ellipse, rgba(80,246,233,.3), transparent 67%);
     filter: blur(70px);
 }
 .aurora-2 {
-    background: radial-gradient(ellipse, rgba(242,99,63,.12), rgba(242,223,75,.06) 42%, transparent 70%);
+    background: radial-gradient(ellipse, rgba(255,112,86,.22), rgba(237,197,36,.12) 42%, transparent 70%);
     filter: blur(80px);
 }
 .starfield { opacity: .22; filter: hue-rotate(85deg); }
 .grid-floor {
     opacity: .22;
     background-image:
-        linear-gradient(rgba(62,217,181,.18) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(62,217,181,.18) 1px, transparent 1px);
+        linear-gradient(rgba(80,246,233,.24) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(80,246,233,.24) 1px, transparent 1px);
 }
 
 /* Full-screen gameplay footage. */
@@ -74,7 +79,7 @@ body {
     z-index: 0;
     overflow: hidden;
     pointer-events: none;
-    background: #081d18 url('assets/attract-gameplay-poster.webp') center / cover no-repeat;
+    background: #040d0b url('assets/attract-gameplay-poster.webp?v=2.0') center / cover no-repeat;
 }
 .menu-gameplay-video {
     position: absolute;
@@ -82,16 +87,16 @@ body {
     height: 100%;
     inset: 0;
     object-fit: cover;
-    opacity: .62;
-    filter: saturate(.86) contrast(1.06) brightness(.78);
+    opacity: .74;
+    filter: saturate(1.35) contrast(1.1) brightness(.92);
     transform: scale(1.015);
 }
 .menu-video-wash {
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse 35% 72% at 50% 49%, rgba(7,26,22,.91) 0 32%, rgba(7,26,22,.72) 67%, rgba(7,26,22,.28) 100%),
-        linear-gradient(180deg, rgba(7,26,22,.25), transparent 22%, transparent 75%, rgba(7,26,22,.62));
+        radial-gradient(ellipse 35% 72% at 50% 49%, rgba(4,13,11,.9) 0 32%, rgba(4,13,11,.68) 67%, rgba(4,13,11,.18) 100%),
+        linear-gradient(180deg, rgba(4,13,11,.16), transparent 22%, transparent 75%, rgba(4,13,11,.5));
 }
 .menu-video-grain {
     position: absolute;
@@ -109,7 +114,7 @@ body {
     z-index: 1;
     pointer-events: none;
     border: 3px solid var(--ink-black);
-    filter: drop-shadow(8px 9px 0 rgba(6,16,13,.56));
+    filter: drop-shadow(8px 9px 0 rgba(2,8,6,.72));
 }
 .menu-screen::before {
     width: clamp(180px, 24vw, 380px);
@@ -117,7 +122,7 @@ body {
     left: -6vw;
     bottom: -5vh;
     background: var(--ink-mint);
-    opacity: .72;
+    opacity: .9;
     border-radius: 58% 42% 68% 32% / 45% 64% 36% 55%;
     transform: rotate(13deg);
 }
@@ -127,22 +132,22 @@ body {
     right: -7vw;
     top: -6vh;
     background: var(--ink-yellow);
-    opacity: .68;
+    opacity: .88;
     border-radius: 34% 66% 43% 57% / 66% 37% 63% 34%;
     transform: rotate(-17deg);
 }
 
 /* Menu composition */
 .menu-screen {
-    background: rgba(7,26,22,.14);
+    background: rgba(4,13,11,.08);
 }
 .menu-content {
     width: min(94vw, 760px);
     padding: clamp(20px, 3vh, 34px) clamp(18px, 4vw, 54px);
-    background: rgba(10,48,41,.88);
+    background: rgba(7,31,27,.9);
     border: 4px solid var(--ink-black);
     border-radius: 34px 10px 30px 14px;
-    box-shadow: 10px 12px 0 rgba(6,16,13,.82), 0 18px 70px rgba(0,0,0,.35);
+    box-shadow: 10px 12px 0 rgba(2,8,6,.94), 0 18px 70px rgba(0,0,0,.42);
     clip-path: polygon(2% 0, 98% 2%, 100% 94%, 96% 100%, 4% 98%, 0 8%);
 }
 .title {
@@ -218,9 +223,9 @@ body {
     border-color: var(--ink-black);
     transform: rotate(1deg);
 }
-.mode-btn.magenta:hover { background: #ff8568; box-shadow: 3px 4px 0 var(--ink-black); }
+.mode-btn.magenta:hover { background: #ff9a86; box-shadow: 3px 4px 0 var(--ink-black); }
 .mode-btn .btn-sub,
-.diff-btn .btn-sub { color: rgba(6,16,13,.9); font-family: 'Nunito Sans', sans-serif; font-weight: 900; }
+.diff-btn .btn-sub { color: rgba(2,8,6,.94); font-family: 'Nunito Sans', sans-serif; font-weight: 900; }
 .diff-btn.easy { color: var(--ink-black); background: var(--ink-mint); border-color: var(--ink-black); }
 .diff-btn.normal { color: var(--ink-black); background: var(--ink-yellow); border-color: var(--ink-black); }
 .diff-btn.hard { color: var(--ink-black); background: var(--ink-coral); border-color: var(--ink-black); }
@@ -264,7 +269,7 @@ body {
     background: var(--panel-bg);
     border: 3px solid var(--ink-black);
     border-radius: 18px 7px 16px 9px;
-    box-shadow: 6px 7px 0 rgba(6,16,13,.78);
+    box-shadow: 6px 7px 0 rgba(2,8,6,.9);
     backdrop-filter: none;
 }
 .panel-header,
@@ -278,7 +283,7 @@ body {
 .ai-side .mini-header { background: var(--ink-yellow); }
 .controls-text { color: var(--ink-cream); }
 .touch-hint {
-    color: rgba(244,240,207,.82);
+    color: rgba(255,253,232,.9);
     font-family: 'Nunito Sans', sans-serif;
     font-weight: 900;
 }
@@ -299,7 +304,7 @@ body {
 .battle-board-wrapper {
     border: 4px solid var(--ink-black);
     border-radius: 18px 7px 16px 9px;
-    background: #061713;
+    background: #020806;
     box-shadow: 8px 9px 0 var(--ink-black), 0 0 0 4px var(--ink-mint);
 }
 .battle-board-wrapper.ai-board {
@@ -349,7 +354,7 @@ body {
 #status-overlay, #p-status-overlay, #a-status-overlay {
     font-family: 'Bungee', sans-serif;
     color: var(--ink-yellow);
-    background: rgba(7,26,22,.82);
+    background: rgba(4,13,11,.88);
     text-shadow: 3px 3px 0 var(--ink-black);
 }
 .garbage-meter { border: 3px solid var(--ink-black); background: var(--ink-forest); }
@@ -358,7 +363,7 @@ body {
 
 /* Game over */
 .gameover-screen {
-    background: rgba(7,26,22,.96);
+    background: rgba(4,13,11,.97);
 }
 .gameover-title {
     color: var(--ink-coral);
@@ -377,13 +382,13 @@ body {
         border-radius: 26px 8px 23px 11px;
         box-shadow: 7px 8px 0 var(--ink-black);
     }
-    .menu-gameplay-video { opacity: .5; object-position: 50% 50%; }
+    .menu-gameplay-video { opacity: .62; object-position: 50% 50%; }
     .menu-video-wash {
-        background: linear-gradient(180deg, rgba(7,26,22,.2), rgba(7,26,22,.72) 52%, rgba(7,26,22,.8));
+        background: linear-gradient(180deg, rgba(4,13,11,.1), rgba(4,13,11,.62) 52%, rgba(4,13,11,.72));
     }
     .title { font-size: clamp(2.6rem, 14vw, 4rem); }
-    .menu-screen::before { opacity: .52; }
-    .menu-screen::after { opacity: .48; }
+    .menu-screen::before { opacity: .72; }
+    .menu-screen::after { opacity: .7; }
     .neon-btn { border-width: 3px; box-shadow: 5px 6px 0 var(--ink-black); }
     .neon-window, .mini-window, .battle-stats, .battle-player-tag { border-width: 2px; box-shadow: 3px 4px 0 var(--ink-black); }
     .canvas-wrapper, .battle-board-wrapper { box-shadow: 5px 6px 0 var(--ink-black), 0 0 0 3px var(--ink-mint); }

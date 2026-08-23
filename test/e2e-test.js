@@ -160,21 +160,19 @@ const section = n => console.log(`\n== ${n} ==`);
         const root = getComputedStyle(document.documentElement);
         return {
             deep: root.getPropertyValue('--ink-deep').trim(),
-            mint: root.getPropertyValue('--ink-mint').trim(),
-            yellow: root.getPropertyValue('--ink-yellow').trim(),
-            coral: root.getPropertyValue('--ink-coral').trim(),
+            palette: [1,2,3,4,5].map(i => root.getPropertyValue('--color-' + i).trim()),
             titleFont: getComputedStyle(document.querySelector('.title')).fontFamily,
             soloButton: getComputedStyle(document.querySelector('.mode-btn')).backgroundColor,
             battleButton: getComputedStyle(document.querySelector('.mode-btn.magenta')).backgroundColor,
             pieces: [COLORS.I.base, COLORS.O.base, COLORS.T.base, COLORS.J.base]
         };
     })()`);
-    assert(inkTokens.deep === '#071a16' && inkTokens.mint === '#3ed9b5' && inkTokens.yellow === '#f2df4b' && inkTokens.coral === '#f2633f',
-        `core ink palette loaded (${inkTokens.deep}, ${inkTokens.mint}, ${inkTokens.yellow}, ${inkTokens.coral})`);
+    assert(inkTokens.deep === '#040d0b' && inkTokens.palette.join(',') === '#f65200,#53a8ff,#edc524,#50f6e9,#ff7056',
+        `exact user palette loaded (${inkTokens.palette.join(', ')})`);
     assert(/Bungee/i.test(inkTokens.titleFont), `display typography uses Bungee (${inkTokens.titleFont})`);
-    assert(inkTokens.soloButton === 'rgb(242, 223, 75)' && inkTokens.battleButton === 'rgb(242, 99, 63)',
-        'mode CTAs use yellow and coral ink roles');
-    assert(inkTokens.pieces.join(',') === '#3ed9b5,#f2df4b,#f2633f,#527bbf',
+    assert(inkTokens.soloButton === 'rgb(237, 197, 36)' && inkTokens.battleButton === 'rgb(255, 112, 86)',
+        'mode CTAs use exact yellow and coral roles');
+    assert(inkTokens.pieces.join(',') === '#50f6e9,#edc524,#ff7056,#53a8ff',
         `canvas tetromino palette uses the new system (${inkTokens.pieces.join(', ')})`);
 
     section('Full-screen gameplay video');

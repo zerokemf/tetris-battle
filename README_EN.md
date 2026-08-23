@@ -31,7 +31,7 @@
 
 ### 🎨 Visual Effects
 
-- **Original Ink Clash Theme** — Deep forest ink, mint, oil yellow and coral with bold black outlines
+- **High-Saturation Ink Clash Theme** — Exact five-color system: `#f65200`, `#53a8ff`, `#edc524`, `#50f6e9`, `#ff7056`, set against deep black-green surfaces and bold outlines
 - **Real Gameplay Background Video** — Recorded from this build's AI-vs-AI Battle, with MP4/WebM and a poster fallback
 - **Power-Aware Lifecycle** — Video plays only on the menu, pauses in-game/when hidden, and becomes a static poster for Reduced Motion
 - **Particle Clear Effects** — Particle count scales with clear tier; Tetris adds a star-burst

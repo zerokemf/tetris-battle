@@ -13,22 +13,22 @@ const SHAPES = {
 };
 
 const COLORS = {
-    I: { base: '#3ed9b5', light: '#9af0d7', dark: '#168a73', glow: 'rgba(62,217,181,0.62)' },
-    O: { base: '#f2df4b', light: '#fff39b', dark: '#a79520', glow: 'rgba(242,223,75,0.62)' },
-    T: { base: '#f2633f', light: '#ff9b7f', dark: '#a93220', glow: 'rgba(242,99,63,0.62)' },
-    S: { base: '#7cce72', light: '#b7eba9', dark: '#3d8f43', glow: 'rgba(124,206,114,0.58)' },
-    Z: { base: '#e94835', light: '#ff8a75', dark: '#97251d', glow: 'rgba(233,72,53,0.62)' },
-    J: { base: '#527bbf', light: '#91ace0', dark: '#2a4785', glow: 'rgba(82,123,191,0.6)' },
-    L: { base: '#f5a13b', light: '#ffd082', dark: '#a95c1c', glow: 'rgba(245,161,59,0.62)' },
-    G: { base: '#8a8a68', light: '#bbb98f', dark: '#4e5542', glow: 'rgba(183,177,124,0.3)' },
-    X: { base: '#f2633f', light: '#fff39b', dark: '#762a1c', glow: 'rgba(242,99,63,0.8)' }
+    I: { base: '#50f6e9', light: '#b9fff9', dark: '#14a79d', glow: 'rgba(80,246,233,0.7)' },
+    O: { base: '#edc524', light: '#fff18a', dark: '#9d7f08', glow: 'rgba(237,197,36,0.7)' },
+    T: { base: '#ff7056', light: '#ffb09f', dark: '#b9321f', glow: 'rgba(255,112,86,0.7)' },
+    S: { base: '#53a8ff', light: '#a9d3ff', dark: '#2164b2', glow: 'rgba(83,168,255,0.68)' },
+    Z: { base: '#f65200', light: '#ff9b69', dark: '#9e3100', glow: 'rgba(246,82,0,0.72)' },
+    J: { base: '#53a8ff', light: '#b5dcff', dark: '#2269b8', glow: 'rgba(83,168,255,0.7)' },
+    L: { base: '#f65200', light: '#ffb06f', dark: '#9e3100', glow: 'rgba(246,82,0,0.72)' },
+    G: { base: '#958537', light: '#cfbd68', dark: '#504718', glow: 'rgba(149,133,55,0.35)' },
+    X: { base: '#f65200', light: '#edc524', dark: '#8a2800', glow: 'rgba(246,82,0,0.86)' }
 };
 
 const TIER_COLORS = {
-    1: { color: '#f4f0cf', glow: 'rgba(244,240,207,0.5)', name: 'SINGLE' },
-    2: { color: '#3ed9b5', glow: 'rgba(62,217,181,0.65)', name: 'DOUBLE' },
-    3: { color: '#f5a13b', glow: 'rgba(245,161,59,0.72)', name: 'TRIPLE' },
-    4: { color: '#f2633f', glow: 'rgba(242,99,63,0.82)', name: 'TETRIS!' }
+    1: { color: '#fffde8', glow: 'rgba(255,253,232,0.55)', name: 'SINGLE' },
+    2: { color: '#50f6e9', glow: 'rgba(80,246,233,0.72)', name: 'DOUBLE' },
+    3: { color: '#f65200', glow: 'rgba(246,82,0,0.78)', name: 'TRIPLE' },
+    4: { color: '#ff7056', glow: 'rgba(255,112,86,0.88)', name: 'TETRIS!' }
 };
 
 const SRS_KICK_DATA = {
@@ -214,7 +214,7 @@ class GameRenderer {
 
     clear() {
         const ctx = this.boardCtx;
-        ctx.fillStyle = '#061713';
+        ctx.fillStyle = '#020806';
         ctx.fillRect(0, 0, this.displayWidth, this.displayHeight);
         this.fxCtx.clearRect(0, 0, this.displayWidth, this.displayHeight);
     }
@@ -222,7 +222,7 @@ class GameRenderer {
     drawGrid() {
         const ctx = this.boardCtx;
         const bs = this.blockSize;
-        ctx.strokeStyle = 'rgba(142,228,200,0.065)';
+        ctx.strokeStyle = 'rgba(80,246,233,0.095)';
         ctx.lineWidth = 1;
         for (let x = 1; x < COLS; x++) {
             ctx.beginPath();
@@ -272,13 +272,13 @@ class GameRenderer {
         const pulse = 0.5 + 0.5 * Math.sin(t);
 
         const grad = ctx.createRadialGradient(px + bs/2, py + bs/2, 1, px + bs/2, py + bs/2, bs);
-        grad.addColorStop(0, '#fff39b');
-        grad.addColorStop(0.4, '#f2633f');
-        grad.addColorStop(1, '#762a1c');
+        grad.addColorStop(0, '#fff18a');
+        grad.addColorStop(0.4, '#ff7056');
+        grad.addColorStop(1, '#8a2800');
         ctx.fillStyle = grad;
         ctx.fillRect(px + 1, py + 1, bs - 2, bs - 2);
 
-        ctx.strokeStyle = `rgba(242,223,75,${0.4 + 0.6 * pulse})`;
+        ctx.strokeStyle = `rgba(237,197,36,${0.4 + 0.6 * pulse})`;
         ctx.lineWidth = 2;
         ctx.strokeRect(px + 1.5, py + 1.5, bs - 3, bs - 3);
 
@@ -439,13 +439,13 @@ class GameRenderer {
                 const angle = (i / 26) * Math.PI * 2;
                 const spd = 2.5 + Math.random() * 4;
                 this.addParticle(cx, cy,
-                    Math.random() > 0.35 ? '#527bbf' : '#f4f0cf',
+                    Math.random() > 0.35 ? '#53a8ff' : '#fffde8',
                     Math.cos(angle) * spd, Math.sin(angle) * spd,
                     Math.random() * 3.5 + 2, 1, 0.015, 0.05
                 );
             }
             this.screenFlash = 0.35;
-            this.screenFlashColor = 'rgba(82,123,191,0.22)';
+            this.screenFlashColor = 'rgba(83,168,255,0.24)';
         } else if (tier === 4) {
             const avgRow = rows.reduce((a, b) => a + b, 0) / rows.length;
             const cy = avgRow * bs + bs / 2;
@@ -454,16 +454,16 @@ class GameRenderer {
                 const angle = (i / 20) * Math.PI * 2;
                 const spd = 3 + Math.random() * 3;
                 this.addParticle(cx, cy,
-                    Math.random() > 0.5 ? '#f2633f' : '#f2df4b',
+                    Math.random() > 0.5 ? '#ff7056' : '#edc524',
                     Math.cos(angle) * spd, Math.sin(angle) * spd,
                     Math.random() * 4 + 3, 1, 0.012, 0.06
                 );
             }
             this.screenFlash = 0.4;
-            this.screenFlashColor = 'rgba(242,99,63,0.25)';
+            this.screenFlashColor = 'rgba(255,112,86,0.28)';
         } else if (tier === 3) {
             this.screenFlash = 0.2;
-            this.screenFlashColor = 'rgba(245,161,59,0.18)';
+            this.screenFlashColor = 'rgba(246,82,0,0.22)';
         }
     }
 
@@ -475,7 +475,7 @@ class GameRenderer {
             const angle = (i / 40) * Math.PI * 2;
             const spd = 4 + Math.random() * 5;
             this.addParticle(px, py,
-                Math.random() > 0.5 ? '#f2633f' : '#f2df4b',
+                Math.random() > 0.5 ? '#ff7056' : '#edc524',
                 Math.cos(angle) * spd, Math.sin(angle) * spd,
                 Math.random() * 4 + 3, 1, 0.02, 0.06
             );
@@ -2019,7 +2019,7 @@ if (document.readyState === 'loading') {
 (function initBgParticles() {
     const container = document.getElementById('bg-particles');
     if (!container) return;
-    const colors = ['rgba(62,217,181,0.12)', 'rgba(82,123,191,0.08)', 'rgba(242,99,63,0.07)'];
+    const colors = ['rgba(80,246,233,0.18)', 'rgba(83,168,255,0.13)', 'rgba(255,112,86,0.12)'];
     for (let i = 0; i < 15; i++) {
         const p = document.createElement('div');
         p.className = 'bg-particle';
