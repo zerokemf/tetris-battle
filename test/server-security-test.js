@@ -21,6 +21,22 @@ function request(port, path) {
     });
 }
 
+function requestDetails(port, path, headers = {}) {
+    return new Promise((resolve, reject) => {
+        const req = http.request({ host: '127.0.0.1', port, path, method: 'GET', headers }, res => {
+            const chunks = [];
+            res.on('data', chunk => chunks.push(chunk));
+            res.on('end', () => resolve({
+                status: res.statusCode,
+                headers: res.headers,
+                body: Buffer.concat(chunks)
+            }));
+        });
+        req.on('error', reject);
+        req.end();
+    });
+}
+
 (async () => {
     await new Promise((resolve, reject) => {
         server.once('error', reject);
@@ -31,6 +47,13 @@ function request(port, path) {
     try {
         console.log('\n== Static server hostile-path handling ==');
         assert(await request(port, '/index.html') === 200, 'normal file request succeeds');
+        const range = await requestDetails(port, '/assets/attract-gameplay.webm', { Range: 'bytes=0-1023' });
+        assert(range.status === 206 && range.body.length === 1024
+            && /^bytes 0-1023\//.test(range.headers['content-range'] || ''),
+            'media byte ranges return a bounded 206 response');
+        const invalidRange = await requestDetails(port, '/assets/attract-gameplay.webm', { Range: 'bytes=9999999-' });
+        assert(invalidRange.status === 416 && /^bytes \*\//.test(invalidRange.headers['content-range'] || ''),
+            'invalid media byte ranges return 416');
         assert(await request(port, '/../tetris-battle-secret') === 403, 'plain traversal is blocked');
         assert(await request(port, '/%2e%2e/tetris-battle-secret') === 403, 'encoded traversal is blocked');
         assert(await request(port, '/%E0%A4%A') === 400, 'malformed URL encoding is rejected');

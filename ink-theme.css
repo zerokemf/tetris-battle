@@ -372,6 +372,8 @@ body {
 
 /* Game over */
 .gameover-screen {
+    padding: clamp(18px, 4vw, 42px);
+    overflow-y: auto;
     background: rgba(4,13,11,.97);
 }
 .gameover-title {
@@ -575,8 +577,46 @@ body {
 .online-ready.is-ready { background: var(--ink-mint); }
 .online-leave { background: var(--ink-surface-2); color: var(--ink-cream); }
 .online-error { margin-top: 18px; padding: 13px 16px; color: var(--ink-black); background: var(--ink-coral); border: 3px solid var(--ink-black); border-radius: 12px 4px 11px 5px; font-weight: 900; }
+.online-rematch-decision {
+    width: min(560px, 92vw);
+    margin: -1.4rem 0 1.1rem;
+    padding: 16px 20px;
+    text-align: center;
+    background: rgba(83,168,255,.12);
+    border: 3px solid var(--ink-blue);
+    border-radius: 18px 6px 16px 8px;
+}
+.online-rematch-question {
+    margin: 0;
+    color: var(--ink-yellow);
+    font: 400 clamp(1.25rem, 3vw, 1.9rem)/1.15 'Bungee', sans-serif;
+    text-shadow: 3px 3px 0 var(--ink-black);
+}
+.online-rematch-status {
+    min-height: 1.45em;
+    margin: 8px 0 0;
+    color: var(--ink-cream);
+    font-weight: 900;
+}
 .gameover-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
-.online-rematch { background: var(--ink-blue); }
+.gameover-actions.online-decision { flex-direction: column; align-items: center; gap: 12px; }
+.online-rematch {
+    min-width: min(320px, 86vw);
+    color: var(--ink-black);
+    background: var(--ink-mint);
+}
+.online-rematch.opponent-ready { background: var(--ink-yellow); }
+.online-rematch:disabled { opacity: .62; cursor: wait; filter: grayscale(.22); }
+.online-exit {
+    min-width: min(260px, 78vw);
+    padding-block: .7rem;
+    color: var(--ink-cream);
+    background: transparent;
+    border-color: rgba(255,253,232,.45);
+    box-shadow: 3px 4px 0 var(--ink-black);
+    font-size: .72rem;
+}
+.online-exit:hover { color: var(--ink-black); background: var(--ink-coral); border-color: var(--ink-black); }
 
 @media (max-width: 768px) {
     .menu-content { width: min(94vw, 520px); }

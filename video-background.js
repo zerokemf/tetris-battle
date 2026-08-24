@@ -9,6 +9,9 @@
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     let playAttempts = 0;
     let lastError = '';
+    let playbackGeneration = 0;
+    let retryTimer = 0;
+    let transientRetries = 0;
 
     video.muted = true;
     video.defaultMuted = true;
@@ -19,7 +22,11 @@
     }
 
     async function syncPlayback() {
+        const generation = ++playbackGeneration;
         if (!shouldPlay()) {
+            if (retryTimer) clearTimeout(retryTimer);
+            retryTimer = 0;
+            transientRetries = 0;
             video.pause();
             wrapper.classList.toggle('is-static', reducedMotion.matches);
             return;
@@ -29,11 +36,24 @@
         playAttempts++;
         try {
             await video.play();
+            if (generation !== playbackGeneration || !shouldPlay()) return;
+            transientRetries = 0;
             wrapper.classList.add('is-playing');
             lastError = '';
         } catch (error) {
+            if (generation !== playbackGeneration) return;
             lastError = String(error && error.message || error);
             wrapper.classList.remove('is-playing');
+            const transient = error?.name === 'AbortError' || /interrupted by a call to pause/i.test(lastError);
+            if (transient && shouldPlay() && transientRetries < 2) {
+                transientRetries++;
+                if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) video.load();
+                if (retryTimer) clearTimeout(retryTimer);
+                retryTimer = setTimeout(() => {
+                    retryTimer = 0;
+                    syncPlayback();
+                }, 120);
+            }
         }
     }
 

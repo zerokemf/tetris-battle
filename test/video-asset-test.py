@@ -45,9 +45,12 @@ def frame_bytes(path: Path, second: float) -> bytes:
 
 
 print("\n== Gameplay video assets ==")
-check(MP4.exists(), "MP4 fallback exists")
-check(WEBM.exists(), "WebM primary source exists")
+check(MP4.exists(), "MP4 primary source exists")
+check(WEBM.exists(), "WebM fallback source exists")
 check(POSTER.exists() and POSTER.stat().st_size > 10_000, "WebP poster exists and is non-trivial")
+html = (ROOT / "index.html").read_text()
+check(html.index("attract-gameplay.mp4") < html.index("attract-gameplay.webm"),
+      "H.264 MP4 is preferred for current-browser compatibility")
 
 mp4 = probe(MP4)
 webm = probe(WEBM)

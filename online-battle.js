@@ -55,7 +55,8 @@
             'online-local-role', 'online-local-ready', 'online-remote-slot',
             'online-remote-name', 'online-remote-role', 'online-remote-ready',
             'online-ready-btn', 'online-countdown', 'online-status', 'online-error',
-            'online-rematch-btn'
+            'online-rematch-decision', 'online-rematch-question', 'online-rematch-status',
+            'online-rematch-btn', 'online-exit-btn'
         ].forEach(id => { ui[id] = document.getElementById(id); });
     }
 
@@ -102,6 +103,39 @@
         ui['online-network'].classList.remove('connected', 'problem');
         if (kind) ui['online-network'].classList.add(kind);
         if (ui['online-network-text']) ui['online-network-text'].textContent = text;
+    }
+
+    function renderRematchDecision() {
+        const connected = Boolean(state.peerId);
+        const question = ui['online-rematch-question'];
+        const status = ui['online-rematch-status'];
+        const button = ui['online-rematch-btn'];
+        const exit = ui['online-exit-btn'];
+
+        if (question) question.textContent = connected ? '是否繼續對戰？' : '對手已離線';
+        if (exit) exit.textContent = connected ? '結束並離開房間' : '返回主選單';
+        if (!button) return;
+
+        button.classList.toggle('opponent-ready', connected && state.remoteRematch && !state.localRematch);
+        if (!connected) {
+            button.disabled = true;
+            button.textContent = '對手已離線';
+            if (status) status.textContent = '連線已結束，無法在原房間繼續對戰。';
+        } else if (state.localRematch) {
+            button.disabled = true;
+            button.textContent = '等待對手';
+            if (status) status.textContent = state.remoteRematch
+                ? '雙方已同意，準備同步倒數...'
+                : '已選擇繼續，等待對手確認...';
+        } else if (state.remoteRematch) {
+            button.disabled = false;
+            button.textContent = '對手已同意 · 繼續對戰';
+            if (status) status.textContent = '對手想繼續對戰，請選擇。';
+        } else {
+            button.disabled = false;
+            button.textContent = '繼續對戰';
+            if (status) status.textContent = '房間連線仍保留，雙方同意後直接開始下一局。';
+        }
     }
 
     function inviteUrl() {
@@ -240,9 +274,8 @@
                 : '房主已離線，房間已結束。');
             setNetwork('problem', source === 'explicit' ? '對手已離開' : '對手連線中斷');
             if (state.role === 'guest' && ui['online-ready-btn']) ui['online-ready-btn'].disabled = true;
-            if (ended && ui['online-rematch-btn']) {
-                ui['online-rematch-btn'].disabled = true;
-                ui['online-rematch-btn'].textContent = 'OPPONENT LEFT';
+            if (ended) {
+                renderRematchDecision();
                 const sub = document.getElementById('gameover-sub');
                 if (sub) sub.textContent = '對手已離線，無法再戰。';
             }
@@ -322,9 +355,8 @@
         state.actions.rematch.onMessage = (data, meta) => {
             if (!validPeer(meta.peerId) || !data || data.v !== PROTOCOL) return;
             state.remoteRematch = Boolean(data.ready);
+            renderRematchDecision();
             if (state.role === 'host') maybeStartRematch();
-            const sub = document.getElementById('gameover-sub');
-            if (sub && state.remoteRematch) sub.textContent = '對手已準備再戰。';
         };
 
         state.actions.ping.onMessage = (data, meta) => {
@@ -342,10 +374,8 @@
             state.latency = Math.round(rtt);
             if (state.role === 'guest') state.clockOffset = responderTime + rtt / 2 - now;
             renderLobby();
-            if (api()?.isRunning) {
-                const dd = document.getElementById('difficulty-display');
-                if (dd) dd.textContent = `ONLINE ${state.latency}ms`;
-            }
+            // Keep the in-game center label fixed. Changing latency digits here
+            // resized the flex column and shifted both playfields every ping.
         };
     }
 
@@ -613,22 +643,14 @@
         state.remoteRematch = false;
         clearTimer('stateTimer', true);
         clearTimer('topoutTimer');
-        if (ui['online-rematch-btn']) {
-            ui['online-rematch-btn'].disabled = !state.peerId;
-            ui['online-rematch-btn'].textContent = 'REMATCH';
-        }
+        renderRematchDecision();
     }
 
     function requestRematch() {
         if (state.phase !== 'ended' || !state.peerId || state.localRematch) return;
         state.localRematch = true;
         sendAction('rematch', { v: PROTOCOL, ready: true });
-        if (ui['online-rematch-btn']) {
-            ui['online-rematch-btn'].disabled = true;
-            ui['online-rematch-btn'].textContent = 'WAITING...';
-        }
-        const sub = document.getElementById('gameover-sub');
-        if (sub) sub.textContent = '等待對手同意再戰...';
+        renderRematchDecision();
         if (state.role === 'host') maybeStartRematch();
     }
 

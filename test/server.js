@@ -40,7 +40,43 @@ function handleRequest(req, res) {
     }
     fs.readFile(file, (err, data) => {
         if (err) { res.writeHead(404); res.end('not found'); return; }
-        res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+        const headers = {
+            'Content-Type': MIME[path.extname(file)] || 'application/octet-stream',
+            'Cache-Control': 'no-store',
+            'Accept-Ranges': 'bytes'
+        };
+        const rangeHeader = req.headers.range;
+        if (rangeHeader) {
+            const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
+            let start;
+            let end;
+            if (match && (match[1] || match[2])) {
+                if (!match[1]) {
+                    const suffixLength = Number(match[2]);
+                    start = Math.max(0, data.length - suffixLength);
+                    end = data.length - 1;
+                } else {
+                    start = Number(match[1]);
+                    end = match[2] ? Number(match[2]) : data.length - 1;
+                }
+            }
+            if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end)
+                || start < 0 || end < start || start >= data.length) {
+                res.writeHead(416, { ...headers, 'Content-Range': `bytes */${data.length}` });
+                res.end();
+                return;
+            }
+            end = Math.min(end, data.length - 1);
+            const body = data.subarray(start, end + 1);
+            res.writeHead(206, {
+                ...headers,
+                'Content-Range': `bytes ${start}-${end}/${data.length}`,
+                'Content-Length': body.length
+            });
+            res.end(body);
+            return;
+        }
+        res.writeHead(200, { ...headers, 'Content-Length': data.length });
         res.end(data);
     });
 }

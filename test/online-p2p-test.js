@@ -222,6 +222,50 @@ function section(name) { console.log(`\n== ${name} ==`); }
         assert(hostMatch.id === guestMatch.id && hostMatch.seed === guestMatch.seed, 'both peers start the same match ID and seed');
         assert(hostMatch.next === guestMatch.next, `seeded 7-bag starts with the same queue (${hostMatch.next})`);
         assert(await host.evaljs(`document.getElementById('battle-pause-btn').classList.contains('hidden')`), 'online match cannot be paused unilaterally');
+
+        section('Stable battle geometry');
+        await sleep(2300); // cover a live P2P latency refresh while gameplay is visible
+        const stableNetworkLabel = await host.evaljs(`document.getElementById('difficulty-display').textContent`);
+        assert(stableNetworkLabel === 'ONLINE P2P', `latency refresh does not rewrite the layout label (${stableNetworkLabel})`);
+        const clearGeometry = await host.evaljs(`(async()=>{
+            const wrapper=document.getElementById('p-board').parentElement;
+            wrapper.classList.remove('shake','shake-heavy');
+            const base=wrapper.getBoundingClientRect();
+            const savedAttack=game.onAttack;
+            game.onAttack=null;
+            game.grid[18]=Array(10).fill('j');
+            game.grid[19]=Array(10).fill('l');
+            game.clearLines();
+            game.onAttack=savedAttack;
+            const points=[];
+            const started=performance.now();
+            while(performance.now()-started<380){
+                await new Promise(resolve=>requestAnimationFrame(resolve));
+                const rect=wrapper.getBoundingClientRect();
+                points.push({x:rect.x-base.x,y:rect.y-base.y});
+            }
+            return {
+                movingClass:wrapper.classList.contains('shake')||wrapper.classList.contains('shake-heavy'),
+                maxShift:Math.max(...points.map(point=>Math.max(Math.abs(point.x),Math.abs(point.y))))
+            };
+        })()`);
+        assert(!clearGeometry.movingClass && clearGeometry.maxShift <= 0.25,
+            `multi-line clears keep the active board stationary (max shift=${clearGeometry.maxShift.toFixed(2)}px)`);
+        const previewAttributeChurn = await host.evaljs(`(async()=>{
+            const canvases=['p-hold','p-next1','p-next2','p-next3','a-hold','a-next1','a-next2','a-next3']
+                .map(id=>document.getElementById(id));
+            await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+            let mutations=0;
+            const observer=new MutationObserver(records=>{
+                mutations+=records.filter(record=>record.attributeName==='width'||record.attributeName==='height').length;
+            });
+            canvases.forEach(canvas=>observer.observe(canvas,{attributes:true,attributeFilter:['width','height']}));
+            await new Promise(resolve=>setTimeout(resolve,500));
+            observer.disconnect();
+            return mutations;
+        })()`);
+        assert(previewAttributeChurn === 0,
+            `Hold/Next canvases keep stable backing stores during gameplay (${previewAttributeChurn} resize mutations / 500ms)`);
         await host.screenshot('/tmp/tetris-p2p-match.png');
 
         section('Bidirectional state and attack synchronization');
@@ -251,8 +295,55 @@ function section(name) { console.log(`\n== ${name} ==`); }
         ]);
         assert(true, 'host adjudicates one defeat and one victory');
 
-        await guest.evaljs(`onlineBattle.requestRematch()`);
-        await host.evaljs(`onlineBattle.requestRematch()`);
+        const decisionUi = await host.evaljs(`(() => ({
+            question:document.getElementById('online-rematch-question')?.textContent.trim()||'',
+            questionVisible:!!document.getElementById('online-rematch-question')&&!document.getElementById('online-rematch-question').classList.contains('hidden'),
+            continueText:document.getElementById('online-rematch-btn')?.textContent.trim()||'',
+            exitText:document.getElementById('online-exit-btn')?.textContent.trim()||'',
+            roomCode:onlineBattle.roomCode,
+            connected:onlineBattle.connected
+        }))()`);
+        assert(decisionUi.questionVisible && decisionUi.question === '是否繼續對戰？',
+            `online result asks whether to continue (${decisionUi.question || 'missing'})`);
+        assert(decisionUi.continueText === '繼續對戰' && decisionUi.exitText === '結束並離開房間',
+            `result choices prioritize rematch and make exit explicit (${decisionUi.continueText} / ${decisionUi.exitText || 'missing'})`);
+        assert(decisionUi.connected && decisionUi.roomCode === roomCode,
+            'result decision keeps the existing P2P room connected');
+        await host.screenshot('/tmp/tetris-p2p-rematch-decision.png');
+        await host.cdp.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+        await sleep(250);
+        const mobileDecision = await host.evaljs(`(() => {
+            const screen=document.getElementById('gameover');
+            const question=document.getElementById('online-rematch-question').getBoundingClientRect();
+            const keep=document.getElementById('online-rematch-btn').getBoundingClientRect();
+            const exit=document.getElementById('online-exit-btn').getBoundingClientRect();
+            return {
+                overflow:document.documentElement.scrollWidth-innerWidth,
+                questionTop:question.top,
+                keep:{left:keep.left,right:keep.right,height:keep.height},
+                exit:{left:exit.left,right:exit.right,height:exit.height},
+                scrollable:screen.scrollHeight>=screen.clientHeight
+            };
+        })()`);
+        assert(mobileDecision.overflow <= 1 && mobileDecision.questionTop >= 0
+            && mobileDecision.keep.left >= 0 && mobileDecision.keep.right <= 390 && mobileDecision.keep.height >= 44
+            && mobileDecision.exit.left >= 0 && mobileDecision.exit.right <= 390 && mobileDecision.exit.height >= 44,
+            `mobile result keeps the question and both choices touch-safe (${JSON.stringify(mobileDecision)})`);
+        await host.screenshot('/tmp/tetris-p2p-rematch-mobile.png');
+        await host.cdp.send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+        await sleep(180);
+
+        await guest.evaljs(`document.getElementById('online-rematch-btn').click()`);
+        await sleep(300);
+        const awaitingDecision = await Promise.all([
+            guest.evaljs(`({connected:onlineBattle.connected,status:document.getElementById('online-rematch-status')?.textContent||'',disabled:document.getElementById('online-rematch-btn').disabled})`),
+            host.evaljs(`({connected:onlineBattle.connected,status:document.getElementById('online-rematch-status')?.textContent||''})`)
+        ]);
+        assert(awaitingDecision[0].connected && awaitingDecision[0].disabled && awaitingDecision[0].status.includes('等待對手'),
+            'player choosing continue stays connected and sees a waiting state');
+        assert(awaitingDecision[1].connected && awaitingDecision[1].status.includes('對手'),
+            'the other player sees that the opponent wants to continue');
+        await host.evaljs(`document.getElementById('online-rematch-btn').click()`);
         await Promise.all([
             host.waitFor(`onlineBattle.phase === 'playing' && onlineBattle.matchId !== '${firstMatchId}'`, 12000, 'host rematch'),
             guest.waitFor(`onlineBattle.phase === 'playing' && onlineBattle.matchId !== '${firstMatchId}'`, 12000, 'guest rematch')
@@ -318,8 +409,14 @@ function section(name) { console.log(`\n== ${name} ==`); }
             host.waitFor(`onlineBattle.phase === 'ended'`, 5000, 'edge host ended'),
             guest.waitFor(`onlineBattle.phase === 'ended'`, 5000, 'edge guest ended')
         ]);
-        await guest.evaljs(`backMenu()`);
-        await host.waitFor(`document.getElementById('online-rematch-btn').disabled && document.getElementById('online-rematch-btn').textContent === 'OPPONENT LEFT'`, 7000, 'rematch disabled after post-game disconnect');
+        const exitedThroughExplicitChoice = await guest.evaljs(`(() => {
+            const button=document.getElementById('online-exit-btn');
+            if (button) { button.click(); return true; }
+            backMenu();
+            return false;
+        })()`);
+        assert(exitedThroughExplicitChoice, 'post-game room exit uses the explicit end-and-leave choice');
+        await host.waitFor(`document.getElementById('online-rematch-btn').disabled && document.getElementById('online-rematch-btn').textContent.includes('離線')`, 7000, 'rematch disabled after post-game disconnect');
         assert(true, 'post-game disconnect disables the rematch control');
         assert(await host.evaljs(`document.getElementById('gameover-sub').textContent.includes('無法再戰')`), 'post-game disconnect explains why rematch is unavailable');
 

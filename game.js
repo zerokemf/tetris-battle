@@ -221,6 +221,7 @@ class GameRenderer {
         this.displayWidth = 0;
         this.displayHeight = 0;
         this._lastW = 0; this._lastH = 0;
+        this._previewSizes = new WeakMap();
         this.resize();
     }
 
@@ -562,8 +563,14 @@ class GameRenderer {
         const dpr = window.devicePixelRatio || 1;
         const w = rect.width, h = rect.height;
         if (w === 0 || h === 0) return;
-        canvas.width = w * dpr;
-        canvas.height = h * dpr;
+        const pixelWidth = Math.max(1, Math.round(w * dpr));
+        const pixelHeight = Math.max(1, Math.round(h * dpr));
+        const priorSize = this._previewSizes.get(canvas);
+        if (!priorSize || priorSize.width !== pixelWidth || priorSize.height !== pixelHeight) {
+            canvas.width = pixelWidth;
+            canvas.height = pixelHeight;
+            this._previewSizes.set(canvas, { width: pixelWidth, height: pixelHeight });
+        }
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.clearRect(0, 0, w, h);
         ctx.fillStyle = 'rgba(6,23,19,0.72)';
@@ -864,7 +871,8 @@ class Tetris {
 
         const tier = Math.min(linesCleared, 4);
         this.renderer.spawnClearEffect(clearedRowIndices, tier, isTSpin);
-        this.triggerShake(tier);
+        // Keep the active playfield fixed: flashes, particles and action text
+        // provide impact feedback without moving the board under the player.
         playSound('clear', tier);
 
         // Scoring
@@ -1832,13 +1840,40 @@ function chooseDifficulty(diff) {
     startGame();
 }
 
+function setOnlineRematchDecision(visible) {
+    const decision = document.getElementById('online-rematch-decision');
+    const question = document.getElementById('online-rematch-question');
+    const status = document.getElementById('online-rematch-status');
+    const rematch = document.getElementById('online-rematch-btn');
+    const exit = document.getElementById('online-exit-btn');
+    const back = document.getElementById('gameover-back-btn');
+    const actions = document.getElementById('gameover-actions');
+
+    decision?.classList.toggle('hidden', !visible);
+    rematch?.classList.toggle('hidden', !visible);
+    exit?.classList.toggle('hidden', !visible);
+    back?.classList.toggle('hidden', visible);
+    actions?.classList.toggle('online-decision', visible);
+
+    if (!visible) {
+        if (question) question.textContent = '是否繼續對戰？';
+        if (status) status.textContent = '房間連線仍保留，雙方同意後直接開始下一局。';
+        if (rematch) {
+            rematch.disabled = false;
+            rematch.textContent = '繼續對戰';
+            rematch.classList.remove('opponent-ready');
+        }
+        if (exit) exit.textContent = '結束並離開房間';
+    }
+}
+
 function startGame() {
     initAudio();
     sharedBag = new Bag7();
     document.body.classList.remove('at-menu');
     document.getElementById('menu').classList.add('hidden');
     document.getElementById('gameover').classList.remove('show');
-    document.getElementById('online-rematch-btn')?.classList.add('hidden');
+    setOnlineRematchDecision(false);
 
     // Swap layouts via body class
     document.body.classList.remove('mode-solo', 'mode-battle');
@@ -1911,7 +1946,7 @@ function startOnlineGame(seed) {
     document.getElementById('menu').classList.add('hidden');
     document.getElementById('online-lobby')?.classList.add('hidden');
     document.getElementById('gameover').classList.remove('show');
-    document.getElementById('online-rematch-btn')?.classList.add('hidden');
+    setOnlineRematchDecision(false);
 
     battleEnded = false;
     battleWinner = null;
@@ -1953,7 +1988,7 @@ async function backMenu() {
     const wasOnline = currentMode === 'online';
     if (wasOnline) await window.onlineBattle?.handleBackMenu();
     document.getElementById('gameover').classList.remove('show');
-    document.getElementById('online-rematch-btn')?.classList.add('hidden');
+    setOnlineRematchDecision(false);
     document.getElementById('menu').classList.remove('hidden');
     document.body.classList.add('at-menu');
     showModeSelect();
@@ -2031,6 +2066,7 @@ function endSolo() {
     document.getElementById('final-lines').textContent = game.lines;
     document.getElementById('final-level').textContent = game.level;
     document.getElementById('final-combo').textContent = game.maxCombo;
+    setOnlineRematchDecision(false);
     document.getElementById('gameover').classList.add('show');
 }
 
@@ -2048,12 +2084,12 @@ function endBattle() {
                 ? 'P2P 連線中斷，本局結束。'
                 : youWin ? '你擊敗了線上對手！' : '線上對手贏得本局。';
         document.getElementById('gameover-sub').textContent = reasonText;
-        document.getElementById('online-rematch-btn')?.classList.remove('hidden');
+        setOnlineRematchDecision(true);
     } else {
         document.getElementById('gameover-sub').textContent = youWin
             ? `You defeated the ${AI_PROFILES[currentDifficulty].name} CPU!`
             : `The ${AI_PROFILES[currentDifficulty].name} CPU defeated you.`;
-        document.getElementById('online-rematch-btn')?.classList.add('hidden');
+        setOnlineRematchDecision(false);
     }
 
     document.getElementById('final-stats-solo').classList.add('hidden');

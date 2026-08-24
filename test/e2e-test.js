@@ -3,7 +3,7 @@ const http = require('http');
 const fs = require('fs');
 
 const CDP_PORT = 9567;
-const GAME_URL = 'http://127.0.0.1:8777/index.html';
+const GAME_URL = process.env.E2E_GAME_URL || 'http://127.0.0.1:8777/index.html';
 
 function httpJson(path, method = 'GET') {
     return new Promise((resolve, reject) => {
@@ -121,16 +121,36 @@ const section = n => console.log(`\n== ${n} ==`);
 
     const consoleErrors = [];
     const pageErrors = [];
+    const mediaTraffic = [];
     cdp.on('Runtime.consoleAPICalled', p => {
         if (p.type === 'error') consoleErrors.push(p.args.map(a => a.value || a.description || '').join(' ').slice(0, 300));
     });
     cdp.on('Runtime.exceptionThrown', p => {
         pageErrors.push((p.exceptionDetails.exception && p.exceptionDetails.exception.description || p.exceptionDetails.text || '').slice(0, 300));
     });
+    cdp.on('Network.requestWillBeSent', p => {
+        if (/attract-gameplay\.(webm|mp4)/.test(p.request.url)) {
+            mediaTraffic.push({ kind: 'request', url: p.request.url, range: p.request.headers.Range || p.request.headers.range || '' });
+        }
+    });
+    cdp.on('Network.responseReceived', p => {
+        if (/attract-gameplay\.(webm|mp4)/.test(p.response.url)) {
+            mediaTraffic.push({
+                kind: 'response', url: p.response.url, status: p.response.status,
+                contentRange: p.response.headers['content-range'] || p.response.headers['Content-Range'] || '',
+                length: p.response.headers['content-length'] || p.response.headers['Content-Length'] || ''
+            });
+        }
+    });
 
     await cdp.send('Runtime.enable');
     await cdp.send('Page.enable');
+    await cdp.send('Network.enable');
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    await cdp.send('Emulation.setEmulatedMedia', {
+        media: '',
+        features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }]
+    });
 
     async function evaljs(expr) {
         const r = await cdp.send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true });
@@ -184,12 +204,16 @@ const section = n => console.log(`\n== ${n} ==`);
         duration: window.__videoBackground.duration,
         dimensions: window.__videoBackground.dimensions,
         error: window.__videoBackground.lastError,
+        shouldPlay: window.__videoBackground.shouldPlay,
+        playAttempts: window.__videoBackground.playAttempts,
+        hidden: document.hidden,
+        reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
         opacity: +getComputedStyle(document.getElementById('menu-gameplay-video')).opacity,
         fit: getComputedStyle(document.getElementById('menu-gameplay-video')).objectFit,
         mp4: document.getElementById('menu-gameplay-video').canPlayType('video/mp4'),
         webm: document.getElementById('menu-gameplay-video').canPlayType('video/webm')
     })`);
-    assert(videoInfo.readyState >= 2 && videoInfo.error === '', `video decoded without media errors (readyState=${videoInfo.readyState})`);
+    assert(videoInfo.readyState >= 2 && videoInfo.error === '', `video decoded without media errors (${JSON.stringify(videoInfo)} traffic=${JSON.stringify(mediaTraffic)})`);
     assert(videoInfo.dimensions[0] === 1280 && videoInfo.dimensions[1] === 720, `recorded gameplay is 1280×720 (${videoInfo.dimensions.join('×')})`);
     assert(videoInfo.duration >= 13.9 && videoInfo.duration <= 14.1, `loop duration is 14 seconds (${videoInfo.duration.toFixed(2)}s)`);
     assert(videoInfo.paused === false, 'muted gameplay video autoplays on menu');
@@ -321,7 +345,18 @@ const section = n => console.log(`\n== ${n} ==`);
     assert(await evaljs(`loopGeneration === ${generationBeforePause + 2}`),
         'pause and resume each invalidate stale animation frames');
 
-    // Rapid pause/resume must leave exactly one active rAF chain.
+    // Rapid pause/resume must leave exactly one active rAF chain. Compare with
+    // this browser's measured rAF cadence instead of assuming a 60 Hz display.
+    const rafBaseline = await evaljs(`new Promise(resolve => {
+        let count = 0;
+        const started = performance.now();
+        const tick = () => {
+            count++;
+            if (performance.now() - started < 350) requestAnimationFrame(tick);
+            else resolve(count);
+        };
+        requestAnimationFrame(tick);
+    })`);
     await evaljs(`
         window.__updateCount = 0;
         window.__originalUpdate = game.update.bind(game);
@@ -330,8 +365,8 @@ const section = n => console.log(`\n== ${n} ==`);
     `);
     await sleep(350);
     const rapidUpdates = await evaljs(`window.__updateCount`);
-    assert(rapidUpdates >= 10 && rapidUpdates <= 28,
-        `rapid pause/resume keeps one game loop (${rapidUpdates} updates / 350ms)`);
+    assert(rapidUpdates >= Math.floor(rafBaseline * 0.65) && rapidUpdates <= Math.ceil(rafBaseline * 1.35),
+        `rapid pause/resume keeps one game loop (${rapidUpdates} updates vs ${rafBaseline} rAF / 350ms)`);
 
     // ==================== Battle mode smoke test ====================
     section('Battle mode');
@@ -354,6 +389,17 @@ const section = n => console.log(`\n== ${n} ==`);
     // KO display elements exist
     const koOk = await evaljs(`document.getElementById('ko-p') !== null`);
     assert(koOk, 'KO counter elements present');
+    await evaljs(`battleWinner=game; battleEnded=true; endBattle()`);
+    const cpuResultControls = await evaljs(`({
+        gameover:document.getElementById('gameover').classList.contains('show'),
+        backVisible:!document.getElementById('gameover-back-btn').classList.contains('hidden'),
+        onlineDecisionHidden:document.getElementById('online-rematch-decision').classList.contains('hidden'),
+        onlineExitHidden:document.getElementById('online-exit-btn').classList.contains('hidden')
+    })`);
+    assert(cpuResultControls.gameover && cpuResultControls.backVisible,
+        'CPU result preserves the original back-to-menu action');
+    assert(cpuResultControls.onlineDecisionHidden && cpuResultControls.onlineExitHidden,
+        'CPU result does not show ONLINE rematch choices');
 
     // Back to menu
     await evaljs(`backMenu()`);
