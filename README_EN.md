@@ -28,6 +28,8 @@
 | **Lock Delay** | 0.5s grace period on ground contact with Move Reset (max 15 resets/piece) |
 | **Hold System** | Swap the current piece with the held piece (once per drop) |
 | **3-Piece Next Queue** | Preview the next three upcoming pieces |
+| **ONLINE P2P Friend Rooms** | Create a six-character room code and play a friend over encrypted WebRTC data channels |
+| **Fair Online Randomizer** | A shared seed gives both peers the same deterministic 7-Bag sequence |
 
 ### 🎨 Visual Effects
 
@@ -38,7 +40,17 @@
 - **Screen Shake** — Activates on Double and above
 - **Block Gradients & Highlights** — Each block has a 3D-style linear gradient
 - **Combo Counter** — Real-time display of consecutive clear multiplier
-- **Full-Screen Flash** — Triple triggers purple flash, Tetris triggers pink flash
+
+### 🌐 ONLINE P2P Friend Rooms
+
+- GitHub Pages remains a static deployment; no self-hosted backend is required
+- Vendored Trystero 0.25.3 (MIT) uses public Nostr relays for signaling
+- After matchmaking, board snapshots, attacks, and results travel directly over encrypted WebRTC DataChannels
+- Rooms accept exactly two players; a third peer receives an explicit room-full response
+- Includes READY state, synchronized countdown, shared seed, attacks, host-authoritative results, disconnect handling, and rematches
+
+**Limits:** rooms disappear when the host leaves; matchmaking signals pass through public Nostr relays, and WebRTC may reveal public network-address information to the other player, so room codes should be shared only with trusted friends. Strict NAT/corporate firewalls can prevent connections; there is no central anti-cheat authority, so this mode is for friend matches rather than ranked or prize play.
+- **Full-Screen Flash** — Triple triggers orange flash, Tetris triggers coral flash
 
 ### 🔊 Web Audio Sound Engine
 
@@ -111,10 +123,12 @@ tetris-battle/
 ├── index.html          # Game page and video markup
 ├── style.css           # Core layout and responsive rules
 ├── ink-theme.css       # Ink Clash design system and component theme
-├── game.js             # Game core, AI, audio and Canvas rendering
+├── game.js             # Game core, AI, P2P bridge, audio and Canvas rendering
+├── online-battle.js    # Room codes, Trystero, sync, results and rematches
 ├── video-background.js # Menu video lifecycle
+├── vendor/             # Pinned Trystero Nostr bundle and MIT license
 ├── assets/             # MP4, WebM and poster media
-└── test/               # Logic, browser, security and video-asset tests
+└── test/               # Logic, browser, P2P, security and video-asset tests
 ```
 
 ### Tech Stack

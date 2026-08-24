@@ -30,6 +30,8 @@
 | **Hold 系統** | 隨時交換當前方塊與暫存方塊（每塊限用一次） |
 | **3 格 Next 預覽** | 領先看到即將到來的三個方塊 |
 | **本機最佳紀錄** | 自動保存最高分與最高 Combo，破紀錄時顯示專屬提示 |
+| **ONLINE P2P 朋友房** | 建立 6 碼房號，朋友輸入相同房號後透過 WebRTC 點對點對戰 |
+| **公平線上亂數** | 房主產生共同 seed，雙方使用一致且可重現的 Seeded 7-Bag |
 
 ### 🎨 視覺效果
 
@@ -41,7 +43,18 @@
 - **畫面震動** — Double 以上觸發場景震撼效果
 - **方塊漸層與高光** — 每格方塊自帶 3D 感的線性漸層
 - **Combo 計數器** — 連續消除即時顯示倍數
-- **全螢幕閃光** — Triple 紫光、Tetris 粉光
+- **全螢幕閃光** — Triple 橘光、Tetris 珊瑚色閃光
+
+### 🌐 ONLINE P2P 朋友房
+
+- GitHub Pages 維持純靜態部署，不需要自架後端
+- Trystero 0.25.3（MIT）透過公開 Nostr relays 完成 signaling
+- 配對完成後，盤面、攻擊與勝負資料以 WebRTC DataChannel 加密點對點傳輸
+- 每間房最多 2 人，第三位玩家會收到「房間已滿」
+- 雙方 READY 後同步倒數；支援共同 seed、攻擊、勝負、斷線判定與再戰
+- 盤面以 10Hz 快照同步，攻擊／Top Out／結果採可靠事件通道
+
+**限制：**這是免後端的朋友房方案。房主關閉頁面後房間消失；配對訊號會經公開 Nostr relays，WebRTC 也可能讓對手得知你的公網位址資訊，因此只應和信任的朋友分享房號。嚴格 NAT／公司防火牆可能造成配對失敗；沒有中央權威伺服器，因此不適合排名賽或獎金競賽。
 
 ### 🔊 Web Audio 音效
 
@@ -120,12 +133,15 @@ tetris-battle/
 ├── index.html         # 遊戲主頁與雙模式介面
 ├── style.css          # 核心布局與響應式版面
 ├── ink-theme.css      # 原創油墨色彩系統與全站組件主題
-├── game.js            # 遊戲核心、AI、音效與 Canvas 渲染
+├── game.js            # 遊戲核心、AI、P2P bridge、音效與 Canvas 渲染
+├── online-battle.js   # 房號、Trystero、Ready、同步、勝負與再戰協議
 ├── video-background.js # 首頁遊玩影片生命週期
+├── vendor/            # 固定版 Trystero Nostr bundle 與 MIT 授權
 ├── assets/            # MP4／WebM／poster 背景素材
 └── test/
     ├── logic-test.js           # 遊戲核心單元測試
     ├── e2e-test.js             # Chrome CDP 瀏覽器整合測試
+    ├── online-p2p-test.js      # 真實多頁 WebRTC 房間／對戰測試
     ├── record-attract-video.js # 真實雙 AI 遊玩錄影工具
     ├── server.js               # 零依賴本機靜態測試伺服器
     └── server-security-test.js # Traversal／NUL 等 hostile-path 回歸測試
@@ -136,7 +152,8 @@ tetris-battle/
 - **語言：** 原生 JavaScript（ES6+）
 - **渲染：** HTML5 Canvas 2D（雙層：遊戲層 + FX 粒子層）
 - **音效：** Tone.js / Web Audio API（即時合成，無音效素材檔）
-- **字體：** Google Fonts — Orbitron（標題）、Rajdhani（UI）
+- **線上連線：** Trystero 0.25.3＋WebRTC DataChannel＋Nostr signaling
+- **字體：** Google Fonts — Bungee（標題）、Nunito Sans（UI）
 - **響應式：** DPI 自適應（devicePixelRatio），視窗任意大小皆可
 
 ### 效能優化

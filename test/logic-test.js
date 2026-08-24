@@ -83,7 +83,7 @@ sandbox.globalThis = sandbox;
 
 const code = fs.readFileSync(path.join(__dirname, '..', 'game.js'), 'utf8')
     // Expose top-level const/class declarations (they don't attach to global in vm context)
-    + '\n;this.__exports = { Bag7, Piece, Tetris, TetrisAI, BattleManager, loadHighScore, saveHighScore, SHAPES, COLORS, SRS_KICK_DATA };';
+    + '\n;this.__exports = { Bag7, SeededBag7, Piece, Tetris, TetrisAI, BattleManager, loadHighScore, saveHighScore, SHAPES, COLORS, SRS_KICK_DATA, getOnlineLocalState, applyOnlineRemoteState, receiveOnlineAttack, finishOnlineMatch };';
 
 let failures = 0, passes = 0;
 function assert(cond, msg) {
@@ -133,6 +133,67 @@ section('7-Bag integrity');
         if (Object.keys(seen).length !== 7) { ok = false; break; }
     }
     assert(ok, 'every 7-draw window contains all 7 piece types');
+}
+
+// ============================================================
+section('Seeded 7-Bag determinism for online matches');
+{
+    const a = new S.SeededBag7(0x1234abcd);
+    const b = new S.SeededBag7(0x1234abcd);
+    const c = new S.SeededBag7(0x76543210);
+    const seqA = Array.from({ length: 70 }, () => a.next()).join('');
+    const seqB = Array.from({ length: 70 }, () => b.next()).join('');
+    const seqC = Array.from({ length: 70 }, () => c.next()).join('');
+    assert(seqA === seqB, 'same seed produces identical 70-piece sequence');
+    assert(seqA !== seqC, 'different seed produces a different sequence');
+    let validBags = true;
+    for (let i = 0; i < seqA.length; i += 7) {
+        if (new Set(seqA.slice(i, i + 7)).size !== 7) validBags = false;
+    }
+    assert(validBags, 'every seeded seven-piece batch contains all tetrominoes');
+}
+
+// ============================================================
+section('Online snapshot bridge and hostile input validation');
+{
+    vm.runInContext(`
+        currentMode = 'online';
+        battleEnded = false;
+        game = new Tetris({
+            boardId:'board1', fxId:'fx1', holdId:'hold1',
+            nextIds:['next1','next2','next3'],
+            statIds:{score:'score1',level:'level1',lines:'sent1',combo:'combo1'},
+            overlayIds:{combo:'combo-display',action:'action-text'},
+            bag:new SeededBag7(12345)
+        });
+        aiGame = new Tetris({
+            boardId:'a-board', fxId:'a-fx', holdId:'a-hold',
+            nextIds:['a-next1','a-next2','a-next3'],
+            statIds:{score:'a-score',lines:'a-lines',combo:'a-combo',b2b:'a-b2b',attack:'atk-a'},
+            overlayIds:{combo:'a-combo-display',action:'a-action-text'},
+            garbageMeterId:'a-garbage-meter', bag:new SeededBag7(12345)
+        });
+        game.spawn(); aiGame.spawn();
+        game.score = 4321; game.lines = 12; game.combo = 3; game.attackSent = 7;
+    `, sandbox);
+    const snapshot = sandbox.window.TetrisBattleOnlineApi.getLocalState();
+    assert(snapshot && snapshot.grid.length === 20 && snapshot.grid.every(row => row.length === 10), 'local state serializes a compact 20×10 grid');
+    assert(snapshot.score === 4321 && snapshot.lines === 12 && snapshot.combo === 3, 'local state includes battle statistics');
+    assert(sandbox.window.TetrisBattleOnlineApi.applyRemoteState(snapshot) === true, 'valid peer snapshot applies to remote board');
+    assert(getEl('a-score').textContent === '4,321' || getEl('a-score').textContent === '4321', 'remote score is rendered after snapshot');
+
+    const malformed = JSON.parse(JSON.stringify(snapshot));
+    malformed.grid[0] = 'XXXXXXXXXX';
+    assert(sandbox.window.TetrisBattleOnlineApi.applyRemoteState(malformed) === false, 'invalid grid characters are rejected');
+    const oversized = JSON.parse(JSON.stringify(snapshot));
+    oversized.piece.shape = Array.from({ length: 30 }, () => Array(30).fill(1));
+    assert(sandbox.window.TetrisBattleOnlineApi.applyRemoteState(oversized) === false, 'oversized remote piece payload is rejected');
+
+    assert(sandbox.window.TetrisBattleOnlineApi.receiveAttack(999, true) === true, 'online attack bridge accepts bounded numeric input');
+    const queued = vm.runInContext(`game.garbageQueue[0]`, sandbox);
+    assert(queued.lines === 20 && queued.isBomb === true, `hostile attack is capped at 20 lines (got ${queued.lines})`);
+    assert(sandbox.window.TetrisBattleOnlineApi.finishMatch(true, 'opponent-left') === true, 'online result bridge ends a running match');
+    assert(sandbox.window.TetrisBattleOnlineApi.finishMatch(false, 'duplicate') === false, 'duplicate result cannot overwrite match winner');
 }
 
 // ============================================================

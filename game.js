@@ -106,6 +106,38 @@ class Bag7 {
     next() { if (this.bag.length === 0) this.refill(); return this.bag.pop(); }
 }
 
+// Deterministic 7-bag for online matches. Both peers receive the same seed,
+// so piece randomness is fair without streaming every generated piece.
+class SeededBag7 {
+    constructor(seed) {
+        this.state = (Number(seed) >>> 0) || 0x6d2b79f5;
+        this.bag = [];
+        this.refill();
+    }
+
+    random() {
+        let x = this.state;
+        x ^= x << 13;
+        x ^= x >>> 17;
+        x ^= x << 5;
+        this.state = x >>> 0;
+        return this.state / 4294967296;
+    }
+
+    refill() {
+        this.bag = [...PIECES];
+        for (let i = this.bag.length - 1; i > 0; i--) {
+            const j = Math.floor(this.random() * (i + 1));
+            [this.bag[i], this.bag[j]] = [this.bag[j], this.bag[i]];
+        }
+    }
+
+    next() {
+        if (this.bag.length === 0) this.refill();
+        return this.bag.pop();
+    }
+}
+
 // ==================== Piece ====================
 class Piece {
     constructor(type, board) {
@@ -1747,10 +1779,11 @@ let inputManager = null;
 let running = false;
 let isPaused = false;
 let loopGeneration = 0;           // invalidates stale requestAnimationFrame chains
-let currentMode = 'solo';       // 'solo' | 'battle'
+let currentMode = 'solo';       // 'solo' | 'battle' | 'online'
 let currentDifficulty = 'normal';
 let battleEnded = false;
 let battleWinner = null;
+let onlineEndReason = '';
 
 // Solo config
 const SOLO_CONFIG = {
@@ -1805,6 +1838,7 @@ function startGame() {
     document.body.classList.remove('at-menu');
     document.getElementById('menu').classList.add('hidden');
     document.getElementById('gameover').classList.remove('show');
+    document.getElementById('online-rematch-btn')?.classList.add('hidden');
 
     // Swap layouts via body class
     document.body.classList.remove('mode-solo', 'mode-battle');
@@ -1812,6 +1846,7 @@ function startGame() {
 
     battleEnded = false;
     battleWinner = null;
+    onlineEndReason = '';
 
     if (currentMode === 'battle') {
         // Each player gets an independent 7-bag (fair randomness per player)
@@ -1825,6 +1860,9 @@ function startGame() {
         const diffLabel = AI_PROFILES[currentDifficulty].name;
         const dd = document.getElementById('difficulty-display');
         if (dd) dd.textContent = diffLabel;
+        document.querySelector('.battle-player-tag .tag-name').textContent = 'YOU';
+        document.querySelector('.battle-player-tag.ai-tag .tag-name').textContent = 'CPU';
+        document.getElementById('battle-pause-btn')?.classList.remove('hidden');
 
         if (inputManager) inputManager.destroy();
         inputManager = new InputManager(game);
@@ -1847,6 +1885,10 @@ function startGame() {
         if (so) so.classList.add('hidden');
     }
 
+    beginGameLoop();
+}
+
+function beginGameLoop() {
     running = true;
     isPaused = false;
     const generation = ++loopGeneration;
@@ -1861,8 +1903,57 @@ function startGame() {
     });
 }
 
-function backMenu() {
+function startOnlineGame(seed) {
+    currentMode = 'online';
+    initAudio();
+    document.body.classList.remove('at-menu', 'mode-solo');
+    document.body.classList.add('mode-battle');
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('online-lobby')?.classList.add('hidden');
     document.getElementById('gameover').classList.remove('show');
+    document.getElementById('online-rematch-btn')?.classList.add('hidden');
+
+    battleEnded = false;
+    battleWinner = null;
+    onlineEndReason = '';
+
+    const matchSeed = (Number(seed) >>> 0) || 0x6d2b79f5;
+    game = new Tetris({ ...BATTLE_PLAYER_CONFIG, bag: new SeededBag7(matchSeed) });
+    aiGame = new Tetris({ ...BATTLE_AI_CONFIG, bag: new SeededBag7(matchSeed) });
+    game.spawn();
+    aiGame.spawn();
+    battleManager = null;
+    ai = null;
+
+    game.onAttack = (lines, info) => window.onlineBattle?.handleLocalAttack(lines, info);
+    game.onTopOut = () => window.onlineBattle?.handleLocalTopOut();
+
+    if (inputManager) inputManager.destroy();
+    inputManager = new InputManager(game);
+
+    document.querySelector('.battle-player-tag .tag-name').textContent = 'YOU';
+    document.querySelector('.battle-player-tag.ai-tag .tag-name').textContent = 'OPPONENT';
+    const dd = document.getElementById('difficulty-display');
+    if (dd) dd.textContent = 'ONLINE P2P';
+    document.getElementById('battle-pause-btn')?.classList.add('hidden');
+    ['p-status-overlay', 'a-status-overlay'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    ['atk-p', 'atk-a', 'ko-p', 'ko-a'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '0';
+    });
+
+    beginGameLoop();
+    window.onlineBattle?.handleGameStarted(matchSeed);
+}
+
+async function backMenu() {
+    const wasOnline = currentMode === 'online';
+    if (wasOnline) await window.onlineBattle?.handleBackMenu();
+    document.getElementById('gameover').classList.remove('show');
+    document.getElementById('online-rematch-btn')?.classList.add('hidden');
     document.getElementById('menu').classList.remove('hidden');
     document.body.classList.add('at-menu');
     showModeSelect();
@@ -1873,10 +1964,11 @@ function backMenu() {
     document.body.classList.remove('mode-battle');
     document.body.classList.add('mode-solo');
     updateHighScoreDisplay();
+    currentMode = 'solo';
 }
 
 function togglePause() {
-    if (!running) return;
+    if (!running || currentMode === 'online') return;
     isPaused = !isPaused;
     // Invalidate the frame that may already be queued. On resume, only the
     // new generation below is allowed to continue the animation chain.
@@ -1907,8 +1999,11 @@ function loop(time = 0, generation = loopGeneration) {
     inputManager.update();
     if (game) { game.update(time); game.render(); }
     if (aiGame) {
-        if (ai) ai.update(time);
-        aiGame.update(time);
+        if (currentMode === 'battle') {
+            if (ai) ai.update(time);
+            aiGame.update(time);
+        }
+        // Online opponent is display-only; snapshots update its state.
         aiGame.render();
     }
 
@@ -1945,9 +2040,22 @@ function endBattle() {
     playSound('over');
     const youWin = battleWinner === game;
     document.getElementById('gameover-title').textContent = youWin ? 'VICTORY' : 'DEFEAT';
-    document.getElementById('gameover-sub').textContent = youWin
-        ? `You defeated the ${AI_PROFILES[currentDifficulty].name} CPU!`
-        : `The ${AI_PROFILES[currentDifficulty].name} CPU defeated you.`;
+
+    if (currentMode === 'online') {
+        const reasonText = onlineEndReason === 'opponent-left'
+            ? '對手已離線，你獲得勝利。'
+            : onlineEndReason === 'connection-lost'
+                ? 'P2P 連線中斷，本局結束。'
+                : youWin ? '你擊敗了線上對手！' : '線上對手贏得本局。';
+        document.getElementById('gameover-sub').textContent = reasonText;
+        document.getElementById('online-rematch-btn')?.classList.remove('hidden');
+    } else {
+        document.getElementById('gameover-sub').textContent = youWin
+            ? `You defeated the ${AI_PROFILES[currentDifficulty].name} CPU!`
+            : `The ${AI_PROFILES[currentDifficulty].name} CPU defeated you.`;
+        document.getElementById('online-rematch-btn')?.classList.add('hidden');
+    }
+
     document.getElementById('final-stats-solo').classList.add('hidden');
     document.getElementById('final-stats-battle').classList.remove('hidden');
     document.getElementById('final-atk').textContent = game.attackSent;
@@ -1955,7 +2063,113 @@ function endBattle() {
     document.getElementById('final-bcombo').textContent = game.maxCombo;
     document.getElementById('final-bb2b').textContent = game.maxB2b;
     document.getElementById('gameover').classList.add('show');
+    if (currentMode === 'online') window.onlineBattle?.handleGameEnded(youWin, onlineEndReason);
 }
+
+// ==================== Online Match Bridge ====================
+function boundedInt(value, min, max, fallback = 0) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.min(max, Math.max(min, Math.trunc(number)));
+}
+
+function getOnlineLocalState() {
+    if (currentMode !== 'online' || !game || !game.piece) return null;
+    return {
+        v: 1,
+        grid: game.grid.map(row => row.map(cell => cell || '.').join('')),
+        piece: {
+            type: game.piece.type,
+            x: game.piece.x,
+            y: game.piece.y,
+            rotIndex: game.piece.rotIndex,
+            shape: game.piece.shape.map(row => row.map(cell => cell ? 1 : 0))
+        },
+        nextQueue: game.nextQueue.slice(0, 3),
+        hold: game.hold,
+        score: game.score,
+        level: game.level,
+        lines: game.lines,
+        combo: game.combo,
+        b2b: game.b2b,
+        maxCombo: game.maxCombo,
+        maxB2b: game.maxB2b,
+        attackSent: game.attackSent,
+        over: game.over
+    };
+}
+
+function applyOnlineRemoteState(snapshot) {
+    if (currentMode !== 'online' || !aiGame || !snapshot || snapshot.v !== 1) return false;
+    if (!Array.isArray(snapshot.grid) || snapshot.grid.length !== ROWS) return false;
+    const allowedCells = /^[.ijlostzgx]{10}$/;
+    if (!snapshot.grid.every(row => typeof row === 'string' && allowedCells.test(row))) return false;
+
+    const pieceData = snapshot.piece;
+    if (!pieceData || !PIECES.includes(pieceData.type)) return false;
+    if (!Array.isArray(pieceData.shape) || pieceData.shape.length < 2 || pieceData.shape.length > 4) return false;
+    const size = pieceData.shape.length;
+    if (!pieceData.shape.every(row => Array.isArray(row) && row.length === size && row.every(cell => cell === 0 || cell === 1))) return false;
+
+    aiGame.grid = snapshot.grid.map(row => [...row].map(cell => cell === '.' ? EMPTY : cell));
+    const remotePiece = new Piece(pieceData.type, aiGame);
+    remotePiece.x = boundedInt(pieceData.x, -4, COLS + 2, 3);
+    remotePiece.y = boundedInt(pieceData.y, -4, ROWS, 0);
+    remotePiece.rotIndex = boundedInt(pieceData.rotIndex, 0, 3, 0);
+    remotePiece.shape = pieceData.shape.map(row => [...row]);
+    aiGame.piece = remotePiece;
+
+    aiGame.nextQueue = Array.isArray(snapshot.nextQueue)
+        ? snapshot.nextQueue.filter(type => PIECES.includes(type)).slice(0, 3)
+        : [];
+    aiGame.hold = PIECES.includes(snapshot.hold) ? snapshot.hold : null;
+    aiGame.score = boundedInt(snapshot.score, 0, 999999999);
+    aiGame.level = boundedInt(snapshot.level, 1, 999, 1);
+    aiGame.lines = boundedInt(snapshot.lines, 0, 999999);
+    aiGame.combo = boundedInt(snapshot.combo, 0, 999);
+    aiGame.b2b = boundedInt(snapshot.b2b, 0, 999);
+    aiGame.maxCombo = boundedInt(snapshot.maxCombo, 0, 999);
+    aiGame.maxB2b = boundedInt(snapshot.maxB2b, 0, 999);
+    aiGame.attackSent = boundedInt(snapshot.attackSent, 0, 999999);
+    aiGame.over = Boolean(snapshot.over);
+    aiGame.syncStats();
+    return true;
+}
+
+function receiveOnlineAttack(lines, bomb) {
+    if (currentMode !== 'online' || !game || battleEnded) return false;
+    const safeLines = boundedInt(lines, 0, 20);
+    if (safeLines < 1) return false;
+    game.receiveGarbage(safeLines, Boolean(bomb));
+    return true;
+}
+
+function finishOnlineMatch(youWin, reason = '') {
+    if (currentMode !== 'online' || battleEnded) return false;
+    onlineEndReason = String(reason || '').slice(0, 40);
+    battleEnded = true;
+    battleWinner = youWin ? game : aiGame;
+    const koId = youWin ? 'ko-p' : 'ko-a';
+    const ko = document.getElementById(koId);
+    if (ko) ko.textContent = String(boundedInt(ko.textContent, 0, 98) + 1);
+    // Network results can arrive between animation-frame chains. Finalize in an
+    // independent task so the result UI never depends on another game frame.
+    setTimeout(() => {
+        if (currentMode === 'online' && battleEnded && running) endBattle();
+    }, 0);
+    return true;
+}
+
+window.TetrisBattleOnlineApi = Object.freeze({
+    startMatch: startOnlineGame,
+    restartMatch: startOnlineGame,
+    getLocalState: getOnlineLocalState,
+    applyRemoteState: applyOnlineRemoteState,
+    receiveAttack: receiveOnlineAttack,
+    finishMatch: finishOnlineMatch,
+    get isOnline() { return currentMode === 'online'; },
+    get isRunning() { return currentMode === 'online' && running && !battleEnded; }
+});
 
 document.addEventListener('keydown', e => {
     if (e.key === 'm' || e.key === 'M') { toggleMusic(); return; }

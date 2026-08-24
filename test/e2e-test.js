@@ -232,7 +232,7 @@ const section = n => console.log(`\n== ${n} ==`);
     assert(layout813.contentTop >= 20 && layout813.contentBottom <= 781,
         `1279×813: menu module stays inside safe area (${Math.round(layout813.contentTop)}–${Math.round(layout813.contentBottom)}px)`);
     assert(layout813.buttonBottoms.every(v => v <= 781) && layout813.buttonTops.every(v => v >= 20),
-        '1279×813: both primary mode buttons are fully visible');
+        '1279×813: all three primary mode buttons are fully visible');
     await shot('00b-menu-1279x813');
 
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1024, height: 650, deviceScaleFactor: 1, mobile: false });
@@ -242,6 +242,18 @@ const section = n => console.log(`\n== ${n} ==`);
 
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
     await sleep(200);
+
+    section('Online lobby shell');
+    await evaljs(`openOnlineLobby()`);
+    await sleep(250);
+    assert(await evaljs(`onlineBattle.libraryVersion === 'trystero-0.25.3-nostr'`), 'ONLINE uses the pinned Trystero Nostr client');
+    assert(await evaljs(`!document.getElementById('online-lobby').classList.contains('hidden') && !document.getElementById('online-home').classList.contains('hidden')`),
+        'ONLINE lobby opens on create/join choices');
+    assert(await evaljs(`document.querySelector('.online-limit-note').textContent.includes('Nostr') && document.querySelector('.online-limit-note').textContent.includes('網路位址')`),
+        'P2P signaling and network-address limitation notice is visible');
+    await shot('00c-online-lobby');
+    await evaljs(`closeOnlineLobby()`);
+    assert(await evaljs(`document.getElementById('online-lobby').classList.contains('hidden')`), 'ONLINE lobby closes cleanly');
 
     // ==================== Start solo game ====================
     section('Start solo game');

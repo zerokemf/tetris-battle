@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tetris Battle - SRS Edition</title>
-    <link rel="stylesheet" href="style.css?v=5.1">
-    <link rel="stylesheet" href="ink-theme.css?v=1.1">
+    <link rel="stylesheet" href="style.css?v=6.0">
+    <link rel="stylesheet" href="ink-theme.css?v=1.2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito+Sans:opsz,wght@6..12,600;6..12,800;6..12,900&display=swap" rel="stylesheet">
 </head>
@@ -235,6 +235,10 @@
                         <span class="btn-title">BATTLE</span>
                         <span class="btn-sub">對戰模式</span>
                     </button>
+                    <button class="neon-btn mode-btn online" onclick="openOnlineLobby()">
+                        <span class="btn-title">ONLINE</span>
+                        <span class="btn-sub">朋友房 P2P</span>
+                    </button>
                 </div>
             </div>
 
@@ -260,6 +264,80 @@
         </main>
     </div>
 
+    <!-- ==================== ONLINE P2P LOBBY ==================== -->
+    <div class="online-lobby hidden" id="online-lobby" role="dialog" aria-modal="true" aria-labelledby="online-title">
+        <section class="online-card">
+            <header class="online-header">
+                <div>
+                    <span class="online-kicker">FRIEND MATCH / WebRTC</span>
+                    <h2 id="online-title">ONLINE P2P</h2>
+                    <p>建立房間，把 6 碼房號傳給朋友即可對戰</p>
+                </div>
+                <button class="online-close" type="button" onclick="closeOnlineLobby()" aria-label="關閉線上大廳">×</button>
+            </header>
+
+            <div class="online-home" id="online-home">
+                <div class="online-choice-grid">
+                    <button class="online-choice create" type="button" onclick="onlineBattle.createRoom()">
+                        <span class="online-choice-icon">＋</span>
+                        <span><b>建立房間</b><small>產生新房號並等待朋友</small></span>
+                    </button>
+                    <form class="online-join" id="online-join-form" onsubmit="onlineBattle.joinFromForm(event)">
+                        <label for="online-room-input">輸入房號</label>
+                        <div class="online-room-entry">
+                            <input id="online-room-input" name="room" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="6" placeholder="A7K2MX" aria-describedby="online-room-help">
+                            <button type="submit">加入</button>
+                        </div>
+                        <small id="online-room-help">英文字母＋數字，共 6 碼</small>
+                    </form>
+                </div>
+                <div class="online-limit-note">
+                    <b>實驗性 P2P 朋友房</b>
+                    <span>遊戲資料以 WebRTC 加密點對點傳輸；配對訊號會經公開 Nostr relay，且對手可能得知你的網路位址資訊。只和信任的朋友分享房號。房主離開後房間消失；少數公司網路或嚴格 NAT 可能無法直連。</span>
+                </div>
+            </div>
+
+            <div class="online-room-view hidden" id="online-room-view">
+                <div class="online-room-top">
+                    <div>
+                        <span class="online-label">ROOM CODE</span>
+                        <div class="online-code-row">
+                            <strong id="online-room-code">------</strong>
+                            <button type="button" onclick="onlineBattle.copyInvite()" id="online-copy-btn">複製邀請</button>
+                        </div>
+                    </div>
+                    <div class="online-network" id="online-network">
+                        <span class="online-dot"></span>
+                        <span id="online-network-text">連線服務準備中</span>
+                    </div>
+                </div>
+
+                <div class="online-slots">
+                    <article class="online-slot local" id="online-local-slot">
+                        <span class="slot-number">01</span>
+                        <div><b id="online-local-name">YOU</b><small id="online-local-role">房主</small></div>
+                        <span class="ready-badge" id="online-local-ready">等待</span>
+                    </article>
+                    <div class="online-versus">VS</div>
+                    <article class="online-slot remote empty" id="online-remote-slot">
+                        <span class="slot-number">02</span>
+                        <div><b id="online-remote-name">WAITING...</b><small id="online-remote-role">等待朋友加入</small></div>
+                        <span class="ready-badge" id="online-remote-ready">離線</span>
+                    </article>
+                </div>
+
+                <div class="online-countdown hidden" id="online-countdown" aria-live="assertive">3</div>
+                <p class="online-status" id="online-status" aria-live="polite">正在建立房間...</p>
+                <div class="online-actions">
+                    <button class="online-ready" id="online-ready-btn" type="button" onclick="onlineBattle.toggleReady()" disabled>READY</button>
+                    <button class="online-leave" type="button" onclick="onlineBattle.leaveRoom()">離開房間</button>
+                </div>
+            </div>
+
+            <div class="online-error hidden" id="online-error" role="alert"></div>
+        </section>
+    </div>
+
     <!-- ==================== GAME OVER / WIN SCREEN ==================== -->
     <div class="gameover-screen" id="gameover">
         <h1 class="gameover-title" id="gameover-title">GAME OVER</h1>
@@ -276,11 +354,15 @@
             <div class="final-stat"><span class="final-label">MAX COMBO</span><span class="final-value" id="final-bcombo">0</span></div>
             <div class="final-stat"><span class="final-label">MAX B2B</span><span class="final-value" id="final-bb2b">0</span></div>
         </div>
-        <button class="neon-btn" onclick="backMenu()">BACK TO MENU</button>
+        <div class="gameover-actions">
+            <button class="neon-btn online-rematch hidden" id="online-rematch-btn" onclick="onlineBattle.requestRematch()">REMATCH</button>
+            <button class="neon-btn" onclick="backMenu()">BACK TO MENU</button>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-    <script src="game.js?v=5.1"></script>
+    <script src="game.js?v=6.0"></script>
     <script src="video-background.js?v=1.0"></script>
+    <script src="online-battle.js?v=1.0"></script>
 </body>
 </html>
