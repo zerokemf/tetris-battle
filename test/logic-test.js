@@ -83,7 +83,7 @@ sandbox.globalThis = sandbox;
 
 const code = fs.readFileSync(path.join(__dirname, '..', 'game.js'), 'utf8')
     // Expose top-level const/class declarations (they don't attach to global in vm context)
-    + '\n;this.__exports = { Bag7, SeededBag7, Piece, Tetris, TetrisAI, BattleManager, loadHighScore, saveHighScore, SHAPES, COLORS, SRS_KICK_DATA, getOnlineLocalState, applyOnlineRemoteState, receiveOnlineAttack, finishOnlineMatch };';
+    + '\n;this.__exports = { Bag7, SeededBag7, Piece, Tetris, TetrisAI, BattleManager, loadHighScore, saveHighScore, SHAPES, COLORS, SRS_KICK_DATA, getOnlineLocalState, applyOnlineRemoteState, receiveOnlineAttack, finishOnlineMatch, analyzeGrid, simulateDrop, rotateShape, AI_PROFILES };';
 
 let failures = 0, passes = 0;
 function assert(cond, msg) {
@@ -493,6 +493,95 @@ section('AI still functional after refactor');
         g.update(rafTime += 700);
     }
     assert(!g.over || g.lines >= 0, `game loop stable under AI play (guard=${guard}, over=${g.over})`);
+}
+
+// ============================================================
+section('AI difficulty ladder — survival, skill and safety');
+{
+    // Deterministic full-game simulations driven through the production
+    // update() path (ai.update + game.update), like a real CPU battle.
+    function mulberry32(seedValue) {
+        let a = seedValue >>> 0;
+        return function () {
+            a |= 0; a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    function simulateAi(difficulty, seedValue) {
+        const sandbox = {
+            console,
+            document: documentStub,
+            window: windowStub,
+            localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+            performance: performanceStub,
+            requestAnimationFrame: () => 0,
+            setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
+            Math: Object.create(Math),
+            Date, JSON, Object, Array, String, Number, Boolean, Infinity, NaN, undefined
+        };
+        sandbox.Math.random = mulberry32(seedValue);
+        sandbox.globalThis = sandbox;
+        vm.createContext(sandbox);
+        vm.runInContext(code, sandbox);
+        const { Bag7, Tetris, TetrisAI } = sandbox.__exports;
+
+        const bag = new Bag7();
+        const g = new Tetris({
+            boardId: 'board1', fxId: 'fx1', holdId: 'hold1',
+            nextIds: ['next1', 'next2', 'next3'],
+            statIds: {}, overlayIds: { combo: 'combo-display', action: 'action-text' },
+            bag
+        });
+        g.spawn();
+        const ai = new TetrisAI(g, difficulty);
+        let time = 1000;
+        const endAt = time + 5 * 60000; // five simulated minutes per game
+        while (!g.over && time < endAt) {
+            ai.update(time);
+            g.update(time);
+            time += 16;
+        }
+        return { dead: g.over, lines: g.lines, attacks: g.attackSent };
+    }
+
+    function runLadder(difficulty, games, startSeed) {
+        const runs = [];
+        for (let i = 0; i < games; i++) runs.push(simulateAi(difficulty, startSeed + i * 101));
+        const linesList = runs.map(r => r.lines).sort((a, b) => a - b);
+        const medianLines = (linesList[games >> 1] + linesList[(games - 1) >> 1]) / 2;
+        return {
+            deaths: runs.filter(r => r.dead).length,
+            medianLines,
+            maxLines: linesList[games - 1],
+            minLines: linesList[0],
+            medianAttacks: runs.map(r => r.attacks).sort((a, b) => a - b)[games >> 1]
+        };
+    }
+
+    section('AI easy profile — playable baseline');
+    const easy = runLadder('easy', 8, 41001);
+    console.log(`    easy: ${JSON.stringify(easy)}`);
+    assert(easy.deaths <= 1 && easy.medianLines >= 35,
+        `easy survives early game and clears a modest floor (deaths=${easy.deaths}/8, median=${easy.medianLines})`);
+
+    section('AI normal profile — solid mid tier');
+    const normal = runLadder('normal', 8, 52001);
+    console.log(`    normal: ${JSON.stringify(normal)}`);
+    assert(normal.deaths <= 1 && normal.medianLines >= easy.medianLines * 1.6,
+        `normal clearly outlasts easy (median=${normal.medianLines} vs ${easy.medianLines})`);
+
+    section('AI hard profile — fast and nearly self-safe');
+    const hard = runLadder('hard', 8, 63001);
+    console.log(`    hard: ${JSON.stringify(hard)}`);
+    assert(hard.deaths === 0,
+        `hard never suicides within the window (deaths=${hard.deaths}/8)`);
+    assert(hard.medianLines >= 150,
+        `hard sustains high output without collapsing (median=${hard.medianLines}, max=${hard.maxLines})`);
+    assert(hard.medianLines > normal.medianLines,
+        'hard remains stronger than normal');
 }
 
 console.log(`\n========== RESULT: ${passes} passed, ${failures} failed ==========`);

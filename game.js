@@ -72,30 +72,52 @@ const PERFECT_CLEAR_BONUS = 10;
 const B2B_BONUS = 1;
 
 // AI difficulty profiles
+// dropInterval = starting gravity (ms/row), gravityFloor = fastest gravity,
+// gravityStep = ms removed per level. thinkDelay/actionInterval pace decisions.
 const AI_PROFILES = {
     easy: {
         name: 'EASY',
-        thinkDelay: 800,
-        actionInterval: 500,  // slow — beatable, gives player room to breathe
+        thinkDelay: 650,
+        actionInterval: 430,
         dropInterval: 900,
-        errorChance: 0.12,
-        weights: { height: -0.55, lines: 0.70, holes: -0.40, bumpiness: -0.20 }
+        gravityFloor: 480,
+        gravityStep: 30,
+        errorChance: 0.16,
+        lookahead: 1,
+        gamma: 0.12,
+        weights: { height: -0.32, lines: 0.58, holes: -0.38, bumpiness: -0.18 }
     },
     normal: {
         name: 'NORMAL',
-        thinkDelay: 350,      // moderate thinking time
-        actionInterval: 250,  // faster than easy, still comfortable for humans
-        dropInterval: 600,
-        errorChance: 0.06,   // smarter than easy — knows what it's doing
-        weights: { height: -0.52, lines: 0.78, holes: -0.45, bumpiness: -0.20 }
+        thinkDelay: 320,
+        actionInterval: 220,
+        dropInterval: 620,
+        gravityFloor: 270,
+        gravityStep: 42,
+        errorChance: 0.03,
+        lookahead: 1,
+        gamma: 0.22,
+        weights: {
+            height: -0.42, lines: 0.70, holes: -0.62, bumpiness: -0.28,
+            wells: -0.10, rowTransitions: -0.16, colTransitions: -0.09,
+            holeDepth: -0.13, danger: -0.028, attackBias: 0.30
+        }
     },
     hard: {
         name: 'HARD',
-        thinkDelay: 110,
-        actionInterval: 110,  // fast but not unbeatable — experienced players can counter
-        dropInterval: 400,
-        errorChance: 0.02,   // nearly optimal play
-        weights: { height: -0.52, lines: 0.88, holes: -0.55, bumpiness: -0.22, wells: -0.12 }
+        thinkDelay: 100,
+        actionInterval: 95,
+        dropInterval: 420,
+        gravityFloor: 150,
+        gravityStep: 34,
+        errorChance: 0,
+        lookahead: 1,
+        gamma: 0.38,
+        weights: {
+            height: -0.52, lines: 0.66, holes: -0.95, bumpiness: -0.34,
+            wells: -0.26, rowTransitions: -0.17, colTransitions: -0.13,
+            holeDepth: -0.30, danger: -0.075, attackBias: 0.44
+        }
     }
 };
 
@@ -1192,11 +1214,10 @@ class TetrisAI {
             const diff = (p.rotIndex - g.piece.rotIndex + 4) % 4;
             if (diff === 3) g.rotate(-1);
             else g.rotate(1);
-            // If rotation failed (e.g., piece pinned), abandon the plan and just drop
+            // If rotation failed (pinned by terrain), re-plan for the real
+            // board instead of blindly dropping where we are.
             if (g.piece.rotIndex === before) {
-                g.hardDrop();
-                this.plan = null;
-                this.thinking = false;
+                this.replanOrDrop();
             }
             return;
         }
@@ -1206,10 +1227,8 @@ class TetrisAI {
             const before = g.piece.x;
             g.move(g.piece.x < p.x ? 1 : -1);
             if (g.piece.x === before) {
-                // Blocked by terrain — drop where we are
-                g.hardDrop();
-                this.plan = null;
-                this.thinking = false;
+                // Path blocked by terrain — re-plan rather than self-destruct.
+                this.replanOrDrop();
             }
             return;
         }
@@ -1220,43 +1239,60 @@ class TetrisAI {
         this.thinking = false;
     }
 
+    replanOrDrop() {
+        const g = this.game;
+        // One synchronous re-plan per stuck step. If nothing is reachable,
+        // fall back to a plain drop so the piece always resolves.
+        this.plan = null;
+        this.thinking = false;
+        const retry = this.computeBestMove();
+        if (retry) {
+            this.plan = retry;
+        } else {
+            g.hardDrop();
+            this.plan = null;
+            this.thinking = false;
+        }
+    }
+
     computeBestMove() {
         const g = this.game;
         if (!g.piece) return null;
 
-        // Evaluate the current piece's moves and (if hold available) the hold swap piece's moves
-        let best = { score: -Infinity };
-
-        best = this.evaluatePiece(g.piece.type, false, best);
+        // Collect every candidate (current piece + hold swap), then choose.
+        const candidates = [];
+        this.collectCandidates(g.piece.type, false, g.nextQueue, candidates);
 
         if (g.canHold) {
             const holdType = g.hold || (g.nextQueue[0] || null);
             if (holdType && holdType !== g.piece.type) {
-                best = this.evaluatePiece(holdType, true, best);
+                const followUp = (g.hold ? [g.piece.type, ...g.nextQueue.slice(1)] : g.nextQueue);
+                this.collectCandidates(holdType, true, followUp, candidates);
             }
         }
 
-        // Introduce error chance on easy
-        if (this.profile.errorChance > 0 && Math.random() < this.profile.errorChance) {
-            // Pick a random legal placement instead
-            const randomType = g.piece.type;
-            const shape0 = SHAPES[randomType];
-            const rot = Math.floor(Math.random() * 4);
-            const rotated = rotateShape(shape0, rot);
-            const minX = -getLeftOffset(rotated);
-            const maxX = COLS - rotated[0].length + getRightOffset(rotated);
-            const randX = minX + Math.floor(Math.random() * (maxX - minX + 1));
-            return { x: randX, rotIndex: rot, useHold: false };
+        // Introduce error chance on easier profiles. Mistakes are drawn from
+        // the *top slice* of legal candidates with a front-biased random pick,
+        // so the CPU plays sloppily instead of self-destructing.
+        if (this.profile.errorChance > 0 && Math.random() < this.profile.errorChance && candidates.length > 1) {
+            const sorted = [...candidates].sort((a, b) => b.score - a.score);
+            const poolSize = Math.min(sorted.length, Math.max(3, Math.ceil(sorted.length * 0.2)));
+            const idx = Math.floor(Math.random() * Math.random() * poolSize);
+            const { score, ...plan } = sorted[idx];
+            return plan;
         }
 
-        if (best.score === -Infinity) {
+        if (candidates.length === 0) {
             // Fallback: just hard drop at current position
             return { x: g.piece.x, rotIndex: g.piece.rotIndex, useHold: false };
         }
-        return best;
+        let best = candidates[0];
+        for (const c of candidates) if (c.score > best.score) best = c;
+        const { score, ...plan } = best;
+        return plan;
     }
 
-    evaluatePiece(type, useHold, best) {
+    collectCandidates(type, useHold, followUpQueue, out) {
         const g = this.game;
         const rotations = (type === 'O') ? 1 : 4;
         const shape0 = SHAPES[type];
@@ -1266,25 +1302,47 @@ class TetrisAI {
             for (let x = -2; x <= COLS; x++) {
                 const result = simulateDrop(g.grid, shape, x);
                 if (!result) continue;
-                const score = this.scoreBoard(result.grid, result.linesCleared);
-                if (score > best.score) {
-                    best = { score, x, rotIndex: rot, useHold };
+                let score = this.scoreBoard(result.grid, result.linesCleared);
+                // One-step lookahead: profiles with lookahead>0 also try the next
+                // queued piece and add the discounted best reply. This is what
+                // keeps fast gravity from stacking into self-made graves.
+                if (this.profile.lookahead > 0) {
+                    const nextType = (followUpQueue && followUpQueue[0]) || null;
+                    if (nextType) {
+                        let bestReply = -Infinity;
+                        const nextShape0 = SHAPES[nextType];
+                        const nextRotations = (nextType === 'O') ? 1 : 4;
+                        for (let nrot = 0; nrot < nextRotations; nrot++) {
+                            const nshape = rotateShape(nextShape0, nrot);
+                            for (let nx = -2; nx <= COLS; nx++) {
+                                const nresult = simulateDrop(result.grid, nshape, nx);
+                                if (!nresult) continue;
+                                const replyScore = this.scoreBoard(nresult.grid, nresult.linesCleared);
+                                if (replyScore > bestReply) bestReply = replyScore;
+                            }
+                        }
+                        if (bestReply !== -Infinity) score += bestReply * this.profile.gamma;
+                    }
                 }
+                out.push({ score, x, rotIndex: rot, useHold });
             }
         }
-        return best;
     }
 
     scoreBoard(grid, linesCleared) {
         const w = this.profile.weights;
-        const { heights, holes, bumpiness, wells } = analyzeGrid(grid);
-        const agg = heights.reduce((a, b) => a + b, 0);
+        const a = analyzeGrid(grid);
         let score = 0;
-        score += (w.height || 0) * agg;
+        score += (w.height || 0) * a.aggregateHeight;
         score += (w.lines || 0) * linesCleared;
-        score += (w.holes || 0) * holes;
-        score += (w.bumpiness || 0) * bumpiness;
-        if (w.wells) score += w.wells * wells;
+        score += (w.holes || 0) * a.holes;
+        score += (w.bumpiness || 0) * a.bumpiness;
+        if (w.wells) score += w.wells * a.wells;
+        if (w.rowTransitions) score += w.rowTransitions * a.rowTransitions;
+        if (w.colTransitions) score += w.colTransitions * a.colTransitions;
+        if (w.holeDepth) score += w.holeDepth * a.holeDepth;
+        if (w.danger) score += w.danger * a.maxHeight * a.maxHeight / ROWS;
+        if (w.attackBias) score += w.attackBias * attackPotential(linesCleared);
         return score;
     }
 }
@@ -1377,6 +1435,12 @@ function simulateDrop(grid, shape, x) {
     return { grid: finalGrid, linesCleared };
 }
 
+function attackPotential(linesCleared) {
+    // Mirrors ATTACK_TABLE so the evaluator can value multi-line setups
+    // (doubles/Tetrises) without hard-coding battle rules twice.
+    return [0, 0, 1, 2, 4][linesCleared] || 0;
+}
+
 function analyzeGrid(grid) {
     const heights = Array(COLS).fill(0);
     for (let c = 0; c < COLS; c++) {
@@ -1384,18 +1448,46 @@ function analyzeGrid(grid) {
             if (grid[r][c]) { heights[c] = ROWS - r; break; }
         }
     }
+    const aggregateHeight = heights.reduce((a, b) => a + b, 0);
+    const maxHeight = Math.max(...heights);
     // Holes: empty cells below the column top
     let holes = 0;
+    let holeDepth = 0;
     for (let c = 0; c < COLS; c++) {
         const top = ROWS - heights[c];
+        let seen = 0;
         for (let r = top + 1; r < ROWS; r++) {
             if (!grid[r][c]) holes++;
+            else if (holes > 0 && grid[r][c]) holeDepth += ++seen; // covered cells above holes
         }
     }
     // Bumpiness
     let bumpiness = 0;
     for (let c = 0; c < COLS - 1; c++) {
         bumpiness += Math.abs(heights[c] - heights[c+1]);
+    }
+    // Row transitions: solid↔empty changes per row incl. walls. Rough surface
+    // roughness measure — flat, filled rows score low.
+    let rowTransitions = 0;
+    for (let r = 0; r < ROWS; r++) {
+        let last = true;
+        for (let c = 0; c < COLS; c++) {
+            const cell = !!grid[r][c];
+            if (cell !== last) rowTransitions++;
+            last = cell;
+        }
+        if (!last) rowTransitions++;
+    }
+    // Column transitions incl. floor/walls.
+    let colTransitions = 0;
+    for (let c = 0; c < COLS; c++) {
+        let last = false;
+        for (let r = 0; r < ROWS; r++) {
+            const cell = !!grid[r][c];
+            if (cell !== last) colTransitions++;
+            last = cell;
+        }
+        if (!last) colTransitions++;
     }
     // Wells (deep gaps between pillars)
     let wells = 0;
@@ -1405,7 +1497,11 @@ function analyzeGrid(grid) {
         const depth = Math.min(left, right) - heights[c];
         if (depth > 2) wells += depth;
     }
-    return { heights, holes, bumpiness, wells };
+    return {
+        heights, aggregateHeight, maxHeight,
+        holes, holeDepth, bumpiness, wells,
+        rowTransitions, colTransitions
+    };
 }
 
 // ==================== Battle Manager ====================
@@ -2037,6 +2133,12 @@ function loop(time = 0, generation = loopGeneration) {
         if (currentMode === 'battle') {
             if (ai) ai.update(time);
             aiGame.update(time);
+            // Per-difficulty gravity: the shared level curve would make HARD
+            // suicide at level 10+ and EASY crawl forever.
+            const profile = AI_PROFILES[ai ? ai.difficulty : currentDifficulty] || AI_PROFILES.normal;
+            const target = Math.max(profile.gravityFloor || 150,
+                profile.dropInterval - (aiGame.level - 1) * (profile.gravityStep || 40));
+            if (Math.abs(aiGame.interval - target) > 0.5) aiGame.interval = target;
         }
         // Online opponent is display-only; snapshots update its state.
         aiGame.render();
