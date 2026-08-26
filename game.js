@@ -1056,16 +1056,18 @@ class Tetris {
         el.textContent = text;
         el.className = 'action-text show tier-' + tier;
         clearTimeout(this.actionTimer);
-        this.actionTimer = setTimeout(() => { el.className = 'action-text hidden'; }, 1200);
+        this.actionTimer = setTimeout(() => { el.className = 'action-text hidden'; }, 1600);
     }
 
     showCombo(count) {
         const el = this.comboDisplay;
         if (!el) return;
-        el.textContent = count + 'x COMBO';
-        el.className = 'combo-display show';
+        // Two-line arcade combo banner: big count on top, COMBO label below
+        const hot = count >= 4 ? ' combo-hot' : '';
+        el.innerHTML = '<span class="combo-num">' + count + 'x</span><span class="combo-label">COMBO</span>';
+        el.className = 'combo-display show' + hot;
         clearTimeout(this.comboTimer);
-        this.comboTimer = setTimeout(() => { el.className = 'combo-display hidden'; }, 1500);
+        this.comboTimer = setTimeout(() => { el.className = 'combo-display hidden'; }, 2000);
     }
 
     popStat(id) {

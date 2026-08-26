@@ -354,12 +354,26 @@ body {
 .combo-display,
 .action-text {
     font-family: 'Bungee', sans-serif;
+}
+.combo-display .combo-num {
+    color: var(--ink-yellow);
+    text-shadow: 3px 3px 0 var(--ink-black), 0 0 18px rgba(237,197,36,.75), 0 0 42px rgba(237,197,36,.35);
+}
+.combo-display .combo-label {
     color: var(--ink-cream);
+    text-shadow: 2px 2px 0 var(--ink-black), 0 0 12px rgba(255,253,232,.5);
+}
+.combo-display.combo-hot .combo-num {
+    color: var(--ink-orange);
+    text-shadow: 3px 3px 0 var(--ink-black), 0 0 18px rgba(246,82,0,.85), 0 0 46px rgba(246,82,0,.45);
+}
+.action-text {
     text-shadow: 3px 3px 0 var(--ink-black);
 }
-.action-text.tier-2 { color: var(--ink-mint); }
-.action-text.tier-3 { color: var(--ink-orange); }
-.action-text.tier-4 { color: var(--ink-coral); }
+.action-text.tier-1 { color: var(--ink-cream); }
+.action-text.tier-2 { color: var(--ink-mint); text-shadow: 3px 3px 0 var(--ink-black), 0 0 16px rgba(80,246,233,.6); }
+.action-text.tier-3 { color: var(--ink-orange); text-shadow: 3px 3px 0 var(--ink-black), 0 0 20px rgba(246,82,0,.7); }
+.action-text.tier-4 { color: var(--ink-coral); text-shadow: 3px 3px 0 var(--ink-black), 0 0 26px rgba(255,112,86,.8); }
 #status-overlay, #p-status-overlay, #a-status-overlay {
     font-family: 'Bungee', sans-serif;
     color: var(--ink-yellow);
