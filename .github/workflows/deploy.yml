@@ -32,7 +32,8 @@ jobs:
           node test/logic-test.js
           node --test test/input-controls-test.js
           node test/feedback-practice-test.js
-          node test/practice-test.js
+          php -l backend/api.php
+          python3 test/leaderboard-api-test.py
           node test/server-security-test.js
           python3 test/vendor-test.py
           python3 test/video-asset-test.py

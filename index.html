@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css?v=7.0">
     <link rel="stylesheet" href="ink-theme.css?v=7.0">
     <link rel="stylesheet" href="input-controls.css?v=7.0">
-    <link rel="stylesheet" href="battle-practice.css?v=7.0">
+    <link rel="stylesheet" href="leaderboard.css?v=8.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito+Sans:opsz,wght@6..12,600;6..12,800;6..12,900&display=swap" rel="stylesheet">
 </head>
@@ -22,7 +22,7 @@
     </div>
     <div class="bg-particles" id="bg-particles"></div>
 
-    <div id="practice-bar" class="practice-bar hidden"><strong>重練中 · 不計紀錄</strong><button type="button" onclick="TetrisPractice.repeat();this.blur()">重試同局面</button><button type="button" onclick="backMenu()">離開重練</button></div>
+
     <!-- Music Toggle Button -->
     <button class="music-toggle" id="music-toggle" type="button" onclick="toggleMusic()" aria-label="Toggle music" title="Toggle music (M)">
         <span class="music-icon" id="music-icon">
@@ -266,6 +266,14 @@
                 </div>
                 <button class="text-btn" onclick="showModeSelect()">← BACK</button>
             </div>
+            <section class="leaderboard" aria-labelledby="leaderboard-title">
+                <header class="leaderboard-header"><div><h2 id="leaderboard-title">GLOBAL TOP 10</h2><p>共享排行榜 · SOLO / CPU BATTLE</p></div><button id="leaderboard-refresh" type="button">重新整理</button></header>
+                <p class="leaderboard-note">依分數排名；單人或 CPU 對戰落敗後可登錄。CPU 各難度共榜；ONLINE 朋友房不計排名。</p>
+                <div class="leaderboard-grid">
+                    <section class="leaderboard-board" aria-labelledby="leaderboard-solo-title"><h3 id="leaderboard-solo-title">SOLO <span>單人榜</span></h3><p id="leaderboard-solo-status" class="leaderboard-status" role="status">讀取中…</p><table><caption class="sr-only">單人模式前十名</caption><thead><tr><th scope="col">#</th><th scope="col">玩家</th><th scope="col">分數</th><th scope="col">消行</th></tr></thead><tbody id="leaderboard-solo-rows"></tbody></table></section>
+                    <section class="leaderboard-board" aria-labelledby="leaderboard-battle-title"><h3 id="leaderboard-battle-title">BATTLE <span>CPU 對戰榜</span></h3><p id="leaderboard-battle-status" class="leaderboard-status" role="status">讀取中…</p><table><caption class="sr-only">CPU 對戰模式前十名</caption><thead><tr><th scope="col">#</th><th scope="col">玩家</th><th scope="col">分數</th><th scope="col">消行</th></tr></thead><tbody id="leaderboard-battle-rows"></tbody></table></section>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -363,12 +371,15 @@
             <p class="online-rematch-question" id="online-rematch-question">是否繼續對戰？</p>
             <p class="online-rematch-status" id="online-rematch-status" aria-live="polite">房間連線仍保留，雙方同意後直接開始下一局。</p>
         </div>
-        <section id="practice-offer" class="practice-offer hidden" aria-labelledby="practice-title">
-            <h3 id="practice-title">換一種落法，救回這一局</h3>
-            <p>還原雙方盤面、後續方塊與待接收攻擊。僅本次遊戲保留，不計入最佳紀錄。</p>
-            <label for="practice-checkpoint">回到哪個局面？</label>
-            <select id="practice-checkpoint"></select>
-            <button type="button" onclick="TetrisPractice.retrySelected();this.blur()">回到局面重練</button>
+        <section id="leaderboard-result" class="leaderboard-result hidden" aria-labelledby="leaderboard-result-title">
+            <h3 id="leaderboard-result-title">登錄共享排行榜</h3>
+            <p id="leaderboard-result-summary"></p>
+            <form id="leaderboard-submit-form" novalidate>
+                <label for="leaderboard-name">英文名字</label>
+                <p id="leaderboard-name-help">1–16 字元，須以英文字母開頭；其餘可用英文、數字、空格、_ 或 -。名字與成績將公開；每局限登錄一次。</p>
+                <div class="leaderboard-entry"><input id="leaderboard-name" name="name" type="text" inputmode="text" maxlength="16" autocomplete="nickname" autocapitalize="off" spellcheck="false" aria-describedby="leaderboard-name-help leaderboard-submit-status" required><button id="leaderboard-submit" type="submit">登錄成績</button></div>
+            </form>
+            <p id="leaderboard-submit-status" role="status" aria-live="polite"></p>
         </section>
         <div class="gameover-actions" id="gameover-actions">
             <button class="neon-btn online-rematch hidden" id="online-rematch-btn" onclick="onlineBattle.requestRematch()">繼續對戰</button>
@@ -379,8 +390,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
     <script src="input-controls.js?v=7.0"></script>
-    <script src="game.js?v=7.1"></script>
-    <script src="practice.js?v=7.0"></script>
+    <script src="leaderboard.js?v=8.0"></script>
+    <script src="game.js?v=8.0"></script>
     <script src="video-background.js?v=1.1"></script>
     <script src="online-battle.js?v=1.1"></script>
 </body>

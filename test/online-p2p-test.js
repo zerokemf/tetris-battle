@@ -286,7 +286,7 @@ function section(name) { console.log(`\n== ${name} ==`); }
         await guest.evaljs(`game.grid=Array.from({length:20},()=>Array(10).fill(0));game.grid[10][0]='j';for(let r=16;r<20;r++)game.grid[r].fill('i');game.combo=1;game.clearLines();`);
         await host.waitFor(`aiGame.lastClearEvent?.combo===2 && aiGame.lastClearEvent.canceled===4`,5000,'peer real-clear feedback arrives');
         assert(await host.evaljs(`document.getElementById('a-board-flow').textContent.includes('抵銷 4 → 送出 0') && document.getElementById('a-combo-display').textContent.includes('2x')`), 'remote real clear shows cancellation, sent attack and two-line combo');
-        assert(await host.evaljs(`TetrisPractice.count===0 && !TetrisPractice.retry(0)`), 'online has no local rewind checkpoints');
+        assert(await host.evaljs(`typeof TetrisPractice==='undefined'`), 'online has no local rewind checkpoints');
 
         section('Host-authoritative result and rematch');
         const firstMatchId = hostMatch.id;

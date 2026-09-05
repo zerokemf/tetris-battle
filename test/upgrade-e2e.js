@@ -19,8 +19,8 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  await send('Emulation.setDeviceMetricsOverride',{width:1440,height:900,deviceScaleFactor:1,mobile:false});
  await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'no-preference'}]});
  await send('Page.navigate',{url:URL});
- for(let i=0;i<60;i++){await sleep(100);if(await js(`typeof InputManager==='function' && !!InputManager.ui && !!window.TetrisPractice`))break;}
- check(await js(`!!InputManager.ui && !!window.TetrisPractice`),'new assets and controls loaded');
+ for(let i=0;i<60;i++){await sleep(100);if(await js(`typeof InputManager==='function' && !!InputManager.ui && typeof TetrisPractice==='undefined'`))break;}
+ check(await js(`!!InputManager.ui && typeof TetrisPractice==='undefined'`),'new assets and controls loaded');
  await js(`localStorage.removeItem('tb-input-settings-v1');chooseMode('solo');`);await sleep(250);
  check(await js('running && !isPaused'),'solo starts');
  // Observe real board locking, not a mocked callback.
@@ -41,29 +41,15 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  check(anim.time<450 && Number(anim.opacity)>.1,'successive clears restart caption animation');
  await shot('solo-caption');
  // Result comes from locking actual pieces until top-out, not a fake result overlay.
- await js(`game.grid=Array.from({length:20},()=>Array(10).fill(0));game.spawn();TetrisPractice.capture();`);
+ await js(`game.grid=Array.from({length:20},()=>Array(10).fill(0));game.spawn();`);
  for(let i=0;i<15;i++){if(!await js('running'))break;await key('Space');await key('Space','keyUp');await sleep(40);}
  await sleep(120);
- check(await js(`!running && document.getElementById('gameover').classList.contains('show') && !document.getElementById('practice-offer').classList.contains('hidden')`),'actual solo top-out offers retry checkpoints');
- await shot('solo-retry-offer');
- const best=await js(`localStorage.getItem('tb-high-score')`);
- await click('#practice-offer button');await sleep(150);
- check(await js(`running && TetrisPractice.active && !document.getElementById('practice-bar').classList.contains('hidden')`),'retry button restores playable practice');
- check(await js(`localStorage.getItem('tb-high-score')`)===best,'retry leaves existing high score intact');
- await click('#practice-bar button');check(await js('running && !game.over'),'repeat same checkpoint works without leaving practice');
+ check(await js(`!running && document.getElementById('gameover').classList.contains('show') && !document.getElementById('practice-offer')`),'actual solo defeat has no retry mechanism');
  await js(`backMenu();chooseMode('battle');chooseDifficulty('normal')`);await sleep(250);
  await js(`game.grid=Array.from({length:20},()=>Array(10).fill(0));game.grid[10][0]='j';for(let r=16;r<20;r++)game.grid[r].fill('i');game.receiveGarbage(3,false);game.clearLines();`);
  check(await js(`document.getElementById('p-board-flow').textContent.includes('抵銷 3 → 送出 1')`),'battle HUD shows actual cancel3 / send1');
  check(await js(`aiGame.garbageQueue.reduce((s,x)=>s+x.lines,0)`)===1,'attack reaches opponent unchanged');
  await shot('desktop-battle');
- for(let i=0;i<20;i++){if(!await js('running'))break;await key('Space');await key('Space','keyUp');await sleep(40);}
- await sleep(120);
- check(await js(`!running && !document.getElementById('practice-offer').classList.contains('hidden')`),'actual CPU defeat offers whole-world retry');
- await click('#practice-offer button');await sleep(120);
- check(await js(`running && TetrisPractice.active && !game.over && !aiGame.over && !!ai && !battleEnded`),'CPU practice restores both boards and resumes AI');
- await send('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
- await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});await sleep(100);
- check(await js(`document.getElementById('p-board').getBoundingClientRect().bottom <= document.getElementById('practice-bar').getBoundingClientRect().top`),'mobile practice bar does not cover landing rows');await shot('mobile-practice');
  // Caption sizes and touch hit areas across requested widths.
  for(const [width,height] of [[320,740],[390,844],[430,932],[768,1024],[1024,768]]){
   await send('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:true});await send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});

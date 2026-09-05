@@ -1,0 +1,68 @@
+/* Ink leaderboard; keep gameplay feedback formerly bundled with practice CSS. */
+.combat-panel { box-sizing:border-box; height:46px; display:flex; flex-direction:column; justify-content:center; gap:2px; padding:4px 10px; background:var(--ink-forest); border:2px solid var(--ink-mint); border-radius:10px 3px; color:var(--ink-cream); font:800 12px/1.3 'Nunito Sans',sans-serif; white-space:nowrap; }
+.combat-panel strong { color:var(--ink-mint); font-size:13px; }
+.combat-panel span { color:var(--ink-muted); }
+.combat-panel.pressure-mid { border-color:var(--ink-yellow); }
+.combat-panel.pressure-high { border-color:var(--ink-coral); background:#351b16; }
+.combat-panel.pressure-high span { color:var(--ink-coral); }
+.battle-board-wrapper,.canvas-wrapper { container-type:inline-size; }
+.combo-display { font-size:clamp(22px,19cqw,72px); }
+.action-text { width:78%; white-space:normal; overflow-wrap:normal; text-align:center; font-size:clamp(16px,8cqw,40px); line-height:1.12; }
+/* Scroll the menu itself, never shrink/crop ten rows into the old fixed card. */
+#menu { overflow-y:auto; overflow-x:hidden; justify-content:flex-start; padding:64px 12px 40px; }
+#menu .menu-content { flex-shrink:0; width:min(100%,1040px); max-height:none; transform:none; clip-path:none; padding:28px clamp(14px,3vw,36px); }
+#menu .menu-content > * { flex-shrink:0; }
+#menu .title { font-size:clamp(2.6rem,6vw,4rem); }
+.leaderboard { width:100%; margin-top:28px; text-align:left; color:var(--ink-cream); }
+.leaderboard-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.leaderboard h2 { font:400 clamp(18px,3vw,24px)/1.3 'Bungee',sans-serif; color:var(--ink-yellow); margin:0; }
+.leaderboard-header p,.leaderboard-note { font-size:13px; line-height:1.6; color:var(--ink-muted); margin:5px 0 12px; }
+.leaderboard-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.leaderboard-board { min-width:0; padding:14px; background:var(--ink-deep); border:2px solid var(--ink-mint); border-radius:16px 5px; }
+.leaderboard-board:nth-child(2) { border-color:var(--ink-coral); }
+.leaderboard-board h3 { margin:0; color:var(--ink-mint); font:400 18px/1.4 'Bungee',sans-serif; }
+.leaderboard-board:nth-child(2) h3 { color:var(--ink-coral); }
+.leaderboard-board h3 span { font:800 13px 'Nunito Sans',sans-serif; color:var(--ink-cream); }
+.leaderboard-status { min-height:20px; font-size:12px; line-height:1.5; color:var(--ink-muted); margin:5px 0 10px; }
+.leaderboard table { width:100%; border-collapse:collapse; table-layout:fixed; font-size:14px; font-variant-numeric:tabular-nums; }
+.leaderboard th,.leaderboard td { padding:9px 4px; border-bottom:1px solid #23483e; text-align:right; overflow-wrap:anywhere; }
+.leaderboard th { color:var(--ink-muted); font-size:12px; }
+.leaderboard th:first-child,.leaderboard td:first-child { width:10%; text-align:left; color:var(--ink-yellow); }
+.leaderboard th:nth-child(2),.leaderboard td:nth-child(2) { width:37%; text-align:left; }
+.leaderboard th:nth-child(3) { width:33%; }
+.leaderboard td:nth-child(2) { font-weight:900; }
+.leaderboard tbody tr:first-child { background:#15372b; }
+.leaderboard button,.leaderboard-result button { min-height:44px; padding:8px 13px; border:2px solid var(--ink-black); border-radius:10px 3px; background:var(--ink-mint); color:var(--ink-black); font:900 14px 'Nunito Sans',sans-serif; cursor:pointer; }
+.leaderboard button { flex-shrink:0; }
+.leaderboard button:disabled,.leaderboard-result button:disabled { opacity:.6; cursor:default; }
+.leaderboard-result { width:min(460px,100%); flex-shrink:0; margin:14px auto; padding:16px; border:2px solid var(--ink-mint); border-radius:16px 5px; background:var(--ink-forest); color:var(--ink-cream); text-align:left; }
+.leaderboard-result h3 { margin:0 0 6px; font-size:19px; color:var(--ink-mint); }
+.leaderboard-result p { margin:8px 0; font-size:13px; line-height:1.6; }
+#leaderboard-name-help { color:var(--ink-muted); }
+.leaderboard-result label { font-weight:900; }
+.leaderboard-entry { display:flex; gap:8px; }
+.leaderboard-entry input { min-width:0; width:100%; min-height:44px; padding:8px 10px; background:var(--ink-deep); color:var(--ink-cream); border:2px solid var(--ink-mint); border-radius:6px; font:800 16px 'Nunito Sans',sans-serif; }
+.leaderboard-entry button { flex-shrink:0; }
+#leaderboard-submit-status { min-height:21px; color:var(--ink-yellow-soft); }
+#gameover.show { max-height:100dvh; overflow:auto; padding:28px 16px; justify-content:flex-start; }
+#gameover.show > * { flex-shrink:0; }
+#gameover.show > :first-child { margin-top:auto; }
+#gameover.show > :last-child { margin-bottom:auto; }
+button:focus-visible,input:focus-visible { outline:3px solid var(--ink-yellow); outline-offset:3px; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+@media(max-width:768px) {
+    .ai-side .combat-panel { height:38px; padding:2px 4px; font-size:9px; }
+    .ai-side .combat-panel strong { font-size:10px; }
+}
+@media(max-width:680px) {
+    .leaderboard-grid { grid-template-columns:1fr; }
+    #menu { padding:60px 10px 24px; }
+    #menu .menu-content { padding:24px 12px; }
+    .leaderboard-board { padding:12px; }
+    .leaderboard table { font-size:14px; }
+    .leaderboard-header { align-items:flex-start; }
+    .leaderboard-header button { padding:8px; font-size:12px; }
+}
+@media(prefers-reduced-motion:reduce) {
+    .combo-display.show,.action-text.show { animation:none!important; opacity:1; transform:translate(-50%,-50%); }
+}

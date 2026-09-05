@@ -1948,7 +1948,7 @@ function clearFeedbackTimers() {
 
 function startGame() {
     clearFeedbackTimers();
-    window.TetrisPractice?.reset();
+    window.TetrisLeaderboard?.beginRound(currentMode);
     initAudio();
     sharedBag = new SeededBag7(Math.floor(Math.random()*4294967296));
     document.body.classList.remove('at-menu');
@@ -2023,7 +2023,7 @@ function beginGameLoop() {
 
 function startOnlineGame(seed) {
     clearFeedbackTimers();
-    window.TetrisPractice?.reset();
+    window.TetrisLeaderboard?.beginRound('online');
     currentMode = 'online';
     initAudio();
     document.body.classList.remove('at-menu', 'mode-solo');
@@ -2071,7 +2071,8 @@ function startOnlineGame(seed) {
 
 async function backMenu() {
     clearFeedbackTimers();
-    window.TetrisPractice?.reset();
+    window.TetrisLeaderboard?.closeResult();
+    window.TetrisLeaderboard?.refresh();
     const wasOnline = currentMode === 'online';
     if (wasOnline) await window.onlineBattle?.handleBackMenu();
     document.getElementById('gameover').classList.remove('show');
@@ -2131,7 +2132,7 @@ function togglePause() {
 
 function loop(time = 0, generation = loopGeneration) {
     if (generation !== loopGeneration || !running || isPaused) return;
-    window.TetrisPractice?.capture();
+
     inputManager.update();
     if (game) { game.update(time); game.render(); }
     if (aiGame) {
@@ -2163,10 +2164,9 @@ function endSolo() {
     playSound('over');
     document.getElementById('gameover-title').textContent = 'GAME OVER';
     const hs = loadHighScore();
-    const practicing = Boolean(window.TetrisPractice?.active);
-    const isNewRecord = !practicing && game.score > hs.score;
-    if (!practicing) saveHighScore(game.score, game.maxCombo);
-    document.getElementById('gameover-sub').textContent = practicing ? '重練結束 · 不計入最佳紀錄' : isNewRecord ? '🏆 NEW HIGH SCORE!' : '';
+    const isNewRecord = game.score > hs.score;
+    saveHighScore(game.score, game.maxCombo);
+    document.getElementById('gameover-sub').textContent = isNewRecord ? '🏆 NEW HIGH SCORE!' : '';
     document.getElementById('gameover-sub').classList.toggle('new-record', isNewRecord);
     document.getElementById('final-stats-solo').classList.remove('hidden');
     document.getElementById('final-stats-battle').classList.add('hidden');
@@ -2175,7 +2175,7 @@ function endSolo() {
     document.getElementById('final-level').textContent = game.level;
     document.getElementById('final-combo').textContent = game.maxCombo;
     setOnlineRematchDecision(false);
-    window.TetrisPractice?.offer();
+    window.TetrisLeaderboard?.showResult({ mode: 'solo', lost: true, score: game.score, lines: game.lines });
     inputManager?.reset?.();
     InputManager.refreshUI();
     document.getElementById('gameover').classList.add('show');
@@ -2209,7 +2209,7 @@ function endBattle() {
     document.getElementById('final-bl').textContent = game.lines;
     document.getElementById('final-bcombo').textContent = game.maxCombo;
     document.getElementById('final-bb2b').textContent = game.maxB2b;
-    window.TetrisPractice?.offer();
+    window.TetrisLeaderboard?.showResult({ mode: currentMode, lost: !youWin, score: game.score, lines: game.lines });
     inputManager?.reset?.();
     InputManager.refreshUI();
     document.getElementById('gameover').classList.add('show');
