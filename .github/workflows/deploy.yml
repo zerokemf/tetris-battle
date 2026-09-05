@@ -2,11 +2,17 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       pages: write
@@ -14,19 +20,30 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
       - uses: actions/checkout@v4
-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install media verification tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Verify game rules and upgrades
+        run: |
+          node test/logic-test.js
+          node --test test/input-controls-test.js
+          node test/feedback-practice-test.js
+          node test/practice-test.js
+          node test/server-security-test.js
+          python3 test/vendor-test.py
+          python3 test/video-asset-test.py
+      - name: Package only public game assets
+        run: node scripts/build-pages.js
       - name: Setup Pages
-        uses: actions/configure-pages@v4
-
+        uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
-
+          path: _site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

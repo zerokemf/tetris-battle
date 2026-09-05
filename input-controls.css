@@ -1,0 +1,65 @@
+/* Ink-compatible controls. Only gameplay gains a touch layout. */
+#input-settings-button {position:fixed;top:12px;left:12px;z-index:120;min-height:44px;padding:8px 12px;border:2px solid var(--ink-mint);border-radius:12px 4px;background:var(--ink-black);color:var(--ink-cream);font:900 13px 'Nunito Sans',sans-serif;cursor:pointer;}
+#input-settings-button:disabled {opacity:.55;cursor:not-allowed;}
+#input-settings {margin:auto;width:min(560px,calc(100vw - 24px));max-height:90dvh;overflow:auto;padding:24px;color:var(--ink-cream);background:var(--ink-forest);border:3px solid var(--ink-mint);border-radius:20px 6px;box-shadow:8px 8px 0 var(--ink-black);font:800 14px/1.5 'Nunito Sans',sans-serif;}
+#input-settings::backdrop {background:rgba(0,0,0,.8);}
+#input-settings h2 {color:var(--ink-mint);margin-bottom:10px;}
+#input-settings button {min-height:44px;padding:8px 14px;color:var(--ink-black);background:var(--ink-mint);border:2px solid var(--ink-black);border-radius:8px 3px;font:900 14px 'Nunito Sans',sans-serif;cursor:pointer;}
+#input-settings .input-close {float:right;}
+.input-timing,.input-bindings {display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;}
+#input-settings label {display:flex;flex-direction:column;gap:4px;min-width:0;}
+#input-settings input {width:100%;min-width:0;min-height:44px;padding:8px;background:var(--ink-black);color:var(--ink-cream);border:2px solid var(--ink-blue);border-radius:6px;font:800 16px 'Nunito Sans',sans-serif;}
+.input-note {font-size:12px;color:var(--ink-muted);}
+#input-settings-error {min-height:24px;color:var(--ink-coral);}
+.input-settings-actions {display:flex;justify-content:space-between;gap:10px;}
+#input-touch-pad {display:none;}
+@media(max-width:768px),(pointer:coarse) {
+    body {--tb-pad-height:124px;}
+    body:not(.at-menu) #input-touch-pad {display:flex;position:fixed;bottom:0;left:0;width:100%;height:var(--tb-pad-height);padding:10px 12px max(10px,env(safe-area-inset-bottom));justify-content:space-between;gap:18px;z-index:80;background:linear-gradient(transparent,var(--ink-black) 12%);touch-action:none;user-select:none;}
+    .touch-group {display:grid;grid-template-columns:repeat(3,minmax(44px,64px));gap:6px;align-items:end;}
+    .touch-group:last-child {grid-template-columns:repeat(2,minmax(44px,64px));}
+    #input-touch-pad button {min-width:44px;min-height:46px;border:2px solid var(--ink-black);border-radius:10px 4px;background:var(--ink-mint);color:var(--ink-black);font:900 22px 'Nunito Sans',sans-serif;touch-action:none;box-shadow:2px 3px 0 #1a635b;}
+    #input-touch-pad [data-action=hold],#input-touch-pad [data-action=hardDrop] {font-size:15px;}
+    #input-touch-pad [data-action=hardDrop] {background:var(--ink-orange);color:var(--ink-cream);}
+    #input-touch-pad button.pressed {background:var(--ink-yellow);box-shadow:none;}
+    body:not(.at-menu) .game-container {height:calc(100dvh - 190px);margin-top:32px;align-self:flex-start;}
+    body:not(.at-menu) .battle-arena {margin-top:54px;height:calc(100dvh - 195px);align-self:flex-start;}
+    .gameover-screen.show ~ #input-touch-pad {display:none;}
+}
+@media(max-width:768px) {
+    #input-settings-button {top:6px;left:6px;min-height:36px;font-size:11px;padding:6px 8px;}
+    .music-toggle {top:6px;right:6px;}
+    body:not(.at-menu) .game-container {height:calc(100dvh - 198px);margin-top:48px;}
+    body:not(.at-menu) .battle-arena {margin-top:50px;height:calc(100dvh - 186px);}
+    body:not(.at-menu) .player-side .battle-board-wrapper {height:min(calc(100dvh - 284px),calc((100vw - 94px) * 2));width:auto;aspect-ratio:1/2;}
+    body:not(.at-menu) .ai-side .battle-board-wrapper {height:100px;width:50px;}
+}
+@media(max-width:768px) {
+    body:not(.at-menu) .battle-arena {padding:0 8px;overflow:visible;}
+    .ai-side {position:relative;height:90px;padding-right:56px;}
+    .ai-side .battle-row {position:absolute;right:0;top:0;display:block;}
+    .ai-side .left-info,.ai-side .garbage-meter {display:none;}
+    body:not(.at-menu) .ai-side .battle-board-wrapper {height:88px;width:44px;}
+    .ai-side .battle-player-tag {min-height:30px;}
+    .player-side {flex:0 0 auto;}
+    .player-side .battle-row {grid-template-columns:8px auto 54px;}
+    body:not(.at-menu) .player-side .battle-board-wrapper {height:min(calc(100dvh - 414px),calc((100vw - 100px) * 2));width:auto;aspect-ratio:1/2;}
+    .player-side .garbage-meter {height:min(calc(100dvh - 414px),calc((100vw - 100px) * 2));}
+    .player-side .right-info {width:54px;}
+    .player-side .left-info {display:flex;width:54px;grid-column:3;grid-row:1;margin-top:155px;}
+    .player-side .left-info .battle-stats {display:none;}
+    body:not(.at-menu) .canvas-wrapper {height:min(calc(100dvh - 240px),calc((100vw - 160px) * 2));}
+    .game-container .side-panel {width:64px;}
+    .game-container .side-panel canvas {max-width:100%;}
+}
+@media(min-width:769px) and (pointer:coarse) {
+    body:not(.at-menu) .battle-board-wrapper,body:not(.at-menu) .garbage-meter {height:min(calc(100dvh - 310px),34vw);}
+    .battle-info {width:70px;}
+    body:not(.at-menu) .canvas-wrapper {height:min(calc(100dvh - 245px),60vw);}
+}
+@media(max-height:500px) and (pointer:coarse) {
+    body:not(.at-menu) .battle-arena,body:not(.at-menu) .game-container {height:calc(100dvh - 70px);margin-top:48px;width:62vw;}
+    body:not(.at-menu) .player-side .battle-board-wrapper {height:calc(100dvh - 155px);}
+    body:not(.at-menu) #input-touch-pad {background:none;pointer-events:none;height:124px;}
+    #input-touch-pad button {pointer-events:auto;}
+}

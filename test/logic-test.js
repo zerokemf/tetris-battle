@@ -81,7 +81,7 @@ const sandbox = {
 };
 sandbox.globalThis = sandbox;
 
-const code = fs.readFileSync(path.join(__dirname, '..', 'game.js'), 'utf8')
+const code = fs.readFileSync(path.join(__dirname, '..', 'input-controls.js'), 'utf8') + '\n' + fs.readFileSync(path.join(__dirname, '..', 'game.js'), 'utf8')
     // Expose top-level const/class declarations (they don't attach to global in vm context)
     + '\n;this.__exports = { Bag7, SeededBag7, Piece, Tetris, TetrisAI, BattleManager, loadHighScore, saveHighScore, SHAPES, COLORS, SRS_KICK_DATA, getOnlineLocalState, applyOnlineRemoteState, receiveOnlineAttack, finishOnlineMatch, analyzeGrid, simulateDrop, rotateShape, AI_PROFILES };';
 

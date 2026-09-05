@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Tetris Battle - SRS Edition</title>
-    <link rel="stylesheet" href="style.css?v=6.2">
-    <link rel="stylesheet" href="ink-theme.css?v=1.4">
+    <link rel="stylesheet" href="style.css?v=7.0">
+    <link rel="stylesheet" href="ink-theme.css?v=7.0">
+    <link rel="stylesheet" href="input-controls.css?v=7.0">
+    <link rel="stylesheet" href="battle-practice.css?v=7.0">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito+Sans:opsz,wght@6..12,600;6..12,800;6..12,900&display=swap" rel="stylesheet">
 </head>
@@ -20,6 +22,7 @@
     </div>
     <div class="bg-particles" id="bg-particles"></div>
 
+    <div id="practice-bar" class="practice-bar hidden"><strong>重練中 · 不計紀錄</strong><button type="button" onclick="TetrisPractice.repeat();this.blur()">重試同局面</button><button type="button" onclick="backMenu()">離開重練</button></div>
     <!-- Music Toggle Button -->
     <button class="music-toggle" id="music-toggle" type="button" onclick="toggleMusic()" aria-label="Toggle music" title="Toggle music (M)">
         <span class="music-icon" id="music-icon">
@@ -124,6 +127,7 @@
                     <span class="mini-stat">KO <b id="ko-p">0</b></span>
                 </span>
             </div>
+            <div class="combat-panel" id="p-board-combat"><strong id="p-board-flow">消行 → 抵銷 → 送出</strong><span id="p-board-pressure">穩定 · 堆高 0 / 20 · 待接收 0 行</span></div>
             <div class="battle-row">
                 <div class="battle-info left-info">
                     <div class="mini-window">
@@ -173,6 +177,7 @@
                     <span class="mini-stat">KO <b id="ko-a">0</b></span>
                 </span>
             </div>
+            <div class="combat-panel" id="a-board-combat"><strong id="a-board-flow">消行 → 抵銷 → 送出</strong><span id="a-board-pressure">穩定 · 堆高 0 / 20 · 待接收 0 行</span></div>
             <div class="battle-row">
                 <div class="battle-info left-info">
                     <div class="mini-window">
@@ -358,6 +363,13 @@
             <p class="online-rematch-question" id="online-rematch-question">是否繼續對戰？</p>
             <p class="online-rematch-status" id="online-rematch-status" aria-live="polite">房間連線仍保留，雙方同意後直接開始下一局。</p>
         </div>
+        <section id="practice-offer" class="practice-offer hidden" aria-labelledby="practice-title">
+            <h3 id="practice-title">換一種落法，救回這一局</h3>
+            <p>還原雙方盤面、後續方塊與待接收攻擊。僅本次遊戲保留，不計入最佳紀錄。</p>
+            <label for="practice-checkpoint">回到哪個局面？</label>
+            <select id="practice-checkpoint"></select>
+            <button type="button" onclick="TetrisPractice.retrySelected();this.blur()">回到局面重練</button>
+        </section>
         <div class="gameover-actions" id="gameover-actions">
             <button class="neon-btn online-rematch hidden" id="online-rematch-btn" onclick="onlineBattle.requestRematch()">繼續對戰</button>
             <button class="neon-btn" id="gameover-back-btn" onclick="backMenu()">BACK TO MENU</button>
@@ -366,7 +378,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
-    <script src="game.js?v=6.2"></script>
+    <script src="input-controls.js?v=7.0"></script>
+    <script src="game.js?v=7.0"></script>
+    <script src="practice.js?v=7.0"></script>
     <script src="video-background.js?v=1.1"></script>
     <script src="online-battle.js?v=1.1"></script>
 </body>

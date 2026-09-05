@@ -649,7 +649,11 @@ class Tetris {
         this.interval = 1000;
         this.lastTime = 0;
         this.attackSent = 0;
+        this.lastClearEvent = null;
+        this.clearSequence = 0;
         this.bag = config.bag || sharedBag;
+        // Separate gameplay randomness from particles and other cosmetic draws.
+        this.randomSource = new SeededBag7(Math.floor(Math.random()*4294967296));
 
         // T-Spin detection state (set in rotate(), consumed in lockPiece())
         this._tSpin = false;
@@ -937,12 +941,16 @@ class Tetris {
         // crossed milestones queue independently instead of collapsing to a boolean.
         this.updateBombMilestone(linesCleared);
 
+        // Observe, never change, the existing attack/cancellation calculation.
+        const generated = attack;
+        let sent = 0;
         // Cancel incoming garbage first, then send remainder
         if (attack > 0) {
             attack = this.cancelGarbage(attack);
             if (attack > 0 && this.onAttack) {
                 const chargedBomb = this.bombCharges > 0;
                 const sendAsBomb = bombTriggered || chargedBomb;
+                sent = attack;
                 this.attackSent += attack;
                 this.onAttack(attack, { tier, combo: this.combo, b2b: this.b2b, pc: isPC, bomb: sendAsBomb });
                 if (chargedBomb) this.bombCharges--;
@@ -956,6 +964,8 @@ class Tetris {
         else if (isTSpin) label = `T-SPIN ${TIER_COLORS[tier].name}`;
         else if (this.b2b >= 2 && tier === 4) label = 'B2B TETRIS!';
         else if (bombTriggered) label = 'BOMB!';
+        this.lastClearEvent = { seq: ++this.clearSequence, label, tier: isTSpin ? 4 : tier,
+            combo: this.combo, cleared: linesCleared, generated, canceled: generated - attack, sent };
         this.showActionText(label, isTSpin ? 4 : tier);
         if (this.combo >= 2) this.showCombo(this.combo);
 
@@ -996,7 +1006,7 @@ class Tetris {
     }
 
     insertGarbageRows(count, isBomb) {
-        const holeCol = Math.floor(Math.random() * COLS);
+        const holeCol = Math.floor(this.randomSource.random() * COLS);
         // Shift existing rows up by `count`
         for (let r = 0; r < ROWS - count; r++) {
             this.grid[r] = this.grid[r + count];
@@ -1007,7 +1017,7 @@ class Tetris {
             // Bomb: place one bomb block somewhere other than the hole
             if (isBomb) {
                 let bombCol;
-                do { bombCol = Math.floor(Math.random() * COLS); } while (bombCol === holeCol);
+                do { bombCol = Math.floor(this.randomSource.random() * COLS); } while (bombCol === holeCol);
                 row[bombCol] = 'x';
             }
             this.grid[ROWS - count + i] = row;
@@ -1028,6 +1038,7 @@ class Tetris {
     }
 
     updateGarbageMeter() {
+        this.syncCombatHUD();
         if (!this.config.garbageMeterId) return;
         const meter = document.getElementById(this.config.garbageMeterId);
         if (!meter) return;
@@ -1053,6 +1064,8 @@ class Tetris {
     showActionText(text, tier) {
         const el = this.actionText;
         if (!el) return;
+        el.className = 'action-text hidden';
+        void el.offsetWidth; // consecutive clears restart instead of inheriting a faded animation
         el.textContent = text;
         el.className = 'action-text show tier-' + tier;
         clearTimeout(this.actionTimer);
@@ -1062,6 +1075,8 @@ class Tetris {
     showCombo(count) {
         const el = this.comboDisplay;
         if (!el) return;
+        el.className = 'combo-display hidden';
+        void el.offsetWidth;
         // Two-line arcade combo banner: big count on top, COMBO label below
         const hot = count >= 4 ? ' combo-hot' : '';
         el.innerHTML = '<span class="combo-num">' + count + 'x</span><span class="combo-label">COMBO</span>';
@@ -1147,7 +1162,28 @@ class Tetris {
         }
     }
 
+    syncCombatHUD() {
+        const id = this.config.boardId;
+        const flow = document.getElementById(id + '-flow');
+        const pressure = document.getElementById(id + '-pressure');
+        const panel = document.getElementById(id + '-combat');
+        const firstRow = this.grid.findIndex(row => row.some(Boolean));
+        const height = firstRow < 0 ? 0 : ROWS - firstRow;
+        const pending = this.garbageQueue.reduce((sum, item) => sum + item.lines, 0);
+        const warning = height + pending >= 17 ? '危險' : height + pending >= 13 ? '注意' : '穩定';
+        const event = this.lastClearEvent;
+        const text = event ? `消 ${event.cleared} 行 → 抵銷 ${event.canceled} → 送出 ${event.sent}` : '消行 → 抵銷 → 送出';
+        if (flow && flow.textContent !== text) flow.textContent = text;
+        const detail = `${warning} · 堆高 ${height} / 20 · 待接收 ${pending} 行`;
+        if (pressure && pressure.textContent !== detail) pressure.textContent = detail;
+        if (panel) {
+            panel.classList.toggle('pressure-high', warning === '危險');
+            panel.classList.toggle('pressure-mid', warning === '注意');
+        }
+    }
+
     syncStats() {
+        this.syncCombatHUD();
         const s = this.config.statIds;
         if (!s) return;
         if (s.score) document.getElementById(s.score).textContent = this.score.toLocaleString();
@@ -1165,6 +1201,7 @@ class TetrisAI {
         this.game = game;
         this.difficulty = difficulty;
         this.profile = AI_PROFILES[difficulty] || AI_PROFILES.normal;
+        this.randomSource = new SeededBag7(Math.floor(Math.random()*4294967296));
         this.plan = null;           // { x, rotIndex, useHold }
         this.thinkStart = 0;
         this.lastActionTime = 0;
@@ -1276,10 +1313,10 @@ class TetrisAI {
         // Introduce error chance on easier profiles. Mistakes are drawn from
         // the *top slice* of legal candidates with a front-biased random pick,
         // so the CPU plays sloppily instead of self-destructing.
-        if (this.profile.errorChance > 0 && Math.random() < this.profile.errorChance && candidates.length > 1) {
+        if (this.profile.errorChance > 0 && this.randomSource.random() < this.profile.errorChance && candidates.length > 1) {
             const sorted = [...candidates].sort((a, b) => b.score - a.score);
             const poolSize = Math.min(sorted.length, Math.max(3, Math.ceil(sorted.length * 0.2)));
-            const idx = Math.floor(Math.random() * Math.random() * poolSize);
+            const idx = Math.floor(this.randomSource.random() * this.randomSource.random() * poolSize);
             const { score, ...plan } = sorted[idx];
             return plan;
         }
@@ -1782,70 +1819,7 @@ function updateMusicButton() {
 
 document.addEventListener('DOMContentLoaded', updateMusicButton);
 
-// ==================== Input Manager ====================
-class InputManager {
-    constructor(game) {
-        this.game = game;
-        this.keys = {};
-        this.keyTimers = {};
-        this.DAS = 130;
-        this.ARR = 30;
-        this.lastTime = performance.now();
-        this.initListeners();
-    }
-
-    initListeners() {
-        this._kd = e => {
-            // Ignore key repeat events — only respond to initial press
-            if (e.repeat) return;
-            if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
-            if (!this.keys[e.code]) {
-                this.keys[e.code] = true;
-                this.keyTimers[e.code] = 0;
-                this.triggerAction(e.code);
-            }
-        };
-        this._ku = e => { this.keys[e.code] = false; this.keyTimers[e.code] = 0; };
-        window.addEventListener('keydown', this._kd);
-        window.addEventListener('keyup', this._ku);
-    }
-
-    destroy() {
-        window.removeEventListener('keydown', this._kd);
-        window.removeEventListener('keyup', this._ku);
-    }
-
-    update() {
-        const now = performance.now();
-        const dt = now - this.lastTime;
-        this.lastTime = now;
-        for (const [key, pressed] of Object.entries(this.keys)) {
-            if (pressed) {
-                this.keyTimers[key] += dt;
-                if (this.keyTimers[key] >= this.DAS) {
-                    while (this.keyTimers[key] >= this.DAS + this.ARR) {
-                        this.triggerAction(key);
-                        if (this.ARR === 0) { this.keyTimers[key] = this.DAS; break; }
-                        this.keyTimers[key] -= this.ARR;
-                    }
-                }
-            }
-        }
-    }
-
-    triggerAction(keyCode) {
-        if (!this.game || this.game.over || isPaused) return;
-        switch(keyCode) {
-            case 'ArrowLeft': this.game.move(-1); break;
-            case 'ArrowRight': this.game.move(1); break;
-            case 'ArrowDown': this.game.drop(); break;
-            case 'ArrowUp': this.game.rotate(1); break;
-            case 'KeyZ': this.game.rotate(-1); break;
-            case 'KeyC': this.game.holdPiece(); break;
-            case 'Space': this.game.hardDrop(); break;
-        }
-    }
-}
+// InputManager is provided by input-controls.js.
 
 // ==================== High Score (localStorage) ====================
 const HIGH_SCORE_KEY = 'tb-high-score';
@@ -1965,9 +1939,19 @@ function setOnlineRematchDecision(visible) {
     }
 }
 
+function clearFeedbackTimers() {
+    for (const board of [game,aiGame]) {
+        if (!board) continue;
+        clearTimeout(board.comboTimer);clearTimeout(board.actionTimer);
+        board.comboDisplay?.classList.add('hidden');board.actionText?.classList.add('hidden');
+    }
+}
+
 function startGame() {
+    clearFeedbackTimers();
+    window.TetrisPractice?.reset();
     initAudio();
-    sharedBag = new Bag7();
+    sharedBag = new SeededBag7(Math.floor(Math.random()*4294967296));
     document.body.classList.remove('at-menu');
     document.getElementById('menu').classList.add('hidden');
     document.getElementById('gameover').classList.remove('show');
@@ -1983,8 +1967,8 @@ function startGame() {
 
     if (currentMode === 'battle') {
         // Each player gets an independent 7-bag (fair randomness per player)
-        game = new Tetris({ ...BATTLE_PLAYER_CONFIG, bag: new Bag7() });
-        aiGame = new Tetris({ ...BATTLE_AI_CONFIG, bag: new Bag7() });
+        game = new Tetris({ ...BATTLE_PLAYER_CONFIG, bag: new SeededBag7(Math.floor(Math.random()*4294967296)) });
+        aiGame = new Tetris({ ...BATTLE_AI_CONFIG, bag: new SeededBag7(Math.floor(Math.random()*4294967296)) });
         game.spawn();
         aiGame.spawn();
         battleManager = new BattleManager(game, aiGame);
@@ -2024,6 +2008,8 @@ function startGame() {
 function beginGameLoop() {
     running = true;
     isPaused = false;
+    InputManager.refreshUI();
+    document.body.focus();
     const generation = ++loopGeneration;
     startMusic();
     // Ensure renderers resize after layout switch. The generation token keeps
@@ -2032,11 +2018,13 @@ function beginGameLoop() {
         if (generation !== loopGeneration || !running) return;
         if (game) game.renderer.resize();
         if (aiGame) aiGame.renderer.resize();
-        loop(0, generation);
+        loop(performance.now(), generation);
     });
 }
 
 function startOnlineGame(seed) {
+    clearFeedbackTimers();
+    window.TetrisPractice?.reset();
     currentMode = 'online';
     initAudio();
     document.body.classList.remove('at-menu', 'mode-solo');
@@ -2083,6 +2071,8 @@ function startOnlineGame(seed) {
 }
 
 async function backMenu() {
+    clearFeedbackTimers();
+    window.TetrisPractice?.reset();
     const wasOnline = currentMode === 'online';
     if (wasOnline) await window.onlineBattle?.handleBackMenu();
     document.getElementById('gameover').classList.remove('show');
@@ -2093,6 +2083,7 @@ async function backMenu() {
     running = false;
     loopGeneration++;  // invalidate any frame already queued by the previous game
     if (inputManager) { inputManager.destroy(); inputManager = null; }
+    InputManager.refreshUI();
     stopMusic();
     document.body.classList.remove('mode-battle');
     document.body.classList.add('mode-solo');
@@ -2100,9 +2091,20 @@ async function backMenu() {
     currentMode = 'solo';
 }
 
+let pauseStartedAt = 0;
 function togglePause() {
     if (!running || currentMode === 'online') return;
+    inputManager?.reset?.();
     isPaused = !isPaused;
+    if (isPaused) pauseStartedAt = performance.now();
+    else {
+        const elapsed = Math.max(0, performance.now() - pauseStartedAt);
+        for (const board of [game,aiGame]) if (board) {
+            if (board.isLocking) board.lockStartTime += elapsed;
+            board.garbageQueue.forEach(item => { item.time += elapsed; });
+        }
+        if (ai) { ai.thinkStart += elapsed; ai.lastActionTime += elapsed; }
+    }
     // Invalidate the frame that may already be queued. On resume, only the
     // new generation below is allowed to continue the animation chain.
     const generation = ++loopGeneration;
@@ -2123,12 +2125,14 @@ function togglePause() {
         if (aiGame) aiGame.lastTime = performance.now();
         if (inputManager) inputManager.lastTime = performance.now();
         startMusic();
-        loop(0, generation);
+        if (!InputManager.dialogOpen) document.body.focus();
+        loop(performance.now(), generation);
     }
 }
 
 function loop(time = 0, generation = loopGeneration) {
     if (generation !== loopGeneration || !running || isPaused) return;
+    window.TetrisPractice?.capture();
     inputManager.update();
     if (game) { game.update(time); game.render(); }
     if (aiGame) {
@@ -2160,9 +2164,10 @@ function endSolo() {
     playSound('over');
     document.getElementById('gameover-title').textContent = 'GAME OVER';
     const hs = loadHighScore();
-    const isNewRecord = game.score > hs.score;
-    saveHighScore(game.score, game.maxCombo);
-    document.getElementById('gameover-sub').textContent = isNewRecord ? '🏆 NEW HIGH SCORE!' : '';
+    const practicing = Boolean(window.TetrisPractice?.active);
+    const isNewRecord = !practicing && game.score > hs.score;
+    if (!practicing) saveHighScore(game.score, game.maxCombo);
+    document.getElementById('gameover-sub').textContent = practicing ? '重練結束 · 不計入最佳紀錄' : isNewRecord ? '🏆 NEW HIGH SCORE!' : '';
     document.getElementById('gameover-sub').classList.toggle('new-record', isNewRecord);
     document.getElementById('final-stats-solo').classList.remove('hidden');
     document.getElementById('final-stats-battle').classList.add('hidden');
@@ -2171,6 +2176,9 @@ function endSolo() {
     document.getElementById('final-level').textContent = game.level;
     document.getElementById('final-combo').textContent = game.maxCombo;
     setOnlineRematchDecision(false);
+    window.TetrisPractice?.offer();
+    inputManager?.reset?.();
+    InputManager.refreshUI();
     document.getElementById('gameover').classList.add('show');
 }
 
@@ -2202,13 +2210,16 @@ function endBattle() {
     document.getElementById('final-bl').textContent = game.lines;
     document.getElementById('final-bcombo').textContent = game.maxCombo;
     document.getElementById('final-bb2b').textContent = game.maxB2b;
+    window.TetrisPractice?.offer();
+    inputManager?.reset?.();
+    InputManager.refreshUI();
     document.getElementById('gameover').classList.add('show');
     if (currentMode === 'online') window.onlineBattle?.handleGameEnded(youWin, onlineEndReason);
 }
 
 // ==================== Online Match Bridge ====================
 function boundedInt(value, min, max, fallback = 0) {
-    const number = Number(value);
+    const number = typeof value === 'number' ? value : NaN;
     if (!Number.isFinite(number)) return fallback;
     return Math.min(max, Math.max(min, Math.trunc(number)));
 }
@@ -2235,7 +2246,9 @@ function getOnlineLocalState() {
         maxCombo: game.maxCombo,
         maxB2b: game.maxB2b,
         attackSent: game.attackSent,
-        over: game.over
+        over: game.over,
+        feedback: game.lastClearEvent ? { ...game.lastClearEvent } : null,
+        pendingGarbage: game.garbageQueue.reduce((sum, item) => sum + item.lines, 0)
     };
 }
 
@@ -2272,6 +2285,22 @@ function applyOnlineRemoteState(snapshot) {
     aiGame.maxB2b = boundedInt(snapshot.maxB2b, 0, 999);
     aiGame.attackSent = boundedInt(snapshot.attackSent, 0, 999999);
     aiGame.over = Boolean(snapshot.over);
+    // Optional v1 extension: old peers remain compatible. Display-only fields
+    // never send attacks or run clears on the remote board.
+    const event = snapshot.feedback;
+    if (event && Number.isSafeInteger(event.seq) && event.seq > aiGame.clearSequence && event.seq < 10000000
+        && typeof event.label === 'string' && /^(?:(?:T-SPIN(?: MINI)?|B2B) )?(?:SINGLE|DOUBLE|TRIPLE|TETRIS!|T-SPIN|T-SPIN MINI|PERFECT!|BOMB!)$/.test(event.label)) {
+        const safe = { seq: event.seq, label: event.label.slice(0, 32), tier: boundedInt(event.tier, 1, 4, 1),
+            combo: boundedInt(event.combo, 0, 999), cleared: boundedInt(event.cleared, 0, 20),
+            generated: boundedInt(event.generated, 0, 40), canceled: boundedInt(event.canceled, 0, 40), sent: boundedInt(event.sent, 0, 40) };
+        aiGame.lastClearEvent = safe;
+        aiGame.clearSequence = safe.seq;
+        aiGame.showActionText(safe.label, safe.tier);
+        if (safe.combo >= 2) aiGame.showCombo(safe.combo);
+    }
+    const pending = boundedInt(snapshot.pendingGarbage, 0, 200);
+    aiGame.garbageQueue = pending ? [{lines:pending,isBomb:false,time:performance.now()}] : [];
+    aiGame.updateGarbageMeter();
     aiGame.syncStats();
     return true;
 }
@@ -2312,6 +2341,7 @@ window.TetrisBattleOnlineApi = Object.freeze({
 });
 
 document.addEventListener('keydown', e => {
+    if (InputManager.shouldIgnoreEvent(e) || e.repeat) return;
     if (e.key === 'm' || e.key === 'M') { toggleMusic(); return; }
     if (!running) return;
     if (e.key === 'p' || e.key === 'P') togglePause();
@@ -2325,7 +2355,7 @@ window.addEventListener('blur', () => {
     if (running && !isPaused) togglePause();
 });
 
-document.addEventListener('click', () => { document.body.focus(); });
+
 document.body.setAttribute('tabindex', '-1');
 
 // Init menu high-score display
@@ -2337,38 +2367,6 @@ if (document.readyState === 'loading') {
 }
 
 // ==================== Touch Controls ====================
-(function initTouchControls() {
-    let touchStartX = 0, touchStartY = 0, touchStartTime = 0, touchMoved = false;
-
-    document.addEventListener('touchstart', e => {
-        if (!running || isPaused || !game) return;
-        const t = e.touches[0];
-        touchStartX = t.clientX; touchStartY = t.clientY;
-        touchStartTime = Date.now(); touchMoved = false;
-    }, { passive: true });
-
-    document.addEventListener('touchmove', e => {
-        if (!running || isPaused || !game) return;
-        const t = e.touches[0];
-        const dx = t.clientX - touchStartX;
-        const dy = t.clientY - touchStartY;
-        const threshold = 30;
-
-        if (Math.abs(dx) > threshold) {
-            game.move(dx > 0 ? 1 : -1);
-            touchStartX = t.clientX; touchMoved = true;
-        }
-        if (dy > threshold) { game.drop(); touchStartY = t.clientY; touchMoved = true; }
-        if (dy < -threshold) { game.rotate(1); touchStartY = t.clientY; touchMoved = true; }
-        e.preventDefault();
-    }, { passive: false });
-
-    document.addEventListener('touchend', e => {
-        if (!running || isPaused || !game) return;
-        if (!touchMoved && Date.now() - touchStartTime < 200) game.hardDrop();
-    }, { passive: true });
-})();
-
 // ==================== Background Particles ====================
 (function initBgParticles() {
     const container = document.getElementById('bg-particles');
