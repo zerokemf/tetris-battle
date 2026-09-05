@@ -1771,7 +1771,7 @@ function playSound(type, tier) {
 let bgmAudio = null;
 let musicRequest = 0;
 function startMusic() {
-    if (!musicEnabled) return;
+    if (!musicEnabled || typeof Audio === 'undefined') return;
     if (!bgmAudio) {
         bgmAudio = new Audio('assets/korobeiniki-bgm.mp3?v=1');
         bgmAudio.loop = true;
