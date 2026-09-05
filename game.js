@@ -1617,7 +1617,7 @@ async function initAudio() {
         try {
             await Tone.start();
             buildAudioGraph();
-            setupMusicParts();
+            // Background music is the supplied MP3; Tone handles SFX only.
             toneReady = true;
         } catch (e) {
             console.warn('Tone.js init failed', e);
@@ -1768,34 +1768,33 @@ function playSound(type, tier) {
     } catch(e) {}
 }
 
+let bgmAudio = null;
+let musicRequest = 0;
 function startMusic() {
     if (!musicEnabled) return;
-    initAudio().then(() => {
-        if (!toneReady || !audioNodes) return;
-        if (musicPlaying) return;
+    if (!bgmAudio) {
+        bgmAudio = new Audio('assets/korobeiniki-bgm.mp3?v=1');
+        bgmAudio.loop = true;
+        bgmAudio.volume = 0.55;
+        bgmAudio.preload = 'auto';
+    }
+    const request = ++musicRequest;
+    // Call play directly in the user gesture, independently of Tone SFX loading.
+    bgmAudio.play().then(() => {
+        if (request !== musicRequest) return;
         musicPlaying = true;
-        Tone.Transport.stop();
-        Tone.Transport.position = 0;
-        const now = Tone.now();
-        const g = audioNodes.music.master.gain;
-        g.cancelScheduledValues(now);
-        g.setValueAtTime(0, now);
-        g.linearRampToValueAtTime(0.55, now + 0.4);
-        Tone.Transport.start();
+        updateMusicButton();
+    }).catch(() => {
+        if (request !== musicRequest) return;
+        musicPlaying = false;
         updateMusicButton();
     });
 }
 
 function stopMusic() {
-    if (!toneReady || !audioNodes) { musicPlaying = false; updateMusicButton(); return; }
-    if (!musicPlaying) { updateMusicButton(); return; }
+    ++musicRequest;
+    if (bgmAudio) bgmAudio.pause();
     musicPlaying = false;
-    const now = Tone.now();
-    const g = audioNodes.music.master.gain;
-    g.cancelScheduledValues(now);
-    g.setValueAtTime(g.value, now);
-    g.linearRampToValueAtTime(0, now + 0.3);
-    setTimeout(() => { if (!musicPlaying && toneReady) { try { Tone.Transport.stop(); } catch(e) {} }}, 400);
     updateMusicButton();
 }
 
