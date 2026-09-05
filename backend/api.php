@@ -48,6 +48,8 @@ if ($item !== null) {
 flock($fp,LOCK_UN); fclose($fp);
 $rows=array_values(array_filter($data,function($r) use($mode){return $r['mode']===$mode;}));
 usort($rows,function($a,$b){return ($b['score'] <=> $a['score']) ?: strcmp($a['created_at'],$b['created_at']);});
+$rank = null;
+if ($item !== null) foreach ($rows as $i=>$row) if ($row['id'] === $item['id']) { $rank=$i+1; break; }
 $rows=array_slice($rows,0,10);
 foreach($rows as &$row) { unset($row['id'],$row['mode']); } unset($row);
-reply(200,['ok'=>true,'scores'=>$rows]);
+reply(200,['ok'=>true,'scores'=>$rows,'rank'=>$rank]);

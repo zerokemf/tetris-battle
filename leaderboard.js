@@ -98,7 +98,7 @@
     function showResult({ mode, lost, score, lines }) {
         if (!round || round.mode !== mode) return;
         if (round.eligible || round.submitted) return; // repeated end callbacks cannot unlock a round
-        const eligible = MODES.includes(mode) && lost === true;
+        const eligible = MODES.includes(mode) && (mode === 'battle' || lost === true);
         result.classList.toggle('hidden', !eligible && mode !== 'online');
         form.classList.toggle('hidden', !eligible);
         el('leaderboard-result-title').textContent = mode === 'online' ? 'ONLINE · 不計排名' : '登錄共享排行榜';
@@ -141,7 +141,9 @@
             if (round === current) {
                 input.disabled = true;
                 submitButton.textContent = '已登錄';
-                status.textContent = '成績已登錄！每局限一次；未進前十名也會保存成績。';
+                status.textContent = Number.isInteger(data.rank) && data.rank <= 10
+                    ? `成績已登錄！目前第 ${data.rank} 名，回首頁即可查看。`
+                    : '成績已登錄，本局未進前十名；首頁只顯示前十名。';
             }
         } catch (error) {
             if (round === current) {

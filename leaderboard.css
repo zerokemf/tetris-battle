@@ -11,6 +11,7 @@
 /* Scroll the menu itself, never shrink/crop ten rows into the old fixed card. */
 #menu { overflow-y:auto; overflow-x:hidden; justify-content:flex-start; padding:64px 12px 40px; }
 #menu .menu-content { flex-shrink:0; width:min(100%,1040px); max-height:none; transform:none; clip-path:none; padding:28px clamp(14px,3vw,36px); }
+#menu .menu-content { margin-block:auto; }
 #menu .menu-content > * { flex-shrink:0; }
 #menu .title { font-size:clamp(2.6rem,6vw,4rem); }
 .leaderboard { width:100%; margin-top:28px; text-align:left; color:var(--ink-cream); }
