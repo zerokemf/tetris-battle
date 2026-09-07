@@ -1,7 +1,7 @@
 /* Shared leaderboard: server persistence, per-round idempotency, no gameplay changes. */
 (() => {
     'use strict';
-    const ENDPOINT = 'https://willienas.myqnapcloud.com/tetris-leaderboard/api.php';
+    const ENDPOINT = 'https://willienas.myqnapcloud.com/web-arcade/tetris-leaderboard/api.php';
     const MODES = ['solo', 'battle'];
     const NAME = /^[A-Za-z][A-Za-z0-9 _-]{0,15}$/;
     const el = id => document.getElementById(id);

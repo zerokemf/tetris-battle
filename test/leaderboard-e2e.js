@@ -16,7 +16,7 @@ async function browser(port){const tab=await(await fetch(`http://127.0.0.1:${por
  const body=await a.js('__scoreBody');fs.writeFileSync('.ekko-tmp/leaderboard-fixture.json',JSON.stringify(body));
  await b.js('TetrisLeaderboard.refresh()');assert(await b.js("document.getElementById('leaderboard-solo-rows').textContent.includes('VerifyFriends')"),'second browser reads shared score');
  await a.js("document.getElementById('leaderboard-submit-form').requestSubmit()");
- const data=await(await fetch('https://willienas.myqnapcloud.com/tetris-leaderboard/api.php')).json();assert(data.scores.filter(r=>r.name==='VerifyFriends').length===1);console.log('PASS real submission, separate-browser readback and duplicate protection');
+ const data=await(await fetch('https://willienas.myqnapcloud.com/web-arcade/tetris-leaderboard/api.php')).json();assert(data.scores.filter(r=>r.name==='VerifyFriends').length===1);console.log('PASS real submission, separate-browser readback and duplicate protection');
  }
  await a.js("backMenu();chooseMode('battle');chooseDifficulty('normal')");await sleep(200);await a.js("game.over=true;endBattle()");await sleep(100);assert(await a.js("!document.getElementById('leaderboard-result').classList.contains('hidden')"));
  assert(a.errors.length===0&&b.errors.length===0);console.log('PASS removed practice, 4 responsive widths, real solo defeat form, CPU defeat form, no runtime errors');
